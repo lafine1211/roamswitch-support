@@ -17,5 +17,5 @@ Please redact real MAC addresses, SSIDs, IP addresses and license keys.
 - **使い方の質問:** [Discussions](../../discussions) へ投稿してください。
 - **購入・ライセンス・アカウント:** https://lafine.net/ からご連絡ください。
 
-投稿前に [FAQ](docs/FAQ.ja.md) と [変更履歴](CHANGELOG.md) をご確認ください。
+投稿前に [FAQ](docs/FAQ.ja.md) と [変更履歴](CHANGELOG.ja.md) をご確認ください。
 実際の MAC アドレス・SSID・IP アドレス・ライセンスキーは伏せてください。

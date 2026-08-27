@@ -78,14 +78,14 @@ claude mcp add roamswitch /Applications/RoamSwitch.app/Contents/MacOS/RoamSwitch
 
 - **バグ報告・機能要望:** [Issue](../../issues) を作成（テンプレートあり）
 - **質問・雑談:** [Discussions](../../discussions)
-- リリースノート: [CHANGELOG.md](CHANGELOG.md) ／ ヘルプ: [docs/FAQ.ja.md](docs/FAQ.ja.md)
+- リリースノート: [CHANGELOG.ja.md](CHANGELOG.ja.md) ／ ヘルプ: [docs/FAQ.ja.md](docs/FAQ.ja.md)
 
 Issue は日本語・英語どちらでも構いません。
 
 ## リンク
 
 - Web サイト・ダウンロード: https://lafine.net/
-- [FAQ](docs/FAQ.ja.md) ／ [プライバシーポリシー](docs/PRIVACY.ja.md) ／ [変更履歴](CHANGELOG.md)
+- [FAQ](docs/FAQ.ja.md) ／ [プライバシーポリシー](docs/PRIVACY.ja.md) ／ [変更履歴](CHANGELOG.ja.md)
 
 ---
 
