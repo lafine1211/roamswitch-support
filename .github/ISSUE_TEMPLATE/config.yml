@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 🌐 Website & download / Web サイト・ダウンロード
+    url: https://lafine.net/
+    about: Get RoamSwitch, pricing, and purchase. / 入手・価格・購入はこちら。
+  - name: 💬 Questions & discussion / 質問・雑談
+    url: https://github.com/lafine1211/roamswitch-support/discussions
+    about: Usage questions and general discussion. / 使い方の質問や雑談はこちら。

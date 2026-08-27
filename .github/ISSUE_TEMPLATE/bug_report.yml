@@ -1,0 +1,58 @@
+name: "🐞 Bug report / バグ報告"
+description: "Report a problem with RoamSwitch / RoamSwitch の不具合を報告する"
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve RoamSwitch. Japanese or English is fine.
+        ご報告ありがとうございます。日本語・英語どちらでも構いません。
+        Please do **not** include sensitive data (real MAC addresses, SSIDs, IPs, license keys).
+        実データ（MAC アドレス・SSID・IP・ライセンスキー）は伏せてください。
+  - type: input
+    id: version
+    attributes:
+      label: RoamSwitch version / バージョン
+      placeholder: "e.g. 1.4.2"
+    validations:
+      required: true
+  - type: input
+    id: macos
+    attributes:
+      label: macOS version / macOS のバージョン
+      placeholder: "e.g. macOS 14.5 (Apple silicon)"
+    validations:
+      required: true
+  - type: dropdown
+    id: edition
+    attributes:
+      label: Edition / エディション
+      options:
+        - "Free"
+        - "Pro Lifetime"
+        - "Team / Family"
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened / 症状
+      description: What did you expect, and what happened instead? / 期待した動作と実際の動作
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce / 再現手順
+      value: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / diagnostics (optional) / ログ・診断結果（任意）
+      description: Redact anything identifying. / 個人情報は伏せてください。
+      render: text

@@ -1,0 +1,27 @@
+name: "💡 Feature request / 機能要望"
+description: "Suggest an idea for RoamSwitch / RoamSwitch への機能提案"
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Japanese or English is fine. 日本語・英語どちらでも構いません。
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / 解決したい課題
+      description: What are you trying to do that RoamSwitch makes hard today? / 今困っていること
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution / 提案する解決策
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered / 検討した代替案
+    validations:
+      required: false

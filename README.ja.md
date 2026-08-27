@@ -1,0 +1,94 @@
+<!-- Language: [English](README.md) | **日本語** -->
+
+# RoamSwitch — サポート & お知らせ
+
+[English](README.md) | **日本語**
+
+Macのネットワーク境界を自律的に守るメニューバーアプリ。RoamSwitch は、信頼できる
+ネットワーク（自宅LAN・職場・テザリング等）をデフォルトゲートウェイの MAC アドレスで
+認識し、接続先が変わった瞬間に macOS のファイアウォール・ステルスモード・共有サービス
+（SSH / SMB / 画面共有）・AirDrop のポリシーを自動で切り替えます。
+
+> このリポジトリは **ソースコードではありません**。
+> **ダウンロード・リリースノート・FAQ・プライバシーポリシー・サポート**
+> （バグ報告と機能要望は [Issues](../../issues)）の公開窓口です。
+
+<p align="center">
+  <img src="docs/img/menu-ja.png" alt="RoamSwitch メニューバー" width="360">
+</p>
+
+## ダウンロード
+
+**https://lafine.net/**
+
+- 署名・公証済みの `.dmg`（Mac App Store 外での直接配布）
+- **macOS 13 Ventura 以降**（Apple silicon / Intel 対応）
+- 最新バージョン: **1.4.2**
+
+## 主な機能
+
+| レイヤー | 無料版 | Pro 永続版 |
+| :--- | :---: | :---: |
+| Wi‑Fi 自動検知 & カーネルパケット遮断 (`pf`) | ✅ | ✅ |
+| プロファイル別セキュリティレベル（信頼 / 標準 / ロックダウン） | ✅ | ✅ |
+| SSH / SMB / 画面共有 / AirDrop の自動停止・復元 | ✅ | ✅ |
+| Mac セキュリティ診断（FileVault / SIP / Gatekeeper / 自動更新） | ✅ 手動 | ✅ + バックグラウンド自律巡回 |
+| マルウェア対策（XProtect / ClamAV の状態監査・スキャン） | ✅ 手動 | ✅ + ウイルス定義自動更新 |
+| Wi‑Fi 暗号化強度警告・ARPスプーフィング検知・公開ポート/USB 監視 | ✅ | ✅ |
+| 🚨 ランサムウェア様の暗号化活動検知 → 緊急 Air‑Gap 遮断 (`pf`) | ❌ | 🚀 |
+| 🛡️ 開発サーバー（`0.0.0.0`）の LAN 露出隔離ガード | ❌（一覧のみ） | 🚀 ワンクリック遮断 |
+| 🕳️ ポート異常検知ガード（新規公開リスニングポートを自動遮断・シグネチャ不要） | ❌ | 🚀 |
+| ⚡ ARPスプーフィング自動対応 + リアルタイム通知 | ❌（メニュー表示のみ） | 🚀 |
+| 🔌 不正 USB / BadUSB ストレージガード + マウント時 ClamAV 自動スキャン | ❌ | 🚀 |
+| 🌐 Web・メールダウンロード保護 / DNS 脅威保護 / リンク安全性診断 | ❌ | 🚀 |
+| 📄 ログ・診断結果のエクスポート（CSV / JSON） | ❌ | 🚀 |
+| 利用可能台数 | 1 台 | 2 台 |
+
+## 価格
+
+買い切り（サブスクリプションではありません）。
+
+| プラン | 価格（税込・JPY） | 価格（USD） | 台数 |
+| :--- | :--- | :--- | :--- |
+| **Free（無料版）** | ¥0 | $0 | 1 台 |
+| **Pro Lifetime** | **¥2,980** | **$19.99** | 2 台 |
+| **Team / Family** | ¥6,980 | $49.99 | 5 台 |
+
+Pro は永続ライセンス・アップデート無償。購入は **https://lafine.net/** から。
+
+## プライバシー — Zero Telemetry
+
+RoamSwitch は **アプリ自身による外部ネットワーク通信を一切行いません**。
+アナリティクス・クラッシュレポート・ライセンスの常時通信はありません
+（購入時の Web 決済のみ）。同梱の MCP サーバーは読み取り専用でローカル stdio のみを
+使用します。詳細は [docs/PRIVACY.ja.md](docs/PRIVACY.ja.md)。
+
+## MCP サーバー連携（Claude Desktop / Claude Code）
+
+RoamSwitch には **読み取り専用** の MCP（Model Context Protocol）サーバーが同梱され、
+MCP 対応クライアントから Mac のセキュリティ状況を問い合わせられます。ロックダウン切替・
+隔離・取り出しなどの操作系ツールは含まれません。
+
+```sh
+claude mcp add roamswitch /Applications/RoamSwitch.app/Contents/MacOS/RoamSwitchMCPServer
+```
+
+提供ツール: `get_security_report` / `get_exposed_ports` / `get_guard_status` / `audit_url_safety`
+
+## サポート
+
+- **バグ報告・機能要望:** [Issue](../../issues) を作成（テンプレートあり）
+- **質問・雑談:** [Discussions](../../discussions)
+- リリースノート: [CHANGELOG.md](CHANGELOG.md) ／ ヘルプ: [docs/FAQ.ja.md](docs/FAQ.ja.md)
+
+Issue は日本語・英語どちらでも構いません。
+
+## リンク
+
+- Web サイト・ダウンロード: https://lafine.net/
+- [FAQ](docs/FAQ.ja.md) ／ [プライバシーポリシー](docs/PRIVACY.ja.md) ／ [変更履歴](CHANGELOG.md)
+
+---
+
+RoamSwitch はプロプライエタリソフトウェアです。© Lafine.
+本リポジトリのドキュメントはアプリの説明・サポート目的で引用可能です。
