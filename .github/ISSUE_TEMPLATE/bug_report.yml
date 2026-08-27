@@ -30,7 +30,6 @@ body:
       options:
         - "Free"
         - "Pro Lifetime"
-        - "Team / Family"
     validations:
       required: true
   - type: textarea
