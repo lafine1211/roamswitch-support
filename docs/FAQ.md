@@ -11,7 +11,7 @@ levels, automatic stop/restore of SSH / SMB / Screen Sharing / AirDrop, the 10�
 manual Mac security diagnostic, XProtect status checks, Wi‑Fi encryption warnings,
 ARP‑spoofing detection and exposed‑port / USB monitoring (view‑only).
 
-### What does Pro Lifetime (¥2,980 / $19.99) add?
+### What does Pro Lifetime ($19.99) add?
 
 Ransomware‑behavior detection with Air‑Gap isolation, dev‑server LAN‑exposure
 quarantine, port‑anomaly auto‑blocking, ARP‑spoofing auto‑containment, real‑time

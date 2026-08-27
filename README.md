@@ -49,13 +49,14 @@ between them.
 
 One‑time purchase — no subscription.
 
-| Plan | Price (JPY, incl. tax) | Price (USD) | Devices |
-| :--- | :--- | :--- | :--- |
-| **Free** | ¥0 | $0 | 1 |
-| **Pro Lifetime** | **¥2,980** | **$19.99** | 2 |
-| **Team / Family** | ¥6,980 | $49.99 | 5 |
+| Plan | Price | Devices |
+| :--- | :--- | :--- |
+| **Free** | $0 | 1 |
+| **Pro Lifetime** | **$19.99** | 2 |
+| **Team / Family** | $49.99 | 5 |
 
 Pro is a lifetime license with free updates. Purchase at **https://lafine.net/**.
+Prices are shown in USD; checkout is billed in your local currency where supported.
 
 ## Privacy — Zero Telemetry
 
