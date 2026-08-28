@@ -23,7 +23,7 @@ Macのネットワーク境界を自律的に守るメニューバーアプリ�
 
 - 署名・公証済みの `.dmg`（Mac App Store 外での直接配布）
 - **macOS 13 Ventura 以降**（Apple silicon / Intel 対応）
-- 最新バージョン: **1.4.2**
+- 最新バージョン: **1.4.6**
 
 ## 主な機能
 
@@ -72,7 +72,27 @@ MCP 対応クライアントから Mac のセキュリティ状況を問い合�
 claude mcp add roamswitch /Applications/RoamSwitch.app/Contents/MacOS/RoamSwitchMCPServer
 ```
 
-提供ツール: `get_security_report` / `get_exposed_ports` / `get_guard_status` / `audit_url_safety`
+提供ツール: `get_security_report` / `get_exposed_ports` / `get_guard_status` / `audit_url_safety` / `get_app_help`
+
+MCP サーバーと、その検知ロジックは **オープンソース**（MIT）です：
+[github.com/lafine1211/roamswitch-mcp](https://github.com/lafine1211/roamswitch-mcp)。
+`swift test` で単体・敵対的入力・ミューテーションファジングを実行できます。
+
+## セキュリティと検証
+
+- **アーキテクチャ／セキュリティ設計書** — RoamSwitch がどんな権限を持ち、その境界で何をしているかを、
+  出荷バイナリと照合できる粒度で：
+  [docs/WHITEPAPER.ja.md](docs/WHITEPAPER.ja.md)（[English](docs/WHITEPAPER.md)）·
+  整形版 <https://lafine.net/security.html>
+- **[`verify.sh`](verify.sh)** — 設計書 付録 A のチェックを、インストール済みのアプリに対して実行します
+  （署名・公証・entitlements・MCP サーバーのオフライン応答・pf の状態）。約 90 行の読み取り専用シェルです。
+  中身を読んでから：
+
+  ```sh
+  git clone https://github.com/lafine1211/roamswitch-support && cd roamswitch-support
+  ./verify.sh            # sudo を使う 2 ステップを飛ばすなら NO_SUDO=1
+  ```
+- 脆弱性の報告: <https://lafine.net/.well-known/security.txt>
 
 ## サポート
 

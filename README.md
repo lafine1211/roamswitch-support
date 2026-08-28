@@ -24,7 +24,7 @@ between them.
 
 - Signed & notarized `.dmg`, distributed outside the Mac App Store
 - Requires **macOS 13 Ventura or later** (Apple silicon & Intel)
-- Latest version: **1.4.2**
+- Latest version: **1.4.6**
 
 ## What it does
 
@@ -73,7 +73,28 @@ your Mac's security posture. No lockdown/quarantine/eject actions are exposed.
 claude mcp add roamswitch /Applications/RoamSwitch.app/Contents/MacOS/RoamSwitchMCPServer
 ```
 
-Tools: `get_security_report`, `get_exposed_ports`, `get_guard_status`, `audit_url_safety`.
+Tools: `get_security_report`, `get_exposed_ports`, `get_guard_status`, `audit_url_safety`,
+`get_app_help`.
+
+The server and the detection logic behind it are **open source** (MIT):
+[github.com/lafine1211/roamswitch-mcp](https://github.com/lafine1211/roamswitch-mcp) —
+`swift test` runs its unit, adversarial-input and mutation-fuzz suites.
+
+## Security & verification
+
+- **Architecture & security whitepaper** — what privileges RoamSwitch holds and what it
+  does at that boundary, at a level you can check against the shipping binary:
+  [docs/WHITEPAPER.md](docs/WHITEPAPER.md) ([日本語](docs/WHITEPAPER.ja.md)) ·
+  rendered at <https://lafine.net/security.html>
+- **[`verify.sh`](verify.sh)** — runs the whitepaper's Appendix A checks against your
+  installed copy (signature, notarization, entitlements, the MCP server's offline
+  response, pf state). It's ~90 lines of read-only shell — read it first, then:
+
+  ```sh
+  git clone https://github.com/lafine1211/roamswitch-support && cd roamswitch-support
+  ./verify.sh            # NO_SUDO=1 to skip the two sudo steps
+  ```
+- Vulnerability reports: <https://lafine.net/.well-known/security.txt>
 
 ## Support
 
