@@ -150,6 +150,10 @@ Previously the two features each loaded rules with `pfctl -f` independently, com
 - **A failed lift is treated as a failure.** If `block drop all` could not actually be removed, the timestamp is written back so that the failsafe timer and the retry have something to converge on. The screen never falsely shows "lifted."
 - You can take back control at any time — with the lift button in the modal, or simply by turning off Wi-Fi.
 
+### How a port-guard false positive is recovered
+
+The unknown-port auto-block (Pro, on by default once Pro is activated) can stop a legitimate LAN receiver — LocalSend, Syncthing, anything started after the guard was enabled. When that happens, allow it from the "Allow" button on the notification banner or the matching row in the "Exposed ports" screen. An executable allowed once is recorded as known and is not blocked again (`PortAnomalyGuard.allowPort(_:)`). Apple system daemons that satisfy `anchor apple` (`rapportd`, which backs Handoff, and the like) are not watched in the first place.
+
 ## §6. Everyday untrusted-network protection
 
 When you connect to a network you have not registered, the "protection level" switch does not use pf. It simply changes standard OS settings in a way that can be reversed later.
