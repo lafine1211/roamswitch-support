@@ -4,6 +4,15 @@
 
 All notable user‑facing changes to RoamSwitch. Dates are release dates.
 
+## 1.4.7
+
+- Added an **"Allow" button** to the "auto‑block unknown listening ports" notification. If a
+  legitimate LAN receiver started after the guard was enabled — LocalSend, Syncthing — gets
+  blocked, you can now allow it permanently straight from the notification banner (Apple system
+  daemons that satisfy `anchor apple` remain out of scope, as before).
+- Updated the in‑app help and the MCP knowledge base (the auto‑block guards are on by default once
+  Pro is active; how to recover from a false positive).
+
 ## 1.4.6
 
 - Open source:
