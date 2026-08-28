@@ -4,6 +4,13 @@
 
 All notable user‑facing changes to RoamSwitch. Dates are release dates.
 
+## 1.4.6
+
+- Open source:
+  - The bundled read-only MCP server and the detection logic behind it are now published under the MIT license at <https://github.com/lafine1211/roamswitch-mcp>, so you can verify in code what the server exposes to an AI client and that it sends nothing out.
+- Fixed:
+  - A single crafted JSON-RPC line with deeply-nested objects could crash the MCP server (a stack overflow inside Apple's JSON parser). The server now rejects pathologically nested input before parsing. Found by fuzzing the parser after open-sourcing it; details in the repository's `SECURITY_TESTING.md`.
+
 ## 1.4.5
 
 - Security audit and hardening:
