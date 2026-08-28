@@ -4,6 +4,21 @@
 
 All notable user‑facing changes to RoamSwitch. Dates are release dates.
 
+## 1.4.5
+
+- Security audit and hardening:
+  - Hardened privileged helper XPC authentication by switching from PID to `audit_token_t` validation and enforcing Apple Developer Team ID pinning to eliminate PID-reuse / TOCTOU risks.
+  - Relocated temporary packet-filter (pf) rule generation to a root-protected directory.
+  - Added SSRF protection to the link safety auditor to block unintended internal/private network redirects.
+  - Enhanced quarantine metadata integrity to prevent collisions and unintended deletions when multiple files share the same filename.
+
+## 1.4.4
+
+- Expanded MCP Server capabilities:
+  - Added an authoritative built-in knowledge base covering all security features, notification catalogs, and troubleshooting guides.
+  - Added the `get_app_help` tool for AI agents to query application mechanisms and alert explanations.
+  - Added MCP resources (`roamswitch://docs/...`) for documentation inspection.
+
 ## 1.4.3
 
 - Fixed: the emergency network isolation (air‑gap) triggered on ARP‑spoofing and
