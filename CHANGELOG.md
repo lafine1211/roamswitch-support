@@ -4,6 +4,10 @@
 
 All notable user‑facing changes to RoamSwitch. Dates are release dates.
 
+## 1.4.8
+
+- Onboarding: Added an animated video guide demonstrating the macOS system approval steps for the helper tool.
+
 ## 1.4.7
 
 - Added an **"Allow" button** to the "auto‑block unknown listening ports" notification. If a
