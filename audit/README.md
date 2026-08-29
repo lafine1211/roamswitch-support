@@ -76,3 +76,12 @@ beacon.
 - Payloads aren't inspected (destination + TLS SNI only). The MCP server and the
   detection logic are open source, so "what is sent to the LLM" is checkable in
   code: <https://github.com/lafine1211/roamswitch-mcp>
+
+---
+
+## Defense & Penetration Verification (macOS VM)
+
+In addition to the Zero Telemetry egress audit, we provide automated tooling to verify RoamSwitch's 5 core defense boundaries (XPC client authorization, Packet Filter Air-Gap priority, port anomaly detection, read-only MCP invariant, and ARP integrity) on a macOS VM or physical test Mac:
+
+- **[Defense & Penetration Verification Guide (English)](README-SECURITY.md)** (`rs-defense-audit.sh`)
+- **[Verification Checklist (English)](CHECKLIST-SECURITY.txt)**

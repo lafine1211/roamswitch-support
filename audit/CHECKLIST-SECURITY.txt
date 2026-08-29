@@ -1,0 +1,46 @@
+================================================================================
+RoamSwitch Defense & Penetration Verification Checklist (macOS VM)
+================================================================================
+
+[PREREQUISITES]
+[ ] macOS 13 (Ventura) or later on Apple Silicon (Tart or UTM VM recommended)
+[ ] Xcode Command Line Tools installed (xcode-select --install)
+[ ] RoamSwitch 1.4.8+ installed (/Applications/RoamSwitch.app)
+[ ] Privileged helper (com.tetsuharu.RoamSwitch.Helper) installed & approved
+
+--------------------------------------------------------------------------------
+PHASE 1: ENVIRONMENT SETUP
+--------------------------------------------------------------------------------
+1.1 [ ] Launch macOS Virtual Machine (Tart)
+        tart run rs-test-vm
+1.2 [ ] Copy audit script
+        cp audit/rs-defense-audit.sh ~/ && chmod +x ~/rs-defense-audit.sh
+
+--------------------------------------------------------------------------------
+PHASE 2: EXECUTE 5 DEFENSE BOUNDARY TESTS
+--------------------------------------------------------------------------------
+2.1 [ ] XPC Client Authorization Boundary (§3)
+        ./rs-defense-audit.sh xpc
+        -> Unauthorized ad-hoc callers are rejected immediately (PASS)
+
+2.2 [ ] Packet Filter (pf) Priority & Air-Gap Containment (§4, §5)
+        ./rs-defense-audit.sh pf
+        -> All external egress strictly dropped under Air-Gap (PASS)
+
+2.3 [ ] Port Anomaly & Global Exposure Detection (§6)
+        ./rs-defense-audit.sh port
+        -> 0.0.0.0 global listeners distinguished from 127.0.0.1 (PASS)
+
+2.4 [ ] MCP Server Read-Only Invariant & Parser Robustness (§8)
+        ./rs-defense-audit.sh mcp
+        -> Zero mutating tools exposed; resistant to JSON recursion DoS (PASS)
+
+2.5 [ ] ARP Gateway Monitor & Integrity (§11)
+        ./rs-defense-audit.sh arp
+        -> Gateway MAC and ARP table consistency verified (PASS)
+
+--------------------------------------------------------------------------------
+PHASE 3: REPORT INSPECTION
+--------------------------------------------------------------------------------
+3.1 [ ] Inspect ~/rs-defense-audit/run-*/report.md
+3.2 [ ] Verify all 5 defense layers report PASS

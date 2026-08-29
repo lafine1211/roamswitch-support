@@ -70,3 +70,12 @@ chmod +x rs-zerotel-audit.sh
 - ペイロードは検査していません（宛先と TLS SNI のみ）。MCP サーバーと検知ロジックは
   OSS 公開のため、「LLM に何を渡しているか」はコードで確認できます：
   <https://github.com/lafine1211/roamswitch-mcp>
+
+---
+
+## 防御機構・ペネトレーション検証（macOS VM）
+
+Zero Telemetry 監査に加えて、特権ヘルパーの XPC 境界、パケットフィルタの Air-Gap 優先度、ポートアノマリー検知などの「核心的な5つの防御機構」を実機・VM上で自動検証するためのツール一式も提供しています。
+
+- **[防御機構・ペネトレーション検証ガイド（日本語）](README-SECURITY.ja.md)** (`rs-defense-audit.sh`)
+- **[検証チェックリスト（日本語）](CHECKLIST-SECURITY.ja.txt)**
