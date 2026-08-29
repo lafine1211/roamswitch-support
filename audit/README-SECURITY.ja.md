@@ -119,6 +119,31 @@ tart delete test-mac
 
 ---
 
+
+---
+
+## トラブルシューティング: SSH 接続が遮断された場合
+
+RoamSwitch を起動すると、自動的に「外出先保護（完全ロックダウン）」が発動し、ホストからの SSH（ポート22）接続が `pf` ファイアウォールによってブロックされることがあります（**これは RoamSwitch の正常な防御動作です**）。
+
+接続不能になった場合は、以下のいずれかの方法で対応してください：
+
+### 方法 A: VM の GUI 画面から直接操作する（推奨・最も確実）
+Tart のウィンドウ画面を開き、VM 内部のターミナル（Terminal.app）で直接スクリプトを実行します。SSH を経由しないため、ファイアウォール遮断の影響を受けません。
+
+### 方法 B: SSH / SCP を使わず、VM 内で直接スクリプトをダウンロードする
+VM 内のターミナルで以下を実行すると、GitHub から直接最新スクリプトを取得できます：
+```sh
+curl -sSL -o ~/rs-defense-audit.sh "https://raw.githubusercontent.com/lafine1211/roamswitch-support/main/audit/rs-defense-audit.sh"
+chmod +x ~/rs-defense-audit.sh
+~/rs-defense-audit.sh all
+```
+
+### 方法 C: SSH 接続を維持・復帰させたい場合
+1. **信頼ネットワーク登録**: VM 内のメニューバーで RoamSwitch アイコンをクリック ➔ **「現在のネットワークを登録」** を選択（LAN 内の SSH が許可されます）。
+2. **一時的な pf フラッシュ**: VM 内のターミナルで `sudo pfctl -d` を実行。
+3. **SSH デーモンの手動起動**: VM 内で `sudo launchctl load -w /System/Library/LaunchDaemons/ssh.plist` を実行。
+
 ## 関連ドキュメント
 
 - [ホワイトペーパー（日本語）](../docs/WHITEPAPER.ja.md)

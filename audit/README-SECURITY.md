@@ -119,6 +119,31 @@ tart delete test-mac
 
 ---
 
+
+---
+
+## Troubleshooting: When SSH Connection Is Blocked
+
+When RoamSwitch starts on a new VM, it automatically engages "Out-of-Office (Complete Lockdown)" mode, causing the `pf` firewall to block incoming SSH connections (Port 22) from the Host (**this is expected behavior verifying RoamSwitch's inbound shield**).
+
+If SSH disconnects, choose one of the following recovery options:
+
+### Option A: Use the VM GUI Window Directly (Recommended)
+Open the Tart VM GUI window and execute scripts directly inside the guest Terminal.app. This bypasses network-layer SSH dependencies.
+
+### Option B: Download Script Directly Inside the VM (No SCP Needed)
+Inside the VM terminal, fetch the script directly from GitHub:
+```sh
+curl -sSL -o ~/rs-defense-audit.sh "https://raw.githubusercontent.com/lafine1211/roamswitch-support/main/audit/rs-defense-audit.sh"
+chmod +x ~/rs-defense-audit.sh
+~/rs-defense-audit.sh all
+```
+
+### Option C: Restore / Allow SSH Access
+1. **Register as Trusted**: Click the RoamSwitch menu bar icon inside the VM ➔ Select **"Register Current Network"** (allows inbound LAN SSH).
+2. **Temporarily Disable pf**: Run `sudo pfctl -d` inside the VM.
+3. **Start SSH Daemon**: Run `sudo launchctl load -w /System/Library/LaunchDaemons/ssh.plist` inside the VM.
+
 ## Related Documentation
 
 - [RoamSwitch Security Architecture Whitepaper](../docs/WHITEPAPER.md)
