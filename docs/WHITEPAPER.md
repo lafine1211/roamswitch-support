@@ -394,3 +394,13 @@ swift test                    # unit, adversarial-input, stdio, mutation fuzzing
 # the raw value bound into the token (only the salted SHA-256 is ever sent)
 ioreg -d2 -c IOPlatformExpertDevice | awk -F'"' '/IOPlatformUUID/{print $4}'
 ```
+
+### Automated Defense & Penetration Verification Suite
+
+```sh
+# Automatically verify XPC authorization, pf Air-Gap priority, port exposure, MCP Read-Only, and ARP integrity
+git clone https://github.com/lafine1211/roamswitch-support
+cd roamswitch-support/audit
+./rs-defense-audit.sh all
+# → Generates report.md and FINDINGS-DEFENSE.md (Live VM audit logs: audit/RESULTS-DEFENSE-2026-08-30.md)
+```

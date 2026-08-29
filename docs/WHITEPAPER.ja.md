@@ -294,7 +294,7 @@ device_hash = SHA-256( "RoamSwitch-LifetimeSalt-v1" : lowercase(IOPlatformUUID) 
 
 ### RoamSwitch が相手にするもの
 
-- 同じ LAN にいる攻撃者や、乗っ取られた IoT 機器からの探査・攻撃。ステルス化、公開ポートの監査、外部からの隔離で対応します。
+- 同じ LAN にいる攻撃者や、乗っ取られた IoT 機器からの探査・攻撃。ステルス化、公開ポートの監査、外部からの隔離で対応します（実測検証: [`audit/RESULTS-DEFENSE-2026-08-30.ja.md`](../audit/RESULTS-DEFENSE-2026-08-30.ja.md) にて、同一 LAN 内の感染端末から `0.0.0.0` 開発サーバーへの侵入試行が即座に自動遮断される挙動を実証済み）。
 - 信頼していないネットワークでの露出。共有サービスと AirDrop を自動的に停止します。
 - ARP スプーフィング（中間者攻撃）の検知と、検知したときの緊急 Air-Gap。家庭用ルーターで「防ぐ」ことはほぼ不可能なため、「気づいて、人間より速く切る」方針にしています。
 - 認証なしで `0.0.0.0` に晒された開発サーバーやデータベース（Redis、MongoDB、Elasticsearch など）を見つけ、外部から遮断します。
@@ -393,4 +393,14 @@ swift test                    # 単体・敵対的入力・stdio・ミューテ�
 ```sh
 # トークンにバインドされる素の値（送信されるのは salted SHA-256 のみ）
 ioreg -d2 -c IOPlatformExpertDevice | awk -F'"' '/IOPlatformUUID/{print $4}'
+```
+
+### 防御機構・ペネトレーション自動検証スイート
+
+```sh
+# XPC 認可境界、pf Air-Gap 優先度、ポート露出検知、MCP Read-Only、ARP 監視を一括自動検証
+git clone https://github.com/lafine1211/roamswitch-support
+cd roamswitch-support/audit
+./rs-defense-audit.sh all
+# → report.md および FINDINGS-DEFENSE.md を生成（実測検証記録: audit/RESULTS-DEFENSE-2026-08-30.ja.md）
 ```
