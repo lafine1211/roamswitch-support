@@ -201,6 +201,10 @@ There is no code anywhere that collects and sends diagnostic results, port infor
 >
 > The in-app "link safety check" sheet sends a `HEAD` request to the target URL to see where a shortened URL lands (following redirects to private or local addresses is stopped by the v1.4.5 SSRF mitigation). The MCP `audit_url_safety`, by contrast, is offline analysis that completes on the spot and sends the URL nowhere (§8).
 
+### Measured (2026-08-29)
+
+This is not just asserted. On 2026-08-29 a running 1.4.7 install was audited with `tcpdump` + per-process attribution (`nettop` / `lsof` / a filtered `pktap` capture) + LuLu, over a ~2-hour window, with the security level pinned to Maximum Lockdown and the appcast check forced. **Result: no outbound flow attributed to `RoamSwitch`, `RoamSwitchHelper`, or `RoamSwitchMCPServer` other than the appcast check to `lafine.net`; the MCP server's only sockets were to localhost; the entitlements dumps are empty.** Full write-up and the repeatable script: [`audit/RESULTS-2026-08-29.md`](https://github.com/lafine1211/roamswitch-support/blob/main/audit/RESULTS-2026-08-29.md) and [`audit/`](https://github.com/lafine1211/roamswitch-support/tree/main/audit). Run `./audit/rs-zerotel-audit.sh all` to reproduce it on your own machine.
+
 ## §8. The MCP server security model
 
 `RoamSwitchMCPServer` is a standalone command-line tool bundled at `RoamSwitch.app/Contents/MacOS/`. An MCP client such as Claude Desktop or Claude Code launches it as a subprocess and talks to it over **stdio (newline-delimited JSON-RPC 2.0)**. The official SDK would not build against this machine's macOS SDK, so it is implemented by hand on top of Foundation's `JSONSerialization`.

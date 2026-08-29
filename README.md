@@ -94,6 +94,11 @@ The server and the detection logic behind it are **open source** (MIT):
   git clone https://github.com/lafine1211/roamswitch-support && cd roamswitch-support
   ./verify.sh            # NO_SUDO=1 to skip the two sudo steps
   ```
+- **[`audit/`](audit/)** — a heavier, repeatable **Zero Telemetry egress audit**:
+  it captures traffic and attributes it per-process to check that the only
+  outbound connections from RoamSwitch's binaries are the four documented in
+  whitepaper §7. Latest run: [**PASS, 2026-08-29**](audit/RESULTS-2026-08-29.md).
+  Reproduce with `./audit/rs-zerotel-audit.sh all`.
 - Vulnerability reports: <https://lafine.net/.well-known/security.txt>
 
 ## Support

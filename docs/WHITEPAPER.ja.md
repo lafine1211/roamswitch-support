@@ -201,6 +201,10 @@ pf を操作する機能は 2 つあります。緊急 Air-Gap と、開発サ�
 >
 > アプリ内の「リンク安全性診断」シートは、短縮 URL の飛び先を確認するために、対象の URL へ `HEAD` リクエストを送信します（プライベートアドレスやローカルアドレスへの追跡は、v1.4.5 の SSRF 対策で停止しています）。一方、MCP の `audit_url_safety` は、その場で完結するオフライン 解析であり、URL をどこにも送信しません（§8）。
 
+### 実測（2026-08-29）
+
+主張だけではありません。2026-08-29、稼働中の 1.4.7 を `tcpdump` ＋ プロセス帰属（`nettop` / `lsof` / 絞り込んだ `pktap` キャプチャ）＋ LuLu で、約2時間、セキュリティレベルを最大ロックダウンに固定し appcast チェックを強制発火させた状態で監査しました。**結果：`RoamSwitch` / `RoamSwitchHelper` / `RoamSwitchMCPServer` に帰属する外向きは、`lafine.net` への appcast チェック以外なし。MCP サーバーが開いたソケットはローカルホストのみ。entitlements のダンプは空。** 詳細と追試可能なスクリプト：[`audit/RESULTS-2026-08-29.ja.md`](https://github.com/lafine1211/roamswitch-support/blob/main/audit/RESULTS-2026-08-29.ja.md)、[`audit/`](https://github.com/lafine1211/roamswitch-support/tree/main/audit)。`./audit/rs-zerotel-audit.sh all` で自分のマシンでも再現できます。
+
 ## §8. MCP サーバーのセキュリティモデル
 
 `RoamSwitchMCPServer` は、`RoamSwitch.app/Contents/MacOS/` に同梱している単体の コマンドラインツールです。Claude Desktop や Claude Code などの MCP クライアントが、これをサブプロセスと して起動し、**stdio（改行区切りの JSON-RPC 2.0）**でやり取りします。公式 SDK が本機の macOS SDK ではビルドできなかったため、Foundation の `JSONSerialization` の上に手で実装して います。

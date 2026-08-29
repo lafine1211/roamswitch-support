@@ -92,6 +92,10 @@ MCP サーバーと、その検知ロジックは **オープンソース**（MI
   git clone https://github.com/lafine1211/roamswitch-support && cd roamswitch-support
   ./verify.sh            # sudo を使う 2 ステップを飛ばすなら NO_SUDO=1
   ```
+- **[`audit/`](audit/)** — より重い、繰り返し可能な **Zero Telemetry 外向き通信の監査**。
+  トラフィックをキャプチャしてプロセス単位で帰属し、RoamSwitch のバイナリからの外向き接続が
+  設計書 §7 の4経路だけであることを確かめます。直近の実測：[**PASS・2026-08-29**](audit/RESULTS-2026-08-29.ja.md)。
+  `./audit/rs-zerotel-audit.sh all` で再現できます。
 - 脆弱性の報告: <https://lafine.net/.well-known/security.txt>
 
 ## サポート
