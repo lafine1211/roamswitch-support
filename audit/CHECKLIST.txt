@@ -1,0 +1,172 @@
+===========================================================================
+ RoamSwitch  Zero Telemetry audit  —  run sheet (script-driven)
+===========================================================================
+Goal   : Measure that RoamSwitch's only outbound connections are the four
+         documented ones.
+Verdict: Fail if RoamSwitch / RoamSwitchHelper / RoamSwitchMCPServer connect
+         anywhere outside the allowlist.
+Tools  : rs-zerotel-audit.sh, tcpdump (system), tshark (brew install wireshark)
+Time   : ~3-4 h of active work, in one sitting. The idle capture defaults to
+         2 h; an overnight window is optional (only adds coverage of a pure
+         wall-clock daily beacon).
+
+Do NOT open a browser on the test machine. Read this on a second device or
+print it, or on the test machine with `less CHECKLIST.txt`. Not Chrome.
+
+Allowlist (anything else from a RoamSwitch process = FAIL):
+  1  lafine.net /api/v1/license/*     RoamSwitch   license activate/deactivate only
+  2  lafine.net /updates/appcast.xml  RoamSwitch   Sparkle (launch + every 24 h)
+  3  ClamAV mirrors                   freshclam    only with ClamAV installed; not the app
+  4  HEAD to a target URL             RoamSwitch   only when the Link Safety sheet is used
+
+
+---------------------------------------------------------------------------
+ One-time setup
+---------------------------------------------------------------------------
+[ ] Install RoamSwitch, launch it once, approve the privileged helper
+[ ] brew install wireshark        (for tshark)
+[ ] Log in to an admin account    (the script uses sudo)
+[ ] Plug in to power
+[ ] Be on an untrusted network and do NOT register it as trusted -- then
+    RoamSwitch sits at Maximum Lockdown automatically (not Trusted/Open,
+    not Standard Protection). You *pin* it with the manual override at the
+    "pin Maximum Lockdown" prompt during the run, and release it after.
+[ ] LuLu (optional): see "LuLu setup" below
+[ ] Make a work dir and drop the script in it
+        mkdir -p ~/rs-audit && cd ~/rs-audit
+        # copy rs-zerotel-audit.sh here
+        chmod +x rs-zerotel-audit.sh
+
+
+---------------------------------------------------------------------------
+ LuLu setup  (optional -- per-process outbound log)
+---------------------------------------------------------------------------
+[ ] Install LuLu BEFORE RoamSwitch:  brew install --cask lulu
+    Approve in System Settings > Privacy & Security (system extension +
+    network filter); enable it in Login Items.
+[ ] On the "allow already-installed apps?" prompt  ->  No.
+[ ] LuLu > Preferences:
+      Passive Mode          : OFF   (otherwise it never alerts)
+      Block Mode            : OFF
+      Allow Apple programs  : ON    (RoamSwitch is Developer-ID; still alerts)
+      Allow installed apps  : leave OFF from now on
+[ ] LuLu > Rules: no rule for RoamSwitch / RoamSwitchHelper /
+    RoamSwitchMCPServer. Search "roam" and delete any that exist.
+[ ] Verify: RoamSwitch menu > "Check for Updates" -> LuLu should alert for
+    RoamSwitch. If it doesn't, a rule is still there -> delete it.
+[ ] When an alert fires during Phase B/C:
+      Allow  ->  "this process"  ->  temporary (NOT "always").
+      Note the remote host/port shown. (Allow, not Block: path #2 must
+      complete so you can see it only reaches lafine.net.)
+[ ] Check LuLu is logging:
+      log show --last 5m --predicate 'subsystem BEGINSWITH "com.objective-see"'
+    Empty = your LuLu build doesn't emit os_log events; fall back to LuLu's
+    Rules-window history.
+
+  If the install order got reversed (RoamSwitch was running when LuLu was
+  installed and got auto-allowed): LuLu > Rules, search "roam", delete the
+  RoamSwitch rules -> it alerts again. Nuclear option: quit LuLu, move
+  /Library/Objective-See/LuLu/rules.plist aside, restart LuLu.
+  Traffic that happened under the auto-allow was before the capture, so it
+  does not affect the result -- just fix the rules and re-run the baseline.
+
+
+---------------------------------------------------------------------------
+ Run
+---------------------------------------------------------------------------
+        cd ~/rs-audit
+        ./rs-zerotel-audit.sh all --tier-b --idle 2h
+
+  extend the idle window overnight (optional):  --idle 8h
+  also test ClamAV's egress path:               --tier-b --idle 2h --clam
+  you prep the environment yourself (Tier A):   drop --tier-b
+
+
+---------------------------------------------------------------------------
+ Prompts the script stops at (answer in order)
+---------------------------------------------------------------------------
+[ ] "quit the above apps?"       -> Y
+[ ] bootout candidate list       -> to keep any of them, edit
+                                    ~/rs-audit/run-*/bootout-candidates.txt
+                                    and save; otherwise just press Enter
+[ ] 3 GUI toggles (a pane opens)
+      - Apple ID > iCloud > Private Relay        : OFF   (required)
+      - Apple ID > iCloud > iCloud Drive         : sync this Mac -> off
+      - Privacy & Security > Analytics & Improvements : all OFF
+    then Enter
+[ ] "helper approved?"           -> Enter if done
+[ ] (baseline warning, if any)
+      A non-Apple destination is still present = something is still running.
+      In another window:  sudo lsof -nP -iTCP@<that IP>  to find the owner,
+      stop it, Ctrl-C, and start over (cleanest).
+[ ] MANUAL: pin Maximum Lockdown
+      RoamSwitch menu -> security level = Maximum Lockdown (not Trusted/Open,
+      not Standard Protection). Pin it with the manual override so it stays.
+      Note the time. Enter.
+[ ] MANUAL: one network transition
+      Runs the on-change handler (gateway fingerprint, DNS Threat Guard,
+      pf rebuild). Already on an untrusted network? A Wi-Fi off/on is enough:
+        networksetup -setairportpower en0 off; sleep 8; networksetup -setairportpower en0 on
+      (check the interface name with: networksetup -listallhardwareports)
+      Note the time. Enter.  (s to skip -> note "transition handler not covered")
+[ ] MANUAL: run every feature once
+      each diagnostic / DNS Threat Guard on+off / dev-server isolation /
+      USB guard / port + ARP checks / the Link Safety sheet against one
+      external URL (= path #4). Note each time. Enter.
+[ ] "test license activate -> deactivate?"  -> y if you have a key, else N
+      (y: activate in the app, then deactivate right away. = path #1)
+[ ] idle capture starts (default 2 h). You can leave; it runs unattended.
+
+
+---------------------------------------------------------------------------
+ After it finishes
+---------------------------------------------------------------------------
+  Output in ~/rs-audit/run-<timestamp>/ :
+    report.md         verdict (PASS/FAIL) + attributed-flow table
+    FINDINGS.md       shareable summary (method + results + limitations)
+    entitlements-helper.txt / entitlements-mcp.txt
+    lulu.log / lulu-roamswitch.txt   LuLu events, if LuLu was installed
+
+[ ] read the VERDICT line at the bottom of report.md
+[ ] eyeball the "outbound flows attributed to ..." section:
+      RoamSwitchHelper and RoamSwitchMCPServer: 0 entries
+      RoamSwitch: only lafine.net (and the URL you hit for path #4)
+[ ] if you used LuLu: check the "LuLu events" excerpt in report.md
+      (share the log excerpt, not a screenshot; it is embedded in FINDINGS.md)
+
+[ ] release the Maximum Lockdown override in the RoamSwitch menu
+[ ] LuLu > Rules: delete any rule created for the RoamSwitch processes
+
+  Undo the prep:
+    ./rs-zerotel-audit.sh prep-restore --outdir ~/rs-audit/run-<timestamp>
+    (launchctl bootout reverts on reboot; re-enable iCloud / Private Relay
+     in the GUI)
+
+  Rebuild just the analysis + FINDINGS.md:
+    ./rs-zerotel-audit.sh analyze --outdir ~/rs-audit/run-<timestamp>
+
+
+---------------------------------------------------------------------------
+ Troubleshooting
+---------------------------------------------------------------------------
+  tshark missing        -> brew install wireshark
+  baseline FAILs        -> a non-Apple agent is still up. bootout again, or
+                           quit that app -> re-run
+  pktap warning         -> ignore (layers 1+2 cover it)
+  Sparkle doesn't fire  -> use the app menu "Check for Updates". OK if
+                           SULastCheckTime updates.
+  fully unattended      -> add --no-manual. Phase B, path #4 and the 3 GUI
+                           toggles are then recorded as "not covered" (weaker).
+
+
+---------------------------------------------------------------------------
+ What this audit cannot show (put this in any write-up; FINDINGS.md has it)
+---------------------------------------------------------------------------
+  - Not "no traffic at all". The four paths are real. Zero Telemetry = no
+    collection/transmission of usage or diagnostic data.
+  - Not "never". The conclusion is scoped to the observed window.
+  - No App Sandbox, so entitlements don't enforce the absence of egress;
+    it is shown behaviourally.
+  - Payloads aren't inspected (destination + SNI only). No analytics SDK is
+    bundled (MCP + detection logic are open source).
+===========================================================================
