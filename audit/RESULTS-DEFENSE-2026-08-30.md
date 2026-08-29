@@ -90,6 +90,34 @@ Across both **Out-of-Office (Lockdown) Mode** and **Trusted Network Mode**, all 
 
 ---
 
+
+---
+
+## Real-World Scenario: Inbound Intrusion from Compromised Home IoT Device
+
+We simulated a critical real-world threat model: **A compromised smart home / IoT device on the same LAN attempting lateral movement and unauthorized connection into the Mac.**
+
+### 1. Test Setup & Attack Scenario
+- **Setting**: Trusted Mode (Simulating home Wi-Fi).
+- **Target Mac (VM)**: A developer starts a local server bound to all interfaces: `python3 -m http.server 8080 --bind 0.0.0.0`.
+- **Attacker (Host Mac)**: Simulating a rogue IoT device probing `192.168.64.2:8080` for exploitable services.
+
+### 2. RoamSwitch Automatic Detection & Containment
+Within milliseconds of port binding, RoamSwitch's **Port Anomaly Guard (Pro)** fired:
+
+> **🚨 Unknown Listening Port Automatically Blocked**  
+> Detected process "Python" (PID 3655) exposing port 8080 to the external LAN. Automatically shielded external access.
+
+### 3. External Probe Results (From Attacking IoT Node)
+```bash
+% curl -I --connect-timeout 2 http://192.168.64.2:8080
+curl: (28) Failed to connect to 192.168.64.2 port 8080 after 2006 ms: Timeout was reached
+```
+
+### 4. Findings & Efficacy
+- **Shielded Perimeter**: The `pf` firewall dynamically injected an inbound drop rule. The probe timed out after 2000 ms with zero response leakage.
+- **Local Developer Workflow**: The Mac itself retained full access via `http://localhost:8080` (`127.0.0.1`), preserving developer usability without compromising network perimeter defense.
+
 ## Conclusion
 
 This live VM audit confirms that RoamSwitch operates strictly according to its published Security Architecture Whitepaper, enforcing robust privilege separation and fail-closed defense boundaries.
