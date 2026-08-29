@@ -1,0 +1,180 @@
+===========================================================================
+ RoamSwitch  Zero Telemetry 実測  —  簡易手順（スクリプト使用）
+===========================================================================
+目的 : RoamSwitch の外向き通信が「既知4経路」だけであることを実測する。
+判定 : RoamSwitch / RoamSwitchHelper / RoamSwitchMCPServer から
+       許可リスト以外への外向き接続が出たら不合格。
+道具 : RoamSwitch 本体（RoamSwitchMCPServer を同梱）
+       audit/rs-zerotel-audit.sh
+       tcpdump                （macOS 標準）
+       tshark                 brew install wireshark
+       ── 任意 ──
+       LuLu                   objective-see.org。入れておくとプロセス別の
+                              外向きイベントを統一ログに記録（共有時はログ抜粋を添える）
+       ClamAV                 brew install clamav（--clam を使う場合のみ）
+その他: dig / whois / nettop / lsof / osascript / defaults / scutil /
+       networksetup / softwareupdate / codesign … すべて macOS 標準
+環境 : 管理者アカウント（スクリプトは sudo する）／電源接続
+       手順表示用に別デバイスか印刷（テスト機のブラウザは開かない）
+時間 : 在席する実作業 3〜4h（1回で完結）。アイドル放置は既定 2h。
+       一晩に延ばすのは任意（wall-clock の daily beacon まで潰したい場合のみ）。
+
+※ この手順書はテスト機のブラウザで開かない。別デバイスか印刷、または
+   テスト機で `less CHECKLIST.ja.txt`。Chrome は使わない。
+
+許可リスト（これ以外が RoamSwitch* から出たら NG）：
+  1  lafine.net /api/v1/license/*     RoamSwitch   ライセンス認証/解除時のみ
+  2  lafine.net /updates/appcast.xml  RoamSwitch   Sparkle（起動時＋24h）
+  3  ClamAV ミラー                    freshclam    ClamAV 導入時のみ・アプリ外
+  4  対象URLへの HEAD                  RoamSwitch   リンク安全性診断を手動使用時のみ
+
+
+---------------------------------------------------------------------------
+ 事前準備（1回だけ）
+---------------------------------------------------------------------------
+[ ] RoamSwitch をインストール、初回起動して特権ヘルパーを承認しておく
+[ ] tshark を入れる            brew install wireshark
+[ ] 管理者アカウントでログインしている（スクリプトは sudo する）
+[ ] 電源を接続する
+[ ] 未信頼ネットワークに接続し、信頼登録しない。これで RoamSwitch は自動で
+    🔴 最大ロックダウン になる（🟢 信頼・🟡 標準保護 にしない）。
+    ※ 手動オーバーライドでの「固定」は実行中の「最大ロックダウンを固定」
+      プロンプトで行い、完了後に解除する。
+[ ] LuLu を使う場合：下の「LuLu セットアップ」を参照
+[ ] 作業ディレクトリを作り、スクリプトを置く
+        mkdir -p ~/rs-audit && cd ~/rs-audit
+        # rs-zerotel-audit.sh をここにコピー
+        chmod +x rs-zerotel-audit.sh
+
+
+---------------------------------------------------------------------------
+ LuLu セットアップ（任意 — プロセス別の外向きログ）
+---------------------------------------------------------------------------
+[ ] LuLu を RoamSwitch より先にインストール：brew install --cask lulu
+    システム設定 → プライバシーとセキュリティ でシステム機能拡張と
+    ネットワークフィルタを許可。ログイン項目で有効化。
+[ ] 「すでに起動中の App をすべて許可しますか？」→ No
+[ ] LuLu → Preferences：
+      Passive Mode          : オフ  （オンだとアラートを出さない）
+      Block Mode            : オフ
+      Allow Apple programs  : オン  （RoamSwitch は Developer ID 署名。ちゃんとアラートが出る）
+      Allow installed apps  : 以後オフのまま
+[ ] LuLu → Rules：RoamSwitch / RoamSwitchHelper / RoamSwitchMCPServer の
+    ルールが無いこと。検索窓に "roam" と入れて、あれば削除。
+[ ] 確認：RoamSwitch メニュー →「アップデートを確認」→ LuLu が RoamSwitch の
+    アラートを出せば OK。出なければルールが残っている → 削除。
+[ ] フェーズ B/C でアラートが出たら：
+      Allow → 「この処理のみ」→ 一時的（"always" にしない）。
+      表示された宛先ホスト/ポートを控える。（Block ではなく Allow：経路#2 を
+      完走させないと「lafine.net にしか向いていない」の確認ができない）
+[ ] LuLu がログを出しているか確認：
+      log show --last 5m --predicate 'subsystem BEGINSWITH "com.objective-see"'
+    空なら、その版は os_log にイベントを出していない → LuLu の Rules 画面の
+    履歴で代替。
+
+  インストール順が逆になった場合（RoamSwitch 起動中に LuLu を入れて
+  auto-allow された）：LuLu → Rules で "roam" を検索して RoamSwitch 系の
+  ルールを削除 → またアラートが出るようになる。完全リセットは、LuLu を
+  終了して /Library/Objective-See/LuLu/rules.plist を退避 → 再起動。
+  auto-allow 中の通信はキャプチャ開始前なので結果に影響なし。ルールを
+  直してベースラインから取り直せばよい。
+
+
+---------------------------------------------------------------------------
+ 実行
+---------------------------------------------------------------------------
+        cd ~/rs-audit
+        ./rs-zerotel-audit.sh all --tier-b --idle 2h
+
+  アイドルを一晩に延ばす（任意）：  --idle 8h
+  ClamAV 経路も見る場合：            --tier-b --idle 2h --clam
+  環境準備を自分でやる場合（Tier A）：--tier-b を外す
+
+
+---------------------------------------------------------------------------
+ スクリプトが止まって待つポイント（順に対応する）
+---------------------------------------------------------------------------
+[ ] 「アプリ終了してよいか」   → y
+[ ] bootout 候補リストの確認   → 残したいものがあれば
+                                 ~/rs-audit/run-*/bootout-candidates.txt を
+                                 編集して保存、なければそのまま Enter
+[ ] GUI 3項目（設定パネルが開く）
+      - Apple ID → iCloud → プライベートリレー：オフ  ★必須
+      - Apple ID → iCloud → iCloud Drive：この Mac の同期オフ
+      - プライバシーとセキュリティ → 解析と改善：全部オフ
+    設定したら Enter
+[ ] 「RoamSwitch 承認済みか」   → 済んでいれば Enter
+[ ] （ベースラインが汚れていたら警告）
+      非 Apple の宛先が残る＝止め足りない。
+      別窓で  sudo lsof -nP -iTCP@<その IP>  で犯人を特定して停止 →
+      Ctrl-C して最初からやり直すのが確実
+[ ] 手動ステップ：最大ロックダウンを固定
+      RoamSwitch メニュー → セキュリティレベル ＝ 🔴 最大ロックダウン
+      （🟢 信頼(オープン)・🟡 標準保護 にしない）。手動オーバーライドで固定。
+      時刻を控える。Enter
+[ ] 手動ステップ：ネットワーク遷移を1回
+      遷移時ハンドラ（ゲートウェイ再取得・DNS Threat Guard・pf 組み直し）を
+      走らせる。既に未信頼ネットワークにいるなら Wi-Fi オフ→オンで十分：
+        networksetup -setairportpower en0 off; sleep 8; networksetup -setairportpower en0 on
+      （インターフェース名は networksetup -listallhardwareports で確認）
+      時刻を控える。Enter（s でスキップ→記事に「遷移ハンドラ未カバー」と明記）
+[ ] 手動ステップ：アプリで全機能を1回ずつ
+      各診断 / DNS Threat Guard ON・OFF / 開発サーバー隔離 / USB ガード /
+      ポート・ARP チェック / 「リンク安全性診断」シートで外部URLを1本
+      （＝経路#4）。各操作の時刻を控える。Enter
+[ ] 「ライセンス認証→解除もするか」 → キーがあれば y、なければ N
+      （y の場合：アプリで認証 → すぐ解除。時刻を控える。＝経路#1）
+[ ] アイドル放置（既定 2h）が始まる。席を外してよい（放置中は自動）
+
+
+---------------------------------------------------------------------------
+ 完了後
+---------------------------------------------------------------------------
+  出力は ~/rs-audit/run-<日時>/ に：
+    report.md         PASS / FAIL と突き合わせ表
+    FINDINGS.md       共有用まとめ（方法・結果・確認できないこと）
+    entitlements-helper.txt / entitlements-mcp.txt
+    lulu.log / lulu-roamswitch.txt   LuLu を入れていた場合のイベントログ
+
+[ ] report.md の末尾 VERDICT を見る
+[ ] report.md の「帰属する外向きフロー」を目視：
+      RoamSwitchHelper と RoamSwitchMCPServer は 0 件
+      RoamSwitch は lafine.net（と経路#4で自分が叩いた URL）だけ
+[ ] LuLu を使った場合：report.md の「LuLu イベント」抜粋を確認
+      （共有するのはスクショではなくログ抜粋。FINDINGS.md に埋め込み済み）
+
+[ ] RoamSwitch のメニューで最大ロックダウンの手動オーバーライドを解除する
+[ ] LuLu → Rules：RoamSwitch 系に作られたルールを削除する
+
+  設定を戻す：
+    ./rs-zerotel-audit.sh prep-restore --outdir ~/rs-audit/run-<日時>
+    （launchctl bootout は再起動で自動復帰。iCloud/リレーは GUI で戻す）
+
+  解析・FINDINGS.md だけ作り直す：
+    ./rs-zerotel-audit.sh analyze --outdir ~/rs-audit/run-<日時>
+
+
+---------------------------------------------------------------------------
+ うまくいかないとき
+---------------------------------------------------------------------------
+  tshark が無い          → brew install wireshark
+  ベースラインが FAIL     → 非 Apple の常駐が残っている。bootout し直す or
+                            そのアプリを終了 → 再実行
+  pktap 不可の警告        → 無視してよい（層1＋層2 で代替される）
+  Sparkle が走らない      → メニューの「アップデートを確認」を手動で。
+                            SULastCheckTime が更新されれば OK
+  完全無人で回したい      → --no-manual を付ける。ただしフェーズ B・経路#4・
+                            GUI 3項目は「未カバー」と記録される（弱くなる）
+
+
+---------------------------------------------------------------------------
+ この監査で確認できないこと（結果を共有するとき必ず添える。FINDINGS.md に雛形）
+---------------------------------------------------------------------------
+  - 「通信を一切しない」ではない。4経路は実在する。Zero Telemetry ＝
+    利用状況・診断結果を収集送信しない、という意味。
+  - 「絶対に無い」の証明は原理的に不可。結論は観測ウィンドウの範囲に限定。
+  - App Sandbox 非使用のため entitlements は egress を技術的には強制しない。
+    だから挙動で示すしかない。
+  - ペイロードは検査していない（宛先と SNI のみ）。解析 SDK は同梱していない
+    （MCP と検知ロジックは OSS 公開済み）。
+===========================================================================
