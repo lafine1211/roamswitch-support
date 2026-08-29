@@ -1,4 +1,8 @@
+<!-- Language: **English** | [日本語](README.ja.md) -->
+
 # Zero Telemetry egress audit
+
+**English** | [日本語](README.ja.md)
 
 Tooling to **measure** — not just assert — that RoamSwitch's only outbound
 connections are the four documented in the whitepaper
