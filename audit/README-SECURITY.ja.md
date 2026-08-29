@@ -2,9 +2,24 @@
 
 # RoamSwitch 防御機構・ペネトレーション検証ガイド（macOS VM）
 
-このドキュメントとスクリプト（`rs-defense-audit.sh`）は、RoamSwitch の設計思想（Security by Design / Fail-Closed）に基づき、**「核心的な5つの防御境界が正しく機能しているか」**を実機または macOS 仮想マシン（VM）上で検証・ペネトレーションテストするためのツール一式です。
+このドキュメントとスクリプト（`rs-defense-audit.sh`）は、RoamSwitch の設計思想（Security by Design / Fail-Closed）に基づき、**「核心的な5つの防御境界が正しく機能しているか」**を macOS 仮想マシン（VM: 標的環境）上で検証・ペネトレーションテストするためのツール一式です。
 
 ホワイトペーパー（[`docs/WHITEPAPER.ja.md`](../docs/WHITEPAPER.ja.md)）で定義した信頼境界・権限モデルを、客観的なスクリプトでテストします。
+
+---
+
+## 役割分担（ホスト Mac ⇄ 標的 VM）
+
+テスト環境は **「ホスト Mac（操作・外部攻撃側）」** と **「macOS VM（標的・防御側）」** に分かれます。
+
+```
++------------------------------------+          +-----------------------------------------+
+|        ホスト Mac (Host)           |          |         macOS VM (Target Guest)         |
+|  - Tart / UTM で VM を起動         |  ----->  |  - RoamSwitch.app をインストール・起動  |
+|  - スクリプトを VM に転送 (scp)    |   SSH    |  - rs-defense-audit.sh を内部で実行     |
+|  - (任意) 外部から nmap / arpspoof |          |  - 5つの防御境界を自動検証してレポート  |
++------------------------------------+          +-----------------------------------------+
+```
 
 ---
 
@@ -20,52 +35,87 @@
 
 ---
 
-## 推奨環境（macOS VM のセットアップ）
+## ステップ・バイ・ステップ実行手順
 
-テストによりネットワーク遮断やシステム設定の検証を行うため、**Tart** または **UTM** を用いた macOS 仮想マシン上での実行を推奨します。
-
-### Tart を使用する場合（Apple Silicon 推奨）
+### Step 1: 【ホスト側】VM（Tart）の作成と起動
 
 ```sh
-# 1. Tart のインストールと設定
+# Tart のインストール
 brew trust cirruslabs/cli
 brew install cirruslabs/cli/tart
 
-# 2. テスト用 macOS VM の作成と起動
-tart clone ghcr.io/cirruslabs/macos-sonoma-base:latest rs-test-vm
-tart run rs-test-vm
-
-# 3. テスト完了後の初期化（スナップショット破棄・再作成）
-tart delete rs-test-vm
+# テスト用 macOS VM の作成と起動
+tart clone ghcr.io/cirruslabs/macos-sonoma-base:latest test-mac
+tart run test-mac
 ```
 
 ---
 
-## 監査スクリプトの実行方法
+### Step 2: 【VM 内部】RoamSwitch のインストールと準備
+
+VM 内の GUI または SSH（`ssh admin@$(tart ip test-mac)`、パスワード: `admin`）で以下を実行します：
 
 ```sh
-# スクリプトをテスト環境にコピー
-cp audit/rs-defense-audit.sh ~/
+# 1. Swift コマンドラインツールの確認
+xcode-select --install
+
+# 2. RoamSwitch のダウンロードとインストール
+curl -sSL -o /tmp/RoamSwitch.dmg "https://lafine.net/downloads/RoamSwitch.dmg"
+hdiutil attach /tmp/RoamSwitch.dmg
+cp -R /Volumes/RoamSwitch/RoamSwitch.app /Applications/
+hdiutil detach /Volumes/RoamSwitch
+
+# 3. RoamSwitch を起動し、特権ヘルパーを承認（パスワード入力）
+open /Applications/RoamSwitch.app
+```
+
+---
+
+### Step 3: 【ホスト側 ➔ VM】スクリプトの転送
+
+ホスト側のターミナルから、VM 内部へ `rs-defense-audit.sh` をコピーします：
+
+```sh
+# VM の IP アドレスを取得
+VM_IP=$(tart ip test-mac)
+
+# ホストから VM のホームディレクトリへ転送
+scp /Users/tetsuharu/Dev/roamswitch-support/audit/rs-defense-audit.sh admin@$VM_IP:~/
+```
+
+---
+
+### Step 4: 【VM 内部】監査スクリプトの実行
+
+VM 内部のターミナル（または SSH セッション内）で実行します：
+
+```sh
 chmod +x ~/rs-defense-audit.sh
 
 # 全項目を一括自動テスト（レポート生成）
-./rs-defense-audit.sh all
+~/rs-defense-audit.sh all
 
-# 特定のレイヤーのみ個別に検証する場合
-./rs-defense-audit.sh xpc      # XPC 境界テストのみ
-./rs-defense-audit.sh pf       # パケットフィルタ & Air-Gap 検証のみ
-./rs-defense-audit.sh port     # ポートアノマリー検知テストのみ
-./rs-defense-audit.sh mcp      # MCP サーバー Read-Only & ファジングのみ
-./rs-defense-audit.sh arp      # ARP 監視検証のみ
+# 特定レイヤーのみ個別に検証する場合
+~/rs-defense-audit.sh xpc      # XPC 境界テストのみ
+~/rs-defense-audit.sh pf       # パケットフィルタ & Air-Gap 検証のみ
+~/rs-defense-audit.sh port     # ポートアノマリー検知テストのみ
+~/rs-defense-audit.sh mcp      # MCP サーバー Read-Only & ファジングのみ
+~/rs-defense-audit.sh arp      # ARP 監視検証のみ
 ```
 
 ---
 
-## 出力結果（`~/rs-defense-audit/run-<日時>/`）
+## 出力結果（VM 内の `~/rs-defense-audit/run-<日時>/`）
 
 - **`report.md`** — 各検証項目の成否表（PASS / FAIL）とシステム環境サマリ
 - **`FINDINGS-DEFENSE.md`** — 公開・共有用の検証結果サマリ
 - **`test_xpc.log`** / **`test_pf.log`** / **`test_port.log`** / **`test_mcp.log`** — 生の実行ログ
+
+テスト完了後、VM を破棄して完全に初期状態へ戻す場合：
+```sh
+# ホスト側で実行
+tart delete test-mac
+```
 
 ---
 
