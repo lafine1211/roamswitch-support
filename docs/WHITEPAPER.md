@@ -395,6 +395,22 @@ swift test                    # unit, adversarial-input, stdio, mutation fuzzing
 ioreg -d2 -c IOPlatformExpertDevice | awk -F'"' '/IOPlatformUUID/{print $4}'
 ```
 
+### DNS Threat Protection (Quad9 Malware & C2 Blocking) Verification
+
+```sh
+# Query Quad9's official threat blocking verification test domain
+nslookup test.dns9.quad9.net
+# → Blocked with "** server can't find test.dns9.quad9.net: NXDOMAIN" (no IP returned)
+```
+
+### Web & Mail Download Guard (ClamAV Real-Time Quarantine) Verification
+
+```sh
+# Write harmless industry-standard EICAR test string into Downloads directory
+echo 'X5O!P%@AP[4\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*' > ~/Downloads/eicar_test.com
+# → FSEvents triggers immediate ClamAV background scan, auto-quarantines file, and displays alert
+```
+
 ### Automated Defense & Penetration Verification Suite
 
 ```sh

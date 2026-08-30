@@ -395,6 +395,22 @@ swift test                    # 単体・敵対的入力・stdio・ミューテ�
 ioreg -d2 -c IOPlatformExpertDevice | awk -F'"' '/IOPlatformUUID/{print $4}'
 ```
 
+### DNS 脅威保護（Quad9 悪質ドメイン・C2 遮断）の動作確認
+
+```sh
+# Quad9 公式の脅威ブロック検証用テストドメインを問い合わせ
+nslookup test.dns9.quad9.net
+# → ** server can't find test.dns9.quad9.net: NXDOMAIN となり名前解決が遮断されること
+```
+
+### ダウンロード保護（ClamAV リアルタイム検知 & 隔離）の動作確認
+
+```sh
+# 無害なアンチウイルス標準テスト文字列（EICAR）を Downloads に作成
+echo 'X5O!P%@AP[4\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*' > ~/Downloads/eicar_test.com
+# → FSEvents 検知により ClamAV が即時スキャンし、隔離マネージャーへ退避 & 警告通知が発火すること
+```
+
 ### 防御機構・ペネトレーション自動検証スイート
 
 ```sh
