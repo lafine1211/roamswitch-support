@@ -4,6 +4,12 @@
 
 RoamSwitch のユーザー向け変更点。日付はリリース日です。
 
+## 1.5.3
+
+- MCP（Model Context Protocol）サーバー連携の強化：
+  - `get_exposed_ports` ツールでローカルAI推論サーバー（Ollama, LM Studio, Gradio, vLLM）の露出検知・リスク評価を網羅。
+  - `get_guard_status` および `get_app_help` でクリップボードAPIキー保護・Pickle形式AIモデルダウンロード保護の仕様・ガイダンス提供に対応。
+
 ## 1.5.2
 
 - APIキー / シークレット誤送信防止チェッカー（クリップボード保護）：

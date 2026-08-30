@@ -4,6 +4,12 @@
 
 All notable user‑facing changes to RoamSwitch. Dates are release dates.
 
+## 1.5.3
+
+- MCP (Model Context Protocol) Server Integration Enhancements:
+  - `get_exposed_ports` now covers local AI inference servers (Ollama, LM Studio, Gradio, vLLM) exposure audits.
+  - `get_guard_status` and `get_app_help` updated with full knowledge coverage for clipboard secret leak prevention and Pickle AI model download guard.
+
 ## 1.5.2
 
 - Confidential API Key & Secret Leak Prevention (Clipboard Protection):
