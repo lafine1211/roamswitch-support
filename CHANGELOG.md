@@ -4,6 +4,11 @@
 
 All notable user‑facing changes to RoamSwitch. Dates are release dates.
 
+## 1.5.5
+
+- Web & Mail Download Guard (ClamAV Real-Time Scan) Detection & Alert Improvements:
+  - Improved file path parsing logic when processing ClamAV threat scan outputs. Fixed an issue where quarantined threat files were misidentified in the recent scan history, ensuring high-priority banner notifications ("🚨 Quarantined Malicious Download File") and threat status indicators are reliably dispatched upon detection.
+
 ## 1.5.4
 
 - Added Confirmation & Risk Warning Dialogs When Turning Off Critical Security Guards:
