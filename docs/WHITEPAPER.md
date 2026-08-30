@@ -2,7 +2,7 @@
 
 > This document explains what privileges RoamSwitch runs with and what it does at that boundary. It contains no marketing language; everything stated here can be verified against the shipping app binary and its actual behavior.
 
-**Version** v1 (first edition) · **Covers** RoamSwitch 1.5.0 (build 23) · **Requires** macOS 13.0+ / Apple Silicon · **Published** 2026-08-30 · **Team ID** GV76B6G4YU
+**Version** v1 (first edition) · **Covers** RoamSwitch 1.5.1 (build 24) · **Requires** macOS 13.0+ / Apple Silicon · **Published** 2026-08-30 · **Team ID** GV76B6G4YU
 
 *Canonical (rendered): <https://lafine.net/security.en.html>. This Markdown mirror exists for its Git history; the content is identical.*
 
