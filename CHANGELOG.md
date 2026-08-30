@@ -4,6 +4,12 @@
 
 All notable user‑facing changes to RoamSwitch. Dates are release dates.
 
+## 1.5.9
+
+- Comprehensive ClamAV Quarantine Coverage (Bypass Prevention):
+  - Added instant inspection for `.tmp` files to catch payload downloads attempting extension evasion.
+  - Enabled active scanning across all watched directories (Desktop, Documents, Downloads) regardless of `com.apple.quarantine` attributes, ensuring tools copying via terminal (`cp`, `curl`, `wget`) or external media are immediately audited and quarantined.
+
 ## 1.5.8
 
 - Robust Remote Login (SSH) & Sharing Service State Restoration:
