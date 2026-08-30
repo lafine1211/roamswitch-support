@@ -4,6 +4,13 @@
 
 All notable user‑facing changes to RoamSwitch. Dates are release dates.
 
+## 1.5.2
+
+- Confidential API Key & Secret Leak Prevention (Clipboard Protection):
+  - Automatically scans clipboard contents on-device (Zero Telemetry) for OpenAI, Anthropic, GitHub, AWS, HuggingFace, Google Gemini keys, and private keys to prevent accidental pasting into AI chats or public websites.
+- Unsafe AI Model File (Pickle / PyTorch) Download Protection:
+  - Detects arbitrary code execution risks in downloaded `.pkl`, `.pickle`, and `.pt` model files, prompting recommendations to use SafeTensors or GGUF formats.
+
 ## 1.5.1
 
 - Added Local AI / LLM Server Exposure Detection & Protection (Ollama / LM Studio / Gradio / vLLM):

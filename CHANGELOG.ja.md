@@ -4,6 +4,13 @@
 
 RoamSwitch のユーザー向け変更点。日付はリリース日です。
 
+## 1.5.2
+
+- APIキー / シークレット誤送信防止チェッカー（クリップボード保護）：
+  - OpenAI, Anthropic, GitHub, AWS, HuggingFace, Google Gemini等のAPIキーやSSH秘密鍵がクリップボードに保持された際、端末ローカル（Zero Telemetry）で正規表現スキャンし注意喚起。WebやAIチャットへの誤貼り付け・情報漏洩を防止。
+- 危険なAIモデル形式（Pickle / PyTorch）のダウンロード保護：
+  - HuggingFaceやCivitaiからダウンロードされた `.pkl` / `.pickle` / `.pt` ファイルの任意コード実行リスクを検知し、安全なSafeTensors / GGUF形式の利用を推奨。
+
 ## 1.5.1
 
 - ローカルAI / LLM サーバー露出検知＆保護ガード（Ollama / LM Studio / Gradio / vLLM）：

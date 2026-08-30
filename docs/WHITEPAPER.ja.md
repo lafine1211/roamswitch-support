@@ -2,7 +2,7 @@
 
 > RoamSwitch がどのような権限で動作し、その境界で何を行っているのかを説明する技術文書です。 宣伝的な表現は使わず、記載した内容はすべて、配布中のアプリのバイナリと実際の動作から確認できるようにしています。
 
-**版** v1（初版） · **対象** RoamSwitch 1.5.1 (build 24) · **要件** macOS 13.0+ / Apple Silicon · **発行** 2026-08-30 · **Team ID** GV76B6G4YU
+**版** v1（初版） · **対象** RoamSwitch 1.5.2 (build 25) · **要件** macOS 13.0+ / Apple Silicon · **発行** 2026-08-30 · **Team ID** GV76B6G4YU
 
 *正規版（整形済み）: <https://lafine.net/security.html>。この Markdown はその Git 履歴のためのミラーで、内容は同一です。*
 
