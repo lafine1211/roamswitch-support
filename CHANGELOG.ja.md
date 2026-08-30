@@ -4,6 +4,15 @@
 
 RoamSwitch のユーザー向け変更点。日付はリリース日です。
 
+## 1.5.8
+
+- リモートログイン（SSH）および共有サービス自動復元の精度向上：
+  - macOS 13/14/15 launchd において `com.openssh.sshd` の稼働状態判定（`launchctl print` / `print-disabled` / `systemsetup`）を多重強化。
+  - ロックダウン解除時および信頼ネットワーク復帰時、`launchctl load -w` に加えて `/usr/sbin/systemsetup -setremotelogin on` を連携実行し、リモートログイン（SSH）を確実に復旧。
+- ClamAV ダウンロード検疫の重複隔離・多重通知防止：
+  - FSEvents イベント重複による同一ダウンロードファイルの多重スキャンおよび隔離フォルダ（Quarantine）への重複保存バグを修正。
+  - 隔離中・隔離直後のファイルパスキャッシュを導入し、安定した即時検疫を実現。
+
 ## 1.5.7
 
 - ペネトレーションテスト（実環境監査）に基づくセキュリティ防護機能の設計強化：

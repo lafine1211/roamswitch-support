@@ -4,6 +4,15 @@
 
 All notable user‑facing changes to RoamSwitch. Dates are release dates.
 
+## 1.5.8
+
+- Robust Remote Login (SSH) & Sharing Service State Restoration:
+  - Upgraded service load detection (`launchctl print`, `print-disabled`, `systemsetup`) to reliably track `com.openssh.sshd` across modern macOS versions.
+  - Coupled `launchctl load -w` with `/usr/sbin/systemsetup -setremotelogin on` upon lockdown release and trusted network transition to guarantee Remote Login (SSH) restoration.
+- ClamAV Download Quarantine Deduplication & Multi-scan Prevention:
+  - Fixed duplicate quarantine entry bug caused by concurrent FSEvents file write/flush triggers.
+  - Added in-flight scan and recently-quarantined file caching to eliminate redundant scans and quarantine folder ballooning.
+
 ## 1.5.7
 
 - Security Guard Architecture & Robustness Enhancements based on VM Penetration Audit:
