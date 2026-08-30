@@ -41,7 +41,8 @@ between them.
 | 🕳️ Port‑anomaly guard — auto‑block newly exposed listening ports (signature‑free) | ❌ | 🚀 |
 | ⚡ ARP‑spoofing auto‑containment + real‑time notifications | ❌ (menu only) | 🚀 |
 | 🔌 Unauthorized USB / BadUSB storage guard + auto ClamAV scan on mount | ❌ | 🚀 |
-| 🌐 Web/Mail download guard, DNS threat protection, link‑safety auditor | ❌ | 🚀 |
+| 🌐 Web/Mail download guard (incl. Pickle AI model detection), DNS threat protection, link‑safety auditor | ❌ | 🚀 |
+| 🔑 API Key & Secret leak prevention checker (Zero Telemetry clipboard protection) | ✅ | ✅ |
 | 📄 Log & diagnostics export (CSV / JSON) | ❌ | 🚀 |
 | Devices | 1 | 2 |
 
