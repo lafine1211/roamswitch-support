@@ -152,7 +152,11 @@ Previously the two features each loaded rules with `pfctl -f` independently, com
 
 ### How a port-guard false positive is recovered
 
-The unknown-port auto-block (Pro, on by default once Pro is activated) can stop a legitimate LAN receiver — LocalSend, Syncthing, anything started after the guard was enabled. When that happens, allow it from the "Allow" button on the notification banner or the matching row in the "Exposed ports" screen. An executable allowed once is recorded as known and is not blocked again (`PortAnomalyGuard.allowPort(_:)`). Apple system daemons that satisfy `anchor apple` (`rapportd`, which backs Handoff, and the like) are not watched in the first place.
+The unknown-port auto-block (Pro, on by default once Pro is activated) can stop a legitimate LAN receiver — LocalSend, Syncthing, anything started after the guard was enabled. When that happens, allow it from the "Allow" button on the notification banner or the matching row in the "Exposed ports" screen. An executable allowed once is recorded as known and is not blocked again (`PortAnomalyGuard.allowPort(_:)`). Apple system daemons that satisfy `anchor apple` (`rapportd`, which backs Handoff, and the like) are not watched in the first place. Note that generic script interpreters (Python, Node.js, Netcat, etc.) are strictly scoped by `path:port` rather than binary alone to prevent living-off-the-land attacks.
+
+### Self-healing ransomware canary bait
+
+If canary decoy files are tampered with or renamed and trigger the emergency air-gap, releasing containment after verifying security automatically regenerates missing or corrupted canary files back to their pristine baseline hash, immediately restoring uninterrupted kqueue surveillance.
 
 ## §6. Everyday untrusted-network protection
 

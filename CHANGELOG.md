@@ -4,6 +4,14 @@
 
 All notable user‑facing changes to RoamSwitch. Dates are release dates.
 
+## 1.5.7
+
+- Security Guard Architecture & Robustness Enhancements based on VM Penetration Audit:
+  - **Ransomware Canary Bait Self-Healing**: Automatically regenerates and restores the baseline hash of any missing or tampered canary decoy files upon emergency isolation release, immediately reinstating kqueue real-time monitoring.
+  - **Strict Per-Port Identity for Generic Interpreters**: Generic script interpreters and networking shells (Python, Node.js, Ruby, PHP, Netcat, etc.) are now identified by path:port rather than path alone, preventing living-off-the-land attackers from exploiting a previously-allowed interpreter binary to open unmonitored backdoors on new ports.
+  - **Baseline Poisoning Prevention & Reset**: Eliminated unconditional whitelisting of unverified userland listeners on first-time guard activation; added baseline reset capability.
+  - **Download Guard Hidden File (Dotfile) Detection**: Refined exclusion filters to only ignore macOS system metadata (.DS_Store, ._*), ensuring hidden payload downloads (e.g. .hidden_eicar.txt, .payload.sh) are reliably inspected in real time by ClamAV.
+
 ## 1.5.6
 
 - Improved Automatic Restoration of Sharing Services (SSH / SMB / Screen Sharing) upon Emergency Isolation Release:
