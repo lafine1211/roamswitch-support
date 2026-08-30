@@ -4,6 +4,14 @@
 
 All notable user‑facing changes to RoamSwitch. Dates are release dates.
 
+## 1.5.0
+
+- Added Crash Watchdog & Auto-Recovery:
+  - Introduced a background watchdog agent (LaunchAgent) that automatically detects unexpected terminations and restarts the application.
+  - Built-in exponential backoff (2s, 4s, 8s, 16s, 32s) and a 5-attempt retry limit to prevent infinite restart loops.
+  - Native macOS notifications (UNUserNotificationCenter) alert you when an auto-restart occurs or if the crash limit is reached.
+  - Clean user quits are recognized and will not trigger restarts.
+
 ## 1.4.8
 
 - Onboarding: Added an animated video guide demonstrating the macOS system approval steps for the helper tool.
