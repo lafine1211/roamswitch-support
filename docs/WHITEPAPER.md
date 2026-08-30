@@ -2,7 +2,7 @@
 
 > This document explains what privileges RoamSwitch runs with and what it does at that boundary. It contains no marketing language; everything stated here can be verified against the shipping app binary and its actual behavior.
 
-**Version** v1 (first edition) · **Covers** RoamSwitch 1.5.5 (build 28) · **Requires** macOS 13.0+ / Apple Silicon · **Published** 2026-08-30 · **Team ID** GV76B6G4YU
+**Version** v1 (first edition) · **Covers** RoamSwitch 1.6.1 (build 34) · **Requires** macOS 13.0+ / Apple Silicon · **Published** 2026-08-30 · **Team ID** GV76B6G4YU
 
 *Canonical (rendered): <https://lafine.net/security.en.html>. This Markdown mirror exists for its Git history; the content is identical.*
 
@@ -154,9 +154,13 @@ Previously the two features each loaded rules with `pfctl -f` independently, com
 
 The unknown-port auto-block (Pro, on by default once Pro is activated) can stop a legitimate LAN receiver — LocalSend, Syncthing, anything started after the guard was enabled. When that happens, allow it from the "Allow" button on the notification banner or the matching row in the "Exposed ports" screen. An executable allowed once is recorded as known and is not blocked again (`PortAnomalyGuard.allowPort(_:)`). Apple system daemons that satisfy `anchor apple` (`rapportd`, which backs Handoff, and the like) are not watched in the first place. Note that generic script interpreters (Python, Node.js, Netcat, etc.) are strictly scoped by `path:port` rather than binary alone to prevent living-off-the-land attacks.
 
-### Self-healing ransomware canary bait
+### Self-healing ransomware canary bait & containment suppression
 
-If canary decoy files are tampered with or renamed and trigger the emergency air-gap, releasing containment after verifying security automatically regenerates missing or corrupted canary files back to their pristine baseline hash, immediately restoring uninterrupted kqueue surveillance.
+If canary decoy files are tampered with or renamed and trigger the emergency air-gap, releasing containment after verifying security automatically regenerates missing or corrupted canary files back to their authentic baseline hash generated from embedded templates, immediately restoring uninterrupted kqueue surveillance (preventing adversary baseline contamination). Furthermore, during active containment (while the emergency modal is displayed), redundant notification alerts and re-trigger events from periodic background integrity polling are automatically suppressed to avoid distracting the user during incident response.
+
+### ClamAV quarantine resilience & collision handling
+
+All newly added or modified files across watched directories (Downloads, Desktop, Documents) qualify for instant ClamAV inspection regardless of `.tmp` extension naming or `com.apple.quarantine` extended attribute presence (e.g. terminal copies via `cp`, `curl`, `wget`). In the event that a previously quarantined threat with the exact same filename already exists in `~/Library/Application Support/RoamSwitch/Quarantine/`, RoamSwitch automatically detects ClamAV `--move` collision skips and falls back to isolating the new threat under a timestamped unique filename, eliminating residual infected files at the original location.
 
 ## §6. Everyday untrusted-network protection
 
@@ -167,7 +171,7 @@ When you connect to a network you have not registered, the "protection level" sw
 | Operation | Implementation | Privilege | How it is restored |
 | --- | --- | --- | --- |
 | Firewall + stealth mode ON | socketfilterfw --setblockall on / --setstealthmode on | root (helper) | `off` when you return to a safe network |
-| Stop SSH / SMB / Screen Sharing | launchctl unload -w | root (helper) | Records **only the ones that were running** when stopped, and `load -w` on return |
+| Stop SSH / SMB / Screen Sharing | launchctl unload -w | root (helper) | Records **only the ones that were running** when stopped, and `load -w` on return (with SSH also coupled to `/usr/sbin/systemsetup -setremotelogin on` for guaranteed modern macOS restore) |
 | Disable AirDrop | defaults write com.apple.sharingd DiscoverableMode | User (the app itself) | Saves the previous value and writes it back on return |
 
 None of this is a new blocking mechanism that RoamSwitch adds — it is just toggling OS settings. If you delete the app, the only thing that stops is the network-dependent switching; the last OS settings that were applied stay as they are. Nothing is left locked, but if you want to err on the safe side, set it back to "Open" on a trusted network before uninstalling.
