@@ -6,6 +6,9 @@ All notable user‑facing changes to RoamSwitch. Dates are release dates.
 
 ## 1.5.0
 
+- Added Local AI / LLM Server Exposure Detection & Protection (Ollama / LM Studio / Gradio / vLLM):
+  - Added detection and proactive alerts for local AI inference servers accidentally bound to `0.0.0.0` (accessible across the entire LAN), including Ollama (port 11434), LM Studio (1234), Gradio / AI WebUI (7860), and vLLM (8000).
+  - Prevents unauthorized remote model execution/download/deletion, GPU compute theft, and prompt eavesdropping over the local network with one-click `pf` isolation and configuration guidance.
 - Added Crash Watchdog & Auto-Recovery:
   - Introduced a background watchdog agent (LaunchAgent) that automatically detects unexpected terminations and restarts the application.
   - Built-in exponential backoff (2s, 4s, 8s, 16s, 32s) and a 5-attempt retry limit to prevent infinite restart loops.

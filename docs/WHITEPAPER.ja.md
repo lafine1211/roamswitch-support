@@ -2,7 +2,7 @@
 
 > RoamSwitch がどのような権限で動作し、その境界で何を行っているのかを説明する技術文書です。 宣伝的な表現は使わず、記載した内容はすべて、配布中のアプリのバイナリと実際の動作から確認できるようにしています。
 
-**版** v1（初版） · **対象** RoamSwitch 1.4.7 (build 21) · **要件** macOS 13.0+ / Apple Silicon · **発行** 2026-08-28 · **Team ID** GV76B6G4YU
+**版** v1（初版） · **対象** RoamSwitch 1.5.0 (build 23) · **要件** macOS 13.0+ / Apple Silicon · **発行** 2026-08-30 · **Team ID** GV76B6G4YU
 
 *正規版（整形済み）: <https://lafine.net/security.html>。この Markdown はその Git 履歴のためのミラーで、内容は同一です。*
 
@@ -297,7 +297,7 @@ device_hash = SHA-256( "RoamSwitch-LifetimeSalt-v1" : lowercase(IOPlatformUUID) 
 - 同じ LAN にいる攻撃者や、乗っ取られた IoT 機器からの探査・攻撃。ステルス化、公開ポートの監査、外部からの隔離で対応します（実測検証: [`audit/RESULTS-DEFENSE-2026-08-30.ja.md`](../audit/RESULTS-DEFENSE-2026-08-30.ja.md) にて、同一 LAN 内の感染端末から `0.0.0.0` 開発サーバーへの侵入試行が即座に自動遮断される挙動を実証済み）。
 - 信頼していないネットワークでの露出。共有サービスと AirDrop を自動的に停止します。
 - ARP スプーフィング（中間者攻撃）の検知と、検知したときの緊急 Air-Gap。家庭用ルーターで「防ぐ」ことはほぼ不可能なため、「気づいて、人間より速く切る」方針にしています。
-- 認証なしで `0.0.0.0` に晒された開発サーバーやデータベース（Redis、MongoDB、Elasticsearch など）を見つけ、外部から遮断します。
+- 認証なしで `0.0.0.0` に晒された開発サーバーやデータベース（Redis、MongoDB、Elasticsearch など）、およびローカルAI/LLM推論サーバー（Ollama、LM Studio、vLLM、Gradio など）を見つけ、外部から遮断します。
 - ランサムウェアのような不正な暗号化の動きを早い段階で捉え、通信をすべて止めます（シグネチャには依存しません）。
 - 許可していない USB ストレージの自動排出と、接続されたストレージの自動 ClamAV スキャン（任意）。
 
