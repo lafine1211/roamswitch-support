@@ -4,6 +4,12 @@
 
 All notable user‑facing changes to RoamSwitch. Dates are release dates.
 
+## 1.6.1
+
+- Suppress Redundant Notifications During Active Ransomware Containment:
+  - Fixed an issue where 60-second periodic integrity checks repeatedly dispatched threat alerts while emergency isolation was already active.
+  - Pauses background polling and duplicate notifications until isolation is resolved.
+
 ## 1.6.0
 
 - Resilient Quarantine Fallback for Existing Filename Collisions:
