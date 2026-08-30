@@ -4,6 +4,13 @@
 
 All notable user‑facing changes to RoamSwitch. Dates are release dates.
 
+## 1.6.4
+
+- Ransomware Canary Baseline Hash Disk Persistence & Lifecycle Optimization:
+  - Persisted baseline expected SHA-256 hashes per canary bait file to disk (`UserDefaults`).
+  - Missing or tampered decoy files are no longer prematurely overwritten on routine app launches, strictly preserving tamper/deletion detection against the persisted baseline.
+  - Full self-healing regeneration from embedded pristine templates is executed exclusively upon explicit user containment release ("緊急隔離を解除").
+
 ## 1.6.3
 
 - Menu Bar Icon State Stability & Immediate Manual Override Updates:
