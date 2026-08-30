@@ -4,6 +4,12 @@
 
 All notable user‑facing changes to RoamSwitch. Dates are release dates.
 
+## 1.6.0
+
+- Resilient Quarantine Fallback for Existing Filename Collisions:
+  - Added automatic collision resolution in QuarantineManager: if a previously quarantined file with the exact same name already exists, RoamSwitch isolates the newly flagged threat under a timestamped unique filename.
+  - Guarantees zero residual infected files remaining at the original path upon re-download or duplicate attacks.
+
 ## 1.5.9
 
 - Comprehensive ClamAV Quarantine Coverage (Bypass Prevention):
