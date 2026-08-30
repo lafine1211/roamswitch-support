@@ -4,6 +4,12 @@
 
 All notable user‑facing changes to RoamSwitch. Dates are release dates.
 
+## 1.6.2
+
+- Automatic Legacy Data Migration for Port Anomaly Guard:
+  - Added startup migration in `PortAnomalyGuard` to purge legacy portless interpreter identities (e.g. bare `"Python"`) from `KnownExecutablesV2`.
+  - Ensures seamless precision and strict per-port scoping across version upgrades.
+
 ## 1.6.1
 
 - Suppress Redundant Notifications During Active Ransomware Containment:
