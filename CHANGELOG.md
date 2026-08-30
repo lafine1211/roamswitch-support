@@ -4,6 +4,14 @@
 
 All notable user‑facing changes to RoamSwitch. Dates are release dates.
 
+## 1.5.4
+
+- Added Confirmation & Risk Warning Dialogs When Turning Off Critical Security Guards:
+  - When disabling crucial autonomous protection features such as "Auto-Contain ARP Spoofing", "Auto-Block Unknown Listening Ports", or "Auto-Block Unauthorized USB Storage", RoamSwitch now presents a confirmation dialog with full risk explanations (localized in 10 languages).
+  - Prevents accidental deactivation and ensures users are aware of potential security risks before turning off guards.
+- Menu Bar UI Enhancements:
+  - Added guard toggles for ARP spoofing and port anomaly containment directly into the SwiftUI menu bar interface for consistent usability.
+
 ## 1.5.3
 
 - MCP (Model Context Protocol) Server Integration Enhancements:
