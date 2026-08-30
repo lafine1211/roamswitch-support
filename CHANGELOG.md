@@ -4,6 +4,15 @@
 
 All notable user‑facing changes to RoamSwitch. Dates are release dates.
 
+## 1.5.6
+
+- Improved Automatic Restoration of Sharing Services (SSH / SMB / Screen Sharing) upon Emergency Isolation Release:
+  - Fixed an issue where previously active sharing services (such as Remote Login / SSH and SMB file sharing) were not reliably restored after releasing emergency containment (Air-Gap / Lockdown) from ARP spoofing or ransomware detection.
+  - Strengthened helper daemon service state persistence and state protection against duplicate isolation invocations.
+- Performance & Responsiveness Enhancements during Emergency Containment and Background Monitoring:
+  - Offloaded process enumeration and file inspection in port monitoring and canary guard to background queues to prevent main-thread UI hangs and spinning beachballs.
+  - Enhanced trusted signature verification for macOS system daemons (such as photoanalysisd) to eliminate false attribution.
+
 ## 1.5.5
 
 - Web & Mail Download Guard (ClamAV Real-Time Scan) Detection & Alert Improvements:
