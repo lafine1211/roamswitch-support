@@ -4,6 +4,14 @@
 
 All notable user‑facing changes to RoamSwitch. Dates are release dates.
 
+## 1.6.3
+
+- Menu Bar Icon State Stability & Immediate Manual Override Updates:
+  - Enhanced state publisher bindings and immediate icon refresh on manual security level overrides, eliminating lingering busy spinner icons.
+  - Added failsafe timeout to diagnostic passes (`isDiagnosing`) to guarantee the busy state never gets permanently stuck.
+- Hardened Threat Quarantine Permissions:
+  - Quarantined files in `~/Library/Application Support/RoamSwitch/Quarantine` now have all read and execute permissions stripped (`chmod 000`) to render isolated threats completely inert.
+
 ## 1.6.2
 
 - Automatic Legacy Data Migration for Port Anomaly Guard:
