@@ -4,6 +4,21 @@
 
 All notable user‑facing changes to RoamSwitch. Dates are release dates.
 
+## 1.7.0
+
+- 🔌 BadUSB & Physical Keyboard Approval Guard (`USBKeyboardGuard`):
+  - Dynamic real-time monitoring of newly connected HID keyboards and modified cables (Rubber Ducky, O.MG Cable, etc.) via IOKit (`IOHIDManager`).
+  - Built-in MacBook keyboards are automatically allowlisted to ensure uninterrupted daily workflows.
+  - Intercepts and drops keystrokes from unapproved keyboards instantly via `CGEventTap`, stopping malicious automated keystroke/command injection attacks at the physical boundary.
+  - Displays a dedicated approval modal allowing users to review and authorize trusted devices with a single click.
+- 🛡️ Unified USB & BadUSB Guard Settings UI:
+  - Segmented tab navigation for seamlessly managing both Keyboard and Storage allowlists in one place.
+  - Added live real-time detection of macOS Accessibility permissions and direct Settings navigation.
+- 📊 Enhanced Security Health Checks:
+  - Added audit checks for "Unauthorized USB / BadUSB Physical Port Guard" and "macOS Accessory Security (Apple Silicon)".
+- 🌐 Full 10-Language Localization:
+  - Added comprehensive translations across all 10 supported languages: English, Japanese, German, French, Spanish, Italian, Korean, Portuguese, Simplified Chinese, and Traditional Chinese.
+
 ## 1.6.4
 
 - Ransomware Canary Baseline Hash Disk Persistence & Lifecycle Optimization:

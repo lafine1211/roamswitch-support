@@ -2,7 +2,7 @@
 
 > This document explains what privileges RoamSwitch runs with and what it does at that boundary. It contains no marketing language; everything stated here can be verified against the shipping app binary and its actual behavior.
 
-**Version** v1 (first edition) · **Covers** RoamSwitch 1.6.1 (build 34) · **Requires** macOS 13.0+ / Apple Silicon · **Published** 2026-08-30 · **Team ID** GV76B6G4YU
+**Version** v1 (first edition) · **Covers** RoamSwitch 1.7.0 (build 38) · **Requires** macOS 13.0+ / Apple Silicon · **Published** 2026-09-01 · **Team ID** GV76B6G4YU
 
 *Canonical (rendered): <https://lafine.net/security.en.html>. This Markdown mirror exists for its Git history; the content is identical.*
 
@@ -307,6 +307,7 @@ Before an update is applied, the **EdDSA signature** listed in the appcast is ve
 - Detecting ARP spoofing (a man-in-the-middle attack), and an emergency air-gap on detection. "Preventing" it on a home router is essentially impossible, so the approach is to "notice it and cut faster than a human would."
 - Finding dev servers and databases (Redis, MongoDB, Elasticsearch, and so on) exposed on `0.0.0.0` without authentication, and blocking them from outside.
 - Catching ransomware-like unauthorized encryption activity early and stopping all traffic (it does not rely on signatures).
+- BadUSB and physical keyboard approval guard (`USBKeyboardGuard`, CGEventTap + IOKit) that intercepts and drops keystrokes from unapproved USB keyboards/cables (Rubber Ducky, O.MG Cable, etc.) to prevent automated command injection attacks.
 - Auto-ejecting USB storage that is not allowed, and automatically running a ClamAV scan on attached storage (optional).
 
 ### What we have decided not to do
