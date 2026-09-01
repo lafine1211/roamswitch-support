@@ -2,7 +2,7 @@
 
 **English** | [日本語](CHANGELOG.ja.md)
 
-All notable user‑facing changes to RoamSwitch. Dates are release dates. The Mac
+All notable user‑facing changes to RoamSwitch. The Mac
 edition (1.x) and the Linux edition (a separate 1.0.x series) are versioned
 independently.
 
@@ -13,7 +13,7 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
-### 1.0.4 — 2026-09-02
+### 1.0.4
 
 - Fixed a display bug in the "Check for updates" tab where the suggested command
   was sometimes not shown.
@@ -22,7 +22,7 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 - Fixed the window subtitle staying in the launch-time language after switching
   languages.
 
-### 1.0.2 — 2026-09-02
+### 1.0.2
 
 - Automatic stop/restore of sharing services is now on by default: on an
   untrusted network SSH / Samba / remote desktop are stopped, and restored when
@@ -36,7 +36,7 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 - Larger, clearer security‑score display on the dashboard.
 - Fixed the About screen showing a stale version number; tidied up copy.
 
-### 1.0.1 — 2026-09-02
+### 1.0.1
 
 - First published release. The apt (`lafine.net/apt`) and dnf/zypper
   (`lafine.net/rpm`) repositories are published with an RSA‑4096 signature.
@@ -45,7 +45,7 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
   PKGBUILD for now).
 - Fixed a package‑build CI failure.
 
-### 1.0.0 — 2026-09-01
+### 1.0.0
 
 - Initial release. Brings the zero‑trust network defense model of macOS
   RoamSwitch to Linux.
