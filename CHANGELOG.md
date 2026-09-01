@@ -13,12 +13,14 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
-### 1.0.3 — 2026-09-02
+### 1.0.4 — 2026-09-02
 
 - Fixed a display bug in the "Check for updates" tab where the suggested command
   was sometimes not shown.
 - "Open release notes" opened the product page; it now opens the public
   changelog (the CHANGELOG on GitHub).
+- Fixed the window subtitle staying in the launch-time language after switching
+  languages.
 
 ### 1.0.2 — 2026-09-02
 
