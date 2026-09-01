@@ -2,7 +2,48 @@
 
 [English](CHANGELOG.md) | **日本語**
 
-RoamSwitch のユーザー向け変更点。日付はリリース日です。
+RoamSwitch のユーザー向け変更点。日付はリリース日です。Mac 版（1.x）と
+Linux 版（別系列・1.0.x）でバージョン番号は独立しています。
+
+---
+
+## RoamSwitch for Linux
+
+Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）。
+詳しくは <https://lafine.net/linux>。
+
+### 1.0.2 — 2026-09-02
+
+- 共有サービスの自動停止・復元をデフォルト有効に。未信頼ネットワークで
+  SSH / Samba / リモートデスクトップを停止し、信頼ネットワーク復帰で復元
+  （Mac 版と同じ挙動。ネットワークタブまたは `roamswitch sharing off` で無効化可）。
+- 保護レベル名を全10言語に対応。`config.json` の `level_labels` で任意の名前に変更可。
+- ネットワーク登録名を全10言語に対応し、一覧の名前セルをダブルクリックでリネーム可能に。
+- URL 安全性診断タブに機能の説明を追加。
+- 総合セキュリティ診断のスコア表示を大きく見やすく改善。
+- About のバージョン表記が更新されない不具合を修正。実装詳細の文言を整理。
+
+### 1.0.1 — 2026-09-02
+
+- 初回配布リリース。apt（`lafine.net/apt`）/ dnf・zypper（`lafine.net/rpm`）
+  リポジトリを RSA-4096 で署名して公開。GitHub Releases に `.deb` / `.rpm` /
+  署名付き tarball を添付。
+- Arch は AUR パッケージ `roamswitch-bin` を準備中（当面は同梱 PKGBUILD からビルド）。
+- パッケージビルド CI の不具合を修正。
+
+### 1.0.0 — 2026-09-01
+
+- 初版。macOS 版のゼロトラスト・ネットワーク防衛思想を Linux 向けに完全実装。
+- 接続中の Wi-Fi / 有線ネットワークをゲートウェイ MAC で識別し、`nftables`
+  プロファイルを自律切替（信頼 / 標準保護 / 外出先保護）。
+- ランサムウェアの挙動検知（fanotify + シャノンエントロピー + カナリア）と
+  緊急 Air-Gap 隔離、不正 USB / BadUSB ガード、20 項目のセキュリティ健全性診断、
+  読み取り専用の MCP サーバーを標準搭載。
+- 無償 Community Edition（プロプライエタリ・フリーウェア）。全10言語。
+
+---
+
+## RoamSwitch for Mac
 
 ## 1.7.0
 

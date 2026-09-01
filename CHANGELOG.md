@@ -2,7 +2,54 @@
 
 **English** | [日本語](CHANGELOG.ja.md)
 
-All notable user‑facing changes to RoamSwitch. Dates are release dates.
+All notable user‑facing changes to RoamSwitch. Dates are release dates. The Mac
+edition (1.x) and the Linux edition (a separate 1.0.x series) are versioned
+independently.
+
+---
+
+## RoamSwitch for Linux
+
+The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
+(GPG‑signed). See <https://lafine.net/linux>.
+
+### 1.0.2 — 2026-09-02
+
+- Automatic stop/restore of sharing services is now on by default: on an
+  untrusted network SSH / Samba / remote desktop are stopped, and restored when
+  you return to a trusted network (matches the Mac edition; toggle it off in the
+  Networks tab or with `roamswitch sharing off`).
+- Protection‑level names are localized in all 10 languages; set custom names via
+  `level_labels` in `config.json`.
+- Registered‑network names are localized, and the Name cell in the list is now
+  editable inline (double‑click to rename).
+- Added an explanation of the URL Safety Audit tab.
+- Larger, clearer security‑score display on the dashboard.
+- Fixed the About screen showing a stale version number; tidied up copy.
+
+### 1.0.1 — 2026-09-02
+
+- First published release. The apt (`lafine.net/apt`) and dnf/zypper
+  (`lafine.net/rpm`) repositories are published with an RSA‑4096 signature.
+  GitHub Releases carry the `.deb` / `.rpm` / signed tarball.
+- The AUR package `roamswitch-bin` is being set up (build from the bundled
+  PKGBUILD for now).
+- Fixed a package‑build CI failure.
+
+### 1.0.0 — 2026-09-01
+
+- Initial release. Brings the zero‑trust network defense model of macOS
+  RoamSwitch to Linux.
+- Identifies the connected Wi‑Fi / wired network by gateway MAC and autonomously
+  switches `nftables` profiles (Trusted / Standard / Away).
+- Behavioral ransomware detection (fanotify + Shannon entropy + canaries) with
+  emergency Air‑Gap isolation, an unauthorized‑USB / BadUSB guard, a 20‑item
+  security health assessment, and a read‑only MCP server.
+- Free Community Edition (proprietary freeware). All 10 languages.
+
+---
+
+## RoamSwitch for Mac
 
 ## 1.7.0
 
