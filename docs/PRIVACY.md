@@ -45,6 +45,20 @@ privacy policies. License validation does not require ongoing communication.
 The bundled `RoamSwitchMCPServer` is read‑only and communicates only over local
 standard input/output with an MCP client you configure. It has no network access.
 
+## RoamSwitch for Linux
+
+The Linux edition follows the same **Zero Telemetry** principle. Its product code
+contains no HTTP client and opens no TCP/UDP socket of its own; all communication is
+local IPC over a Unix socket. Configuration and assessment results stay on the
+machine; there is no account and no cloud sync. License tokens (Pro / Business) are
+verified offline by Ed25519 signature. The only externally‑facing operations are an
+ARP‑cache `ping` to the LAN gateway, opening the product website in your browser on
+an explicit click, and — only if you click it — ClamAV's own `freshclam`
+signature update. **RoamSwitch Business** contacts a management server only on
+devices an organization has explicitly enrolled (an opt‑in stated in the contract
+and EULA). Details and a reproducible self‑check:
+<https://lafine.net/linux/whitepaper>.
+
 ## Contact
 
 Questions about privacy: open an [Issue](../../issues) or contact us via

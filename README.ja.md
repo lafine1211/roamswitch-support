@@ -79,6 +79,29 @@ MCP サーバーと、その検知ロジックは **オープンソース**（MI
 [github.com/lafine1211/roamswitch-mcp](https://github.com/lafine1211/roamswitch-mcp)。
 `swift test` で単体・敵対的入力・ミューテーションファジングを実行できます。
 
+## RoamSwitch for Linux
+
+**Linux**（systemd + nftables）向けの別エディションが、同じゼロトラスト思想を再現しています。
+ゲートウェイ MAC による `nftables` プロファイルの自律切替、ランサムウェアの挙動検知と
+緊急 Air‑Gap 隔離、不正 USB / BadUSB ガード、20 項目のセキュリティ診断、読み取り専用の
+MCP サーバーを同梱します。
+
+- **無償「Community Edition」**、全機能開放、ライセンス認証不要。プロプライエタリ・
+  フリーウェア（同梱 EULA）。ソースは公開していません。
+- **ダウンロード・ドキュメント:** <https://lafine.net/linux>
+- **導入:** APT（`lafine.net/apt`）、DNF / zypper（`lafine.net/rpm`）、AUR（`roamswitch-bin`）。
+  Ubuntu 22.04+ / Debian 12+ など systemd + nftables のディストロが必要。x86_64 / aarch64
+  （Raspberry Pi 4 / 5 を含む）。
+- **セキュリティ設計書:** <https://lafine.net/linux/whitepaper> — 「外部送信データゼロ」の
+  コードレベル監査と破壊的セルフテストの結果
+  （[audit/RESULTS-LINUX-2026-09-02.ja.md](audit/RESULTS-LINUX-2026-09-02.ja.md)）を収録。
+- **RoamSwitch Business**（有償・準備中）は、組織向けにフリート集中管理・署名付きポリシー配布・
+  署名済み社内 APT リポジトリ・SLA サポートを追加します: <https://lafine.net/business>。
+  macOS 版の **Pro Lifetime** をお持ちの方には、ご本人所有の Linux 端末で Business 機能を
+  無償付与します。
+- **サポート:** 同じ [Issues](../../issues) をご利用ください。Linux の報告にはラベルを付け、
+  `journalctl -u roamswitch -b` と `roamswitch status` の出力（要マスキング）を添付してください。
+
 ## セキュリティと検証
 
 - **アーキテクチャ／セキュリティ設計書** — RoamSwitch がどんな権限を持ち、その境界で何をしているかを、
@@ -114,5 +137,5 @@ Issue は日本語・英語どちらでも構いません。
 
 ---
 
-RoamSwitch はプロプライエタリソフトウェアです。© Lafine.
+RoamSwitch はプロプライエタリソフトウェアです。© Lafine Systems Design.
 本リポジトリのドキュメントはアプリの説明・サポート目的で引用可能です。

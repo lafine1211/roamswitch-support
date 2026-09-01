@@ -44,6 +44,18 @@ RoamSwitch は設定情報（登録済みネットワークのフィンガープ
 同梱の `RoamSwitchMCPServer` は読み取り専用で、設定した MCP クライアントとローカルの
 標準入出力のみで通信します。ネットワークアクセス機能はありません。
 
+## RoamSwitch for Linux
+
+Linux エディションも同じ **Zero Telemetry** 原則に従います。製品コードは HTTP
+クライアントを一切含まず、自前の TCP/UDP ソケットも開きません（すべて Unix ソケットの
+ローカル IPC）。設定・診断結果は端末内に留まり、アカウントもクラウド同期もありません。
+ライセンストークン（Pro / Business）は Ed25519 署名でオフライン検証します。外部に
+触れる動作は、ARP キャッシュ更新用の LAN ゲートウェイへの `ping`、ボタン押下時の
+ブラウザでの製品サイト表示、そして押した場合のみの ClamAV 定義更新（`freshclam`）
+だけです。**RoamSwitch Business** は、組織が明示的に enroll した端末に限り管理サーバーと
+通信します（契約・EULA に明示するオプトイン）。詳細と再現可能なセルフチェック:
+<https://lafine.net/linux/whitepaper>。
+
 ## お問い合わせ
 
 プライバシーに関するご質問は [Issue](../../issues) または https://lafine.net/ から。

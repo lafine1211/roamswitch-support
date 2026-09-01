@@ -81,6 +81,30 @@ The server and the detection logic behind it are **open source** (MIT):
 [github.com/lafine1211/roamswitch-mcp](https://github.com/lafine1211/roamswitch-mcp) —
 `swift test` runs its unit, adversarial-input and mutation-fuzz suites.
 
+## RoamSwitch for Linux
+
+A separate edition for **Linux** (systemd + nftables) reproduces the same zero‑trust
+model — autonomous `nftables` profile switching by gateway MAC, ransomware behaviour
+detection with emergency Air‑Gap isolation, unauthorized‑USB / BadUSB guard, a 20‑item
+security audit, and a read‑only MCP server.
+
+- **Free — "Community Edition"**, every feature unlocked, no activation. Proprietary
+  freeware (bundled EULA); the source is not published.
+- **Download & docs:** <https://lafine.net/linux>
+- **Install:** APT (`lafine.net/apt`), DNF / zypper (`lafine.net/rpm`), or AUR
+  (`roamswitch-bin`). Requires Ubuntu 22.04+ / Debian 12+ or a compatible
+  systemd + nftables distro; x86_64 / aarch64 (incl. Raspberry Pi 4 / 5).
+- **Security whitepaper:** <https://lafine.net/linux/whitepaper>
+  ([EN](https://lafine.net/linux/whitepaper.en)) — includes a code‑level audit of
+  "zero data sent off the machine" and the destructive self‑test results
+  ([audit/RESULTS-LINUX-2026-09-02.md](audit/RESULTS-LINUX-2026-09-02.md)).
+- **RoamSwitch Business** (planned, paid) adds fleet management, signed policy
+  distribution, a signed internal APT repository and SLA support for organizations:
+  <https://lafine.net/business>. Holders of a macOS **Pro Lifetime** license get
+  Business features free on their own Linux machines.
+- **Support:** same [Issues](../../issues) tracker — please label Linux reports and
+  attach `journalctl -u roamswitch -b` and `roamswitch status` output (redacted).
+
 ## Security & verification
 
 - **Architecture & security whitepaper** — what privileges RoamSwitch holds and what it
@@ -117,5 +141,5 @@ Japanese and English are both welcome in Issues.
 
 ---
 
-RoamSwitch is proprietary software. © Lafine. This repository's documentation may be
+RoamSwitch is proprietary software. © Lafine Systems Design. This repository's documentation may be
 quoted for the purpose of discussing or supporting the app.

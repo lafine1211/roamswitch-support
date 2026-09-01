@@ -85,3 +85,12 @@ In addition to the Zero Telemetry egress audit, we provide automated tooling to 
 
 - **[Defense & Penetration Verification Guide (English)](README-SECURITY.md)** (`rs-defense-audit.sh`)
 - **[Verification Checklist (English)](CHECKLIST-SECURITY.txt)**
+
+## RoamSwitch for Linux
+
+The Linux edition has its own self-penetration test and defense verification report,
+covering the `nftables` Air-Gap, the ransomware entropy/canary guards, the Quarantine
+Vault and BadUSB, plus a package-only "zero data sent off the machine" check:
+
+- **[RESULTS-LINUX-2026-09-02.md](RESULTS-LINUX-2026-09-02.md)** ([日本語](RESULTS-LINUX-2026-09-02.ja.md)) — 14 / 15 PASS; all findings fixed and re-verified
+- Whitepaper §9 + Appendix C: <https://lafine.net/linux/whitepaper>

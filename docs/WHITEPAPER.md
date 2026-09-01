@@ -6,6 +6,10 @@
 
 *Canonical (rendered): <https://lafine.net/security.en.html>. This Markdown mirror exists for its Git history; the content is identical.*
 
+> **RoamSwitch for Linux** has its own whitepaper covering the `nftables`-based
+> architecture and a code-level audit of "zero data sent off the machine":
+> <https://lafine.net/linux/whitepaper> ([EN](https://lafine.net/linux/whitepaper.en)).
+
 ## §1. About this document
 
 RoamSwitch is a menu-bar app for the Mac. Depending on how much you trust the network you are currently connected to, it automatically switches the macOS firewall, sharing services, AirDrop, and DNS. It also watches for ARP spoofing, ports open to the outside, USB storage, and ransomware-like encryption activity, and when it detects something dangerous it will go as far as cutting off traffic with the packet filter (`pf`) — an emergency air-gap.

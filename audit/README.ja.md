@@ -79,3 +79,12 @@ Zero Telemetry 監査に加えて、特権ヘルパーの XPC 境界、パケッ
 
 - **[防御機構・ペネトレーション検証ガイド（日本語）](README-SECURITY.ja.md)** (`rs-defense-audit.sh`)
 - **[検証チェックリスト（日本語）](CHECKLIST-SECURITY.ja.txt)**
+
+## RoamSwitch for Linux
+
+Linux エディションには、`nftables` Air-Gap、ランサムウェアのエントロピー／カナリアガード、
+隔離 Vault、BadUSB、そしてパッケージだけで行う「外部送信データゼロ」検証を対象とした
+セルフペネトレーションテスト／防御検証レポートがあります:
+
+- **[RESULTS-LINUX-2026-09-02.ja.md](RESULTS-LINUX-2026-09-02.ja.md)**（[English](RESULTS-LINUX-2026-09-02.md)）— 14 / 15 PASS、発見された不具合はすべて修正・再検証済み
+- 設計書 §9 ＋ 付録 C: <https://lafine.net/linux/whitepaper>
