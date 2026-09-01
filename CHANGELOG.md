@@ -13,6 +13,13 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.0.3 — 2026-09-02
+
+- Fixed a display bug in the "Check for updates" tab where the suggested command
+  was sometimes not shown.
+- "Open release notes" opened the product page; it now opens the public
+  changelog (the CHANGELOG on GitHub).
+
 ### 1.0.2 — 2026-09-02
 
 - Automatic stop/restore of sharing services is now on by default: on an
