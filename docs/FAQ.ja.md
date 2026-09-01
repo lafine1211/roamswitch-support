@@ -71,6 +71,11 @@ Raspberry Pi OS 64bit、Ubuntu for Raspberry Pi（x86_64 / aarch64）。導入�
 `systemd` と `nftables` が必要で、非 systemd 系（Alpine / Void / Devuan）は非対応です。
 Fedora / Arch / openSUSE はソースビルドで動作します。
 
+APT / RPM リポジトリは GPG（RSA-4096）で署名しています。AUR パッケージ
+（`roamswitch-bin`）は同じ署名鍵でリリース tarball を `validpgpkeys` 検証します。
+`makepkg` が鍵のインポートを聞いてきたら `Y`、または事前に
+`gpg --recv-keys 9C12964366B8547511AAEAF5773A9A39ECBD1537` を実行してください。
+
 ### デスクトップなし（ヘッドレス）で動きますか？
 
 動きます。トレイ UI には AppIndicator/StatusNotifierItem 対応デスクトップが必要ですが、

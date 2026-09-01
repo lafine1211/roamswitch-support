@@ -71,6 +71,11 @@ Pi OS 64‑bit and Ubuntu for Raspberry Pi (x86_64 / aarch64). Install via APT
 `systemd` and `nftables` are required; non‑systemd distros (Alpine / Void / Devuan)
 are not supported. Fedora / Arch / openSUSE work from a source build.
 
+The APT and RPM repositories are GPG‑signed (RSA‑4096). The AUR package
+(`roamswitch-bin`) verifies the release tarball against the same signing key via
+`validpgpkeys` — answer `Y` when `makepkg` offers to import it, or run
+`gpg --recv-keys 9C12964366B8547511AAEAF5773A9A39ECBD1537` first.
+
 ### Can it run without a desktop (headless)?
 
 Yes. The tray UI needs an AppIndicator/StatusNotifierItem desktop, but the
