@@ -13,6 +13,16 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.0.8
+
+- Fixed the first-run setup wizard sometimes freezing on the final "Apply" (the
+  wizard re-entered its own teardown while applying).
+- **The setup wizard now starts automatically on your next login after
+  installing** (a `/etc/xdg/autostart` entry is included). After setup it runs
+  silently in the system tray.
+- Fixed untranslated parts of the setup wizard (the away-protection level
+  choices were English-only; page 2's body text repeated the title).
+
 ### 1.0.7
 
 - **Important bug fix**: the BadUSB / USB keyboard guard, when it saw a keyboard
