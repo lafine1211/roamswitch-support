@@ -13,6 +13,17 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.0.9
+
+- Fixed a confirmation dialog ("Enable / Disable this protection?") popping up
+  on app launch and on every screen refresh even though no guard switch was
+  touched (a 1.0.7 implementation mistake). Confirmation dialogs now appear only
+  on **events** — an unknown USB keyboard connecting, a USB drive being
+  inserted, an emergency Air-Gap.
+- **An approval dialog is now shown when you insert an unregistered USB drive.**
+  "Allow" makes the device usable and adds it to the allow-list; "Deny" keeps it
+  held (the same mechanism as the USB keyboard approval).
+
 ### 1.0.8
 
 - Fixed the first-run setup wizard sometimes freezing on the final "Apply" (the
