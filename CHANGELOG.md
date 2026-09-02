@@ -13,6 +13,17 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.0.11
+
+- **The gateway ARP lock is now a full preventive anti-MITM measure.** On an
+  untrusted network (a café, public Wi-Fi), the MAC address of the IPv4
+  gateway — **plus the IPv6 default router and any DNS server on the same
+  network** — is pinned into the kernel neighbour table, so ARP/NDP spoofing
+  can't set up a man-in-the-middle attack. Trusted networks are never pinned.
+  Re-pinned on every network change.
+- **Bug fix**: this setting used to run for the gateway only and on every
+  network; it's now scoped to untrusted networks.
+
 ### 1.0.10
 
 - **Added an "Upgrade now" button to the Updates tab.** When the update check
@@ -165,6 +176,21 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 ---
 
 ## RoamSwitch for Mac
+
+## 1.7.5
+
+- **Added a preventive gateway ARP/NDP lock** (Pro, off by default). When you
+  join an unregistered network (a café, public Wi-Fi), the MAC address of the
+  gateway, the IPv6 router, and any DNS server on the same network is pinned so
+  ARP/NDP spoofing can't set up a man-in-the-middle attack in the first place.
+  Enable it under "Ports & Device Monitoring" → "Pin gateway ARP/NDP on
+  untrusted networks (preventive)".
+- **Reworked the ARP spoofing auto-containment response.** In Lockdown it still
+  cuts all traffic immediately; on Balanced / trusted networks it now
+  **notifies instead of cutting**, with a "Cut all network now" item in the
+  menu. This stops a router reboot or access-point switch from triggering it by
+  mistake, and stops an attacker from using a single spoofed ARP packet to
+  knock you offline.
 
 ## 1.7.4
 
