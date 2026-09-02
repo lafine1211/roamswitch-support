@@ -13,6 +13,27 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.0.5
+
+- **Added the passive link guard** (on by default). It watches where outbound
+  connections are going and warns you about connections to phishing / scam
+  sites. Clear phishing (a host on the threat feed, or a brand‑impersonation
+  domain) is blocked by default, with a one‑tap allow from the notification.
+  Verdicts use offline heuristics (confusable IDN characters, raw‑IP hosts,
+  high‑risk TLDs, …) and never send the target anywhere. It replaces the old
+  paste‑a‑URL checker. Switch off / warn / block in the settings tab or via
+  `linkGuard.mode` in `config.json`.
+- **Added the daily updater** (`roamswitch-update.timer`). Once a day it
+  receives a signed phishing‑site list, the ClamAV signature version, and the
+  latest app version. It is receive‑only and sends nothing about you or your
+  machine (no query string, no cookies, no identifiers). Turn it off entirely
+  with `systemctl disable --now roamswitch-update.timer` or `"enabled": false`
+  in `updates.json`; the product then runs on the data bundled in the package.
+- Fixed a bug where the whole desktop could freeze for tens of seconds shortly
+  after boot and RoamSwitch would crash (and auto‑restart). The cause was the
+  ransomware heuristic misfiring on apps that write many encrypted local files
+  in a short burst (e.g. Telegram); the exclusion list has also been widened.
+
 ### 1.0.4
 
 - Fixed a display bug in the "Check for updates" tab where the suggested command
