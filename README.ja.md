@@ -89,9 +89,9 @@ MCP サーバーを同梱します。
 - **無償「Community Edition」**、全機能開放、ライセンス認証不要。プロプライエタリ・
   フリーウェア（同梱 EULA）。ソースは公開していません。
 - **ダウンロード・ドキュメント:** <https://lafine.net/linux>
-- **導入:** APT（`lafine.net/apt`）、DNF / zypper（`lafine.net/rpm`）、AUR（`roamswitch-bin`）。
-  Ubuntu 22.04+ / Debian 12+ など systemd + nftables のディストロが必要。x86_64 / aarch64
-  （Raspberry Pi 4 / 5 を含む）。
+- **導入:** APT（`lafine.net/apt`）、DNF / zypper（`lafine.net/rpm`）。Arch は同梱
+  PKGBUILD からビルド（AUR `roamswitch-bin` は準備中）。Ubuntu 22.04+ / Debian 12+
+  など systemd + nftables のディストロが必要。x86_64 / aarch64（Raspberry Pi 4 / 5 を含む）。
 - **セキュリティ設計書:** <https://lafine.net/linux/whitepaper> — 「外部送信データゼロ」の
   コードレベル監査と破壊的セルフテストの結果
   （[audit/RESULTS-LINUX-2026-09-02.ja.md](audit/RESULTS-LINUX-2026-09-02.ja.md)）を収録。

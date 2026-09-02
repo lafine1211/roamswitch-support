@@ -91,9 +91,10 @@ security audit, and a read‑only MCP server.
 - **Free — "Community Edition"**, every feature unlocked, no activation. Proprietary
   freeware (bundled EULA); the source is not published.
 - **Download & docs:** <https://lafine.net/linux>
-- **Install:** APT (`lafine.net/apt`), DNF / zypper (`lafine.net/rpm`), or AUR
-  (`roamswitch-bin`). Requires Ubuntu 22.04+ / Debian 12+ or a compatible
-  systemd + nftables distro; x86_64 / aarch64 (incl. Raspberry Pi 4 / 5).
+- **Install:** APT (`lafine.net/apt`) or DNF / zypper (`lafine.net/rpm`); on Arch,
+  build from the bundled PKGBUILD (the AUR package `roamswitch-bin` is pending).
+  Requires Ubuntu 22.04+ / Debian 12+ or a compatible systemd + nftables distro;
+  x86_64 / aarch64 (incl. Raspberry Pi 4 / 5).
 - **Security whitepaper:** <https://lafine.net/linux/whitepaper>
   ([EN](https://lafine.net/linux/whitepaper.en)) — includes a code‑level audit of
   "zero data sent off the machine" and the destructive self‑test results
