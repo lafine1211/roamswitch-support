@@ -13,6 +13,30 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.0.7
+
+- **Important bug fix**: the BadUSB / USB keyboard guard, when it saw a keyboard
+  that wasn't on the allow‑list, disconnected that device at the kernel level.
+  On a combined keyboard+mouse receiver (common on Raspberry Pi and mini PCs)
+  **the mouse went with it**, and a machine with no built‑in input became
+  unusable. Now:
+  - Kernel‑level disconnection of a keyboard is gone. Instead, only the
+    **keystrokes** of an unapproved keyboard are held (the device stays powered;
+    the mouse and any other keyboard keep working) and an **approval dialog** is
+    shown (the same model as the Mac edition). "Allow" enables input and adds it
+    to the allow‑list; "Deny" keeps it blocked. If nothing answers within 3
+    minutes it releases automatically (so a headless box is never stuck). It
+    does not block if there is no other usable keyboard.
+  - Fixed a plain USB mouse being mistaken for a keyboard and blocked.
+  - Devices disconnected by a previous version are restored automatically on
+    the first launch after updating.
+  - The BadUSB keyboard guard now **defaults to off** (add your keyboards to
+    the allow‑list in the first‑run wizard, then enable it).
+- **Added confirmation dialogs when toggling a guard** (matching the Mac
+  edition): ARP auto‑containment, the port anomaly guard, the USB storage /
+  keyboard guards, Bluetooth auto‑off, DNS threat protection, and weakening the
+  link‑protection mode all now ask first.
+
 ### 1.0.6
 
 - **Added the port anomaly guard** (on by default). It learns which programs
