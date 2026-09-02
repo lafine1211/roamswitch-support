@@ -13,6 +13,17 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.0.12
+
+- **ARP spoofing detection now matches the macOS response model.** In Lockdown
+  it still cuts all traffic (Air-Gap) immediately; on Balanced / trusted
+  networks it **notifies instead of cutting**, and you trigger the emergency
+  Air-Gap from RoamSwitch yourself. This stops a router reboot or access-point
+  switch from triggering it by mistake, and stops an attacker from using a
+  single spoofed ARP packet to knock you offline.
+- **Bug fix**: the ARP spoofing auto-containment ran even when the setting was
+  turned off (the daemon wasn't checking the config switch).
+
 ### 1.0.11
 
 - **The gateway ARP lock is now a full preventive anti-MITM measure.** On an
