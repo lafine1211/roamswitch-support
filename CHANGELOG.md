@@ -134,6 +134,14 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 
 ## RoamSwitch for Mac
 
+## 1.7.3
+
+- Fixed "Link Guard" (added in 1.7.2) not appearing in the menu bar. The
+  blocking engine itself was running in 1.7.2, but the UI for the mode switch
+  (Off / Warn only / Auto-block), the scam-list version, and the auto-update
+  toggle was missing. It's now under "Malware Protection" → "Link Guard".
+- Renamed the manual check item to "Check a link manually…".
+
 ## 1.7.2
 
 - 🔗 Added the passive Link Guard (auto-blocks phishing connections) (Pro):
