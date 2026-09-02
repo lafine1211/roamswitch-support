@@ -13,6 +13,25 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.0.6
+
+- **Added the port anomaly guard** (on by default). It learns which programs
+  are listening when you enable it ("known"), then detects any *new, unknown*
+  program that starts exposing a port to the LAN (a backdoor / C2, a dev server
+  accidentally bound to `0.0.0.0`, …) and automatically blocks external access
+  to just that port — this machine and localhost keep working. A notification
+  lets you allow it from the "Port & DevIsolator" tab if you started it
+  yourself. It runs regardless of whether the network is trusted. Disable it
+  with `portAnomalyGuardEnabled: false` in `config.json` (which also releases
+  every port it blocked); "Re-learn baseline" re-captures what's listening.
+- Fixed the bundled threat feed being empty: a fresh install now blocks
+  phishing / scam sites immediately (previously only the offline heuristics
+  worked until the first daily-updater run or `apt upgrade`).
+- Fixed an internal firewall helper table sometimes lingering after switching
+  link protection to `off`.
+- Tidied up UI copy (the Linux edition is a fully free Community Edition, so a
+  few stray "(Pro)" labels were removed).
+
 ### 1.0.5
 
 - **Added the passive link guard** (on by default). It watches where outbound
