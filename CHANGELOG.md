@@ -100,6 +100,15 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 
 ## RoamSwitch for Mac
 
+## 1.7.2
+
+- 🔗 Added the passive Link Guard (auto-blocks phishing connections) (Pro):
+  - Automatically blocks connections to phishing and scam sites on-device, based on a list of known scam sites and brand-impersonation domain checks. The privileged helper adds the domains to a managed section of `/etc/hosts` pointing at `0.0.0.0` — no Apple Network Extension entitlement required — so the block applies across every browser and app.
+  - From "Link Guard" in the menu bar you can choose "Off", "Warn only (don't block)", or "Auto-block obvious scam sites (recommended)". **The default is now auto-block.** Only clear cases are blocked — a listing in the threat feed, or a brand-name homograph — everything else is a warning. A wrong block can be allowed in one click from the notification or the menu (5 minutes or permanent).
+  - The verdict engine and threat feed are shared with the Linux edition.
+- 📡 The threat feed now uses a dedicated Ed25519 signing key, separate from the app-update key. The feed is fetched once a day, receive-only (nothing sent, no identifiers). Turning off "Auto-update" drops external traffic to zero; the feature runs on bundled data (~280 entries) plus homograph detection.
+- 🌐 New UI and help strings localized in all 10 languages.
+
 ## 1.7.1
 
 - 🚀 Smoother first-time setup (privileged helper approval):
