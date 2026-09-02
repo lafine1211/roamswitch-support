@@ -2,7 +2,9 @@
 
 > RoamSwitch がどのような権限で動作し、その境界で何を行っているのかを説明する技術文書です。 宣伝的な表現は使わず、記載した内容はすべて、配布中のアプリのバイナリと実際の動作から確認できるようにしています。
 
-**版** v1（初版） · **対象** RoamSwitch 1.7.1 (build 41) · **要件** macOS 13.0+ / Apple Silicon · **発行** 2026-09-01 · **Team ID** GV76B6G4YU
+**版** v1.1 · **対象** RoamSwitch 1.7.3 (build 43) · **要件** macOS 13.0+ / Apple Silicon · **発行** 2026-09-03 · **Team ID** GV76B6G4YU
+
+*v1.1: リンク保護（§5、フィッシング接続の `/etc/hosts` 遮断）と、その脅威フィード（§7・§11、受信専用の日次取得、フィード専用署名鍵）を追記。*
 
 *正規版（整形済み）: <https://lafine.net/security.html>。この Markdown はその Git 履歴のためのミラーで、内容は同一です。*
 
@@ -100,6 +102,7 @@ identifier "com.tetsuharu.RoamSwitch"
 | enableNetworkAirGap(...) disableNetworkAirGap(...) | 緊急時の全遮断（`block drop all`）の適用・解除。`PFRulesetCoordinator` を経由します（§4） | /sbin/pfctl -f / -e / -sr |
 | setGuardedDevServerPorts(_:) | 指定した開発サーバーポートへの**外部からの**接続だけを pf で遮断します（localhost は素通し）。空配列を渡すと全解除します | /sbin/pfctl（同じく Coordinator 経由） |
 | setSecureDNSServers(_:) restoreOriginalDNSServers(...) getCurrentDNSServers(...) | アクティブなネットワークサービスの DNS を、マルウェア遮断 DNS（Quad9 `9.9.9.9` / Cloudflare `1.1.1.2`）へ切り替え、元の設定をバックアップして復元します | /usr/sbin/networksetup -listallnetworkservices / -getdnsservers / -setdnsservers |
+| setLinkGuardSinkhole(_:) | リンク保護（§5）。渡されたフィッシング／詐欺ドメインを `/etc/hosts` の区切り付き管理セクションに `0.0.0.0` で書き込み、DNS キャッシュをフラッシュします。空配列でセクションを削除。ドメインは正規化・重複排除し、IP や不正な文字列は捨て、上限 6 万件でキャップします。書き込みは一時ファイル + アトミック置換 | /etc/hosts の書き換え（`FileManager.replaceItemAt`）／ /usr/bin/dscacheutil -flushcache ／ /usr/bin/killall -HUP mDNSResponder |
 | terminateProcess(pid:forceKill:) | プロセスの一時停止（SIGSTOP）または強制終了（SIGKILL）。ランサムウェア様プロセスの封じ込めに使います。`pid > 1` のみ | kill(2) システムコール（サブプロセスではありません） |
 | getHelperVersion(...) | ヘルパーのバージョン文字列を返します（アプリとの互換性確認に使います） | — |
 
@@ -136,7 +139,7 @@ pf を操作する機能は 2 つあります。緊急 Air-Gap と、開発サ�
 
 ## §5. 遮断のかかり方と、戻り方
 
-### 3 種類の遮断は、それぞれ別物です
+### 遮断は、それぞれ別物です
 
 **遮断の種類**
 
@@ -145,6 +148,7 @@ pf を操作する機能は 2 つあります。緊急 Air-Gap と、開発サ�
 | 緊急 Air-Gap | 入る通信も出る通信も、すべて止めます | ランサムウェアのような暗号化の動きや、ARP スプーフィング（＝中間者攻撃）を検知したとき。**ふだんの外出先保護では使いません**（出ていくブラウジングは残したいためです） | `set skip on lo0` で通します |
 | 開発サーバーポートガード | 指定ポートへの、**外からの** TCP 接続だけ | ボタン 1 つでの手動隔離、または、見慣れない待ち受けポートを検知したときの自動遮断（Pro） | localhost からは、今までどおりです |
 | ふだんの未信頼ネットワーク保護 | ファイアウォールとステルス、共有の停止（§6）。pf は使いません | 登録していないネットワークに接続したとき | — |
+| リンク保護 | フィッシング／詐欺ドメインへの名前解決だけ（`/etc/hosts` で `0.0.0.0`）。pf は使いません | 脅威フィード掲載またはブランド ホモグラフ偽装に該当する接続先。既定でオン（Pro） | 影響しません |
 
 ### Air-Gap を居座らせない仕組み
 
@@ -164,6 +168,17 @@ pf を操作する機能は 2 つあります。緊急 Air-Gap と、開発サ�
 ### ClamAV 検疫の完全性と衝突回避（フォールバック隔離）
 
 ダウンロードフォルダやデスクトップ、書類フォルダに新規配置されたファイルは、`.tmp` 拡張子や `com.apple.quarantine` 属性の有無（ターミナル経由のコピー等）に関わらず即座に ClamAV スキャン対象となります。また、隔離先フォルダ（`Quarantine`）に過去に隔離された同名ファイルが既に存在する場合でも、ClamAV の移動スキップを自動検知してタイムスタンプ付きのユニーク名で隔離フォルダへ確実に退避・強制移動し、脅威が元の場所に残存する検疫漏れを完全に排除します。
+
+### リンク保護（フィッシング接続の遮断） — 1.7.2 以降
+
+メニューバー →「マルウェア対策」→「リンク保護」（Pro）。フィッシング／詐欺サイトへの接続を、ブラウザやアプリを問わず端末側で遮断します。
+
+- **仕組み。**Apple の Network Extension（コンテンツフィルタ）を使わず、特権ヘルパーが `/etc/hosts` の区切り付き管理セクションに対象ドメインを `0.0.0.0` で書き込み、`dscacheutil -flushcache` と `killall -HUP mDNSResponder` でキャッシュを流します。名前解決の段階で落ちるため、その先の TCP は張られません。区切りマーカーの外にある行には触れません。
+- **3 モード。**「オフ」＝セクション削除。「警告のみ（遮断しない）」＝フィードは読み込むが `/etc/hosts` は書き換えない。「明らかな詐欺サイトは自動でブロック（推奨）」＝遮断。**1.7.2 以降の既定はブロック**。
+- **遮断は明確なケースだけ。**「脅威フィード掲載」または「ブランド名の Unicode ホモグラフ偽装」に該当するときだけブロックし、それ以外（高リスク TLD、サブドメイン偽装など）は警告に留めます。判定エンジンは Linux 版と共通で、URL をどこにも送りません。
+- **誤遮断からの戻し方。**通知またはメニューからドメインを「許可」（5 分間 or 恒久）。許可リストはセクション再生成時に差し引かれます。
+- **Pro ゲート。**遮断の適用（`applyMode()`）は Pro ライセンスが有効なときだけ行われます。非 Pro ではモード設定は保存されますが `/etc/hosts` は一切変更されません。ライセンスの有効化・失効はセッション中でも反映されます。
+- **フィードと同梱シード。**ブロック対象の一覧は署名付きの脅威フィード（§7、フィード専用鍵で検証）由来です。未取得でもアプリ同梱のシード（約 6 万件）で動作し、「自動更新」をオフにすると外部通信は発生しません。
 
 ## §6. ふだんの未信頼ネットワーク保護
 
@@ -190,12 +205,14 @@ pf を操作する機能は 2 つあります。緊急 Air-Gap と、開発サ�
 | ライセンストークン | Keychain com.tetsuharu.RoamSwitch.license | Ed25519 署名付きトークン。`kSecAttrAccessibleAfterFirstUnlock` |
 | アプリ設定 / ガードの ON-OFF | UserDefaults suite com.tetsuharu.RoamSwitch | 信頼ネットワークの登録、保護ポリシー、除外リストなど |
 | pf 状態 | /Library/Application Support/RoamSwitch/ | Air-Gap のタイムスタンプ、ガード対象ポートの JSON、適用中ルールの一時ファイル |
+| リンク保護の脅威フィード | ~/Library/Application Support/RoamSwitch/threatfeed/feed.txt | ダウンロード済みのフィッシング／詐欺ドメイン一覧（未取得ならアプリ同梱のシードを使用）。フィード版数は UserDefaults |
+| リンク保護の管理セクション | /etc/hosts | `# BEGIN RoamSwitch link guard` 〜 `# END` で囲まれた区切り付きセクション。ブロック対象を `0.0.0.0` で無効化。モード「オフ」で削除されます（§5） |
 | デバイスフォールバック UUID | UserDefaults | IOKit が UUID を返さないときにのみ生成される乱数（§9） |
 | ログ | os.Logger / NSLog | 統合ログ。外部への送信はありません |
 
 ### 外に出る通信（全リスト）
 
-診断結果、ポート情報、URL、ログを収集して送信するコードは、どこにもありません。解析 SDK も クラッシュレポーター SDK も入れていません。外部ライブラリは Sparkle（アップデート）だけです。 ネットワークに出るのは、次の 4 つですべてです。
+診断結果、ポート情報、URL、ログを収集して送信するコードは、どこにもありません。解析 SDK も クラッシュレポーター SDK も入れていません。外部ライブラリは Sparkle（アップデート）だけです。 ネットワークに出るのは、次の 5 つですべてです。
 
 **RoamSwitch が行う外部通信**
 
@@ -203,18 +220,23 @@ pf を操作する機能は 2 つあります。緊急 Air-Gap と、開発サ�
 | --- | --- | --- | --- |
 | ライセンス認証 / 解除 | lafine.net /api/v1/license/* | ユーザーがライセンスキーを入力したとき、または Pro を解除したときだけ | ライセンスキー、デバイスハッシュ、ホスト名、アプリバージョン。個人情報は購入時に Stripe が扱い、アプリは扱いません |
 | アップデート確認 | lafine.net /updates/appcast.xml | Sparkle が 24 時間ごと、および起動時に実施 | HTTP リクエスト（標準的な UA・バージョン）。取得物は EdDSA 署名で検証します（§10） |
+| リンク保護の脅威フィード | lafine.net /updates/v1/{manifest, feed/&lt;版&gt;.txt} | リンク保護（§5）が有効で「自動更新」がオンのとき、24 時間ごと（＋起動時）。「自動更新」オフでこの経路は消えます | `GET` のみ。クエリ文字列・Cookie・端末を識別する情報はありません。**受信専用**の署名付き静的ファイルです。マニフェストとフィード本体を Ed25519 で検証します。署名鍵は**フィード専用**で、アプリ更新の `SUPublicEDKey` とは**別鍵**です（漏洩時の影響を「誤ったブロックリスト」に閉じ込めるため） |
 | ClamAV ウイルス定義更新 | ClamAV 公式ミラー | ユーザーが ClamAV を導入し、スキャン機能を使うときだけ。`freshclam` を起動します | ClamAV 標準の定義取得。RoamSwitch 由来の情報は含みません |
 | 決済ページ | Stripe Checkout | ユーザーが購入ボタンを押したときだけ（ブラウザで開きます） | —（ブラウザ側の遷移です） |
 
 > **「Zero Telemetry」の範囲**
 >
-> ここで言う「Zero Telemetry」は、利用状況や診断結果を収集して送信するテレメトリを行わない、という 意味です。通信を一切しない、という意味ではありません。上の表の 4 経路は、実際に存在します。ただし、 いずれもユーザーがきっかけをつくるものか、署名検証つきのアップデート確認であり、Mac 上の診断結果、 ポート、URL、ファイルの中身が外に出ることはありません。
+> ここで言う「Zero Telemetry」は、利用状況や診断結果を収集して送信するテレメトリを行わない、という 意味です。通信を一切しない、という意味ではありません。上の表の 5 経路は、実際に存在します。ただし、 いずれもユーザーがきっかけをつくるものか、署名検証つきの**受信専用**の取得であり、Mac 上の診断結果、 ポート、URL、ファイルの中身が外に出ることはありません。
+>
+> リンク保護の脅威フィード（3 行目）は「送らない」防御に「受け取るだけの更新はする」を足したものです。両者は別の話として切り分けており、Linux 版ホワイトペーパー v1.1 の §1.1 でも「Zero Telemetry」と「受信専用の更新」を分けて記述しています。「自動更新」をオフにすれば、リンク保護は同梱データ（約 6 万件のフィッシング／詐欺ドメイン）とオフラインのホモグラフ検知だけで動作し、この経路は発生しません。
 >
 > アプリ内の「リンク安全性診断」シートは、短縮 URL の飛び先を確認するために、対象の URL へ `HEAD` リクエストを送信します（プライベートアドレスやローカルアドレスへの追跡は、v1.4.5 の SSRF 対策で停止しています）。一方、MCP の `audit_url_safety` は、その場で完結するオフライン 解析であり、URL をどこにも送信しません（§8）。
 
 ### 実測（2026-08-29）
 
 主張だけではありません。2026-08-29、稼働中の 1.4.7 を `tcpdump` ＋ プロセス帰属（`nettop` / `lsof` / 絞り込んだ `pktap` キャプチャ）＋ LuLu で、約2時間、セキュリティレベルを最大ロックダウンに固定し appcast チェックを強制発火させた状態で監査しました。**結果：`RoamSwitch` / `RoamSwitchHelper` / `RoamSwitchMCPServer` に帰属する外向きは、`lafine.net` への appcast チェック以外なし。MCP サーバーが開いたソケットはローカルホストのみ。entitlements のダンプは空。** 詳細と追試可能なスクリプト：[`audit/RESULTS-2026-08-29.ja.md`](https://github.com/lafine1211/roamswitch-support/blob/main/audit/RESULTS-2026-08-29.ja.md)、[`audit/`](https://github.com/lafine1211/roamswitch-support/tree/main/audit)。`./audit/rs-zerotel-audit.sh all` で自分のマシンでも再現できます。
+
+> この実測は 1.4.7 時点のもので、リンク保護の脅威フィード（1.7.2 で追加、上表 3 行目）はまだ存在しません。1.7.2 以降で監査すると、`lafine.net` への **受信専用の `GET` が 2 種類**（appcast と脅威フィード）観測されます。どちらも署名検証つきで、送信内容はありません。フィードを止めるには「リンク保護」→「自動更新: オフ」。
 
 ## §8. MCP サーバーのセキュリティモデル
 
@@ -328,8 +350,10 @@ device_hash = SHA-256( "RoamSwitch-LifetimeSalt-v1" : lowercase(IOPlatformUUID) 
 | 攻撃面 | 抑え方 |
 | --- | --- |
 | root で動く LaunchDaemon と、その mach service（`com.tetsuharu.RoamSwitch.Helper`） | 操作面を `HelperProtocol` に固定しています（§3 の表）。任意コマンドを実行する口はありません。接続はコード署名要件で認可し、`audit_token` を使います。 |
-| `RoamSwitch.app` 本体が侵害された場合、ヘルパーの全操作が攻撃者に渡ります | Hardened Runtime を有効にし、アプリ側に不要な権限を持たせません。ネットワーク送信は、上表の 4 経路に限定しています。今後、第三者レビューの対象にする予定です。 |
+| `RoamSwitch.app` 本体が侵害された場合、ヘルパーの全操作が攻撃者に渡ります | Hardened Runtime を有効にし、アプリ側に不要な権限を持たせません。ネットワーク送信は、上表の 5 経路に限定しています。今後、第三者レビューの対象にする予定です。 |
 | ヘルパーが起動するシステムバイナリのパス | `/sbin/pfctl` などを絶対パスで直接指定し、`PATH` には依存しません。引数もハードコードしています（ポート番号と DNS 文字列を除く）。 |
+| リンク保護が `/etc/hosts` を書き換える（`setLinkGuardSinkhole`） | 書き込みは区切り付きの管理セクション内に限定し、セクション外の行はそのまま保持します。ドメインは正規化・検証し、IP や不正文字列は捨て、6 万件でキャップ、一時ファイル + アトミック置換で書きます。適用するのは「脅威フィード掲載」または「ブランド名のホモグラフ偽装」の明確なケースだけで、判定エンジンはローカル完結です。ブロックリスト自体は署名検証済みのフィード（フィード専用鍵）に由来します。 |
+| リンク保護の脅威フィード取得（受信専用の日次 `GET`） | クエリ・識別子なしの静的ファイル取得のみ。マニフェスト・フィード本体とも Ed25519 で検証し、検証に失敗した取得物は破棄します（無署名データにフォールバックしません）。「自動更新: オフ」でこの経路自体が消えます。 |
 | MCP サーバーが LLM にシステム状態を渡すこと（confused deputy） | 読み取り専用で、書き込み API は実装していません。URL 診断はオフラインです。設定ドメインは read-only で参照します。 |
 | アップデート経路の乗っ取り | EdDSA 署名検証（`SUPublicEDKey`）と、公証チケットの同梱で対応します。appcast は HTTPS です。 |
 
@@ -421,6 +445,32 @@ nslookup test.dns9.quad9.net
 # 無害なアンチウイルス標準テスト文字列（EICAR）を Downloads に作成
 echo 'X5O!P%@AP[4\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*' > ~/Downloads/eicar_test.com
 # → FSEvents 検知により ClamAV が即時スキャンし、隔離マネージャーへ退避 & 警告通知が発火すること
+```
+
+### リンク保護（フィッシング接続の遮断）の動作確認
+
+```sh
+# 管理セクションが書かれているか（Pro + 既定モードなら BEGIN/END の 2 行）
+sudo grep -c 'RoamSwitch link guard' /etc/hosts
+
+# セクションの中身と sinkhole 件数
+sudo sed -n '/BEGIN RoamSwitch link guard/,/END RoamSwitch link guard/p' /etc/hosts | head -4
+sudo sed -n '/BEGIN RoamSwitch link guard/,/END RoamSwitch link guard/p' /etc/hosts | grep -c '^0\.0\.0\.0'
+
+# 実際に落ちているか（セクション内の 1 件で確認。無害）
+D=$(sudo sed -n '/BEGIN RoamSwitch/,/END RoamSwitch/p' /etc/hosts | awk '/^0\.0\.0\.0/{print $2; exit}')
+dscacheutil -q host -a name "$D"   # → ip_address: 0.0.0.0（名前解決が遮断されている）
+
+# メニュー →「リンク保護」→「オフ」にすると上記セクションが消えることも確認
+```
+
+### 脅威フィードの受信専用取得（署名検証つき）
+
+```sh
+# 公開フィードとマニフェスト（誰でも取得・検証可能）
+curl -s https://lafine.net/updates/v1/manifest        # version/generated/threatfeed{version,url,sha256,signature}
+curl -sI https://lafine.net/updates/v1/manifest.sig   # → text/plain
+# 送信内容はクエリ・Cookie・識別子なしの GET のみ。tcpdump 併走で確認できます
 ```
 
 ### 防御機構・ペネトレーション自動検証スイート

@@ -2,7 +2,9 @@
 
 > This document explains what privileges RoamSwitch runs with and what it does at that boundary. It contains no marketing language; everything stated here can be verified against the shipping app binary and its actual behavior.
 
-**Version** v1 (first edition) · **Covers** RoamSwitch 1.7.1 (build 41) · **Requires** macOS 13.0+ / Apple Silicon · **Published** 2026-09-01 · **Team ID** GV76B6G4YU
+**Version** v1.1 · **Covers** RoamSwitch 1.7.3 (build 43) · **Requires** macOS 13.0+ / Apple Silicon · **Published** 2026-09-03 · **Team ID** GV76B6G4YU
+
+*v1.1: adds Link Guard (§5, `/etc/hosts` blocking of phishing connections) and its threat feed (§7 / §11, a receive-only daily fetch with a feed-dedicated signing key).*
 
 *Canonical (rendered): <https://lafine.net/security.en.html>. This Markdown mirror exists for its Git history; the content is identical.*
 
@@ -101,6 +103,7 @@ The privileged operations defined in `Shared/HelperProtocol.swift` are all of th
 | enableNetworkAirGap(...) disableNetworkAirGap(...) | Applies and lifts the emergency full block (`block drop all`). Goes through `PFRulesetCoordinator` (§4) | /sbin/pfctl -f / -e / -sr |
 | setGuardedDevServerPorts(_:) | Uses pf to block only **external** connections to the given dev-server ports (localhost passes through). Passing an empty array lifts all of them | /sbin/pfctl (also via the Coordinator) |
 | setSecureDNSServers(_:) restoreOriginalDNSServers(...) getCurrentDNSServers(...) | Switches the DNS of active network services to malware-blocking DNS (Quad9 `9.9.9.9` / Cloudflare `1.1.1.2`), backing up the original settings and restoring them | /usr/sbin/networksetup -listallnetworkservices / -getdnsservers / -setdnsservers |
+| setLinkGuardSinkhole(_:) | Link Guard (§5). Writes the given phishing/scam domains into a delimited managed section of `/etc/hosts` as `0.0.0.0`, then flushes the DNS cache. An empty array removes the section. Domains are normalized and de-duplicated; IPs and junk are dropped; capped at 60,000; written via a temp file + atomic replace | rewrites /etc/hosts (`FileManager.replaceItemAt`) / /usr/bin/dscacheutil -flushcache / /usr/bin/killall -HUP mDNSResponder |
 | terminateProcess(pid:forceKill:) | Suspends (SIGSTOP) or force-quits (SIGKILL) a process. Used to contain ransomware-like processes. `pid > 1` only | kill(2) system call (not a subprocess) |
 | getHelperVersion(...) | Returns the helper's version string (used for app-compatibility checks) | — |
 
@@ -137,7 +140,7 @@ Previously the two features each loaded rules with `pfctl -f` independently, com
 
 ## §5. How a block is applied, and how it lifts
 
-### The three kinds of block are each different
+### The kinds of block are each different
 
 **Kinds of block**
 
@@ -146,6 +149,7 @@ Previously the two features each loaded rules with `pfctl -f` independently, com
 | Emergency air-gap | Stops all traffic, incoming and outgoing | When ransomware-like encryption activity, or ARP spoofing (= a man-in-the-middle attack), is detected. **Not used for everyday away-from-home protection** (outgoing browsing needs to stay available) | Passed through with `set skip on lo0` |
 | Dev-server port guard | Only **external** TCP connections to the given ports | A one-click manual isolation, or automatic blocking when an unfamiliar listening port is detected (Pro) | From localhost, unchanged |
 | Everyday untrusted-network protection | Firewall and stealth, sharing stopped (§6). pf is not used | When you connect to a network you have not registered | — |
+| Link Guard | Only name resolution of phishing/scam domains (`0.0.0.0` via `/etc/hosts`). pf is not used | A destination on the threat feed, or a brand-name homograph. On by default (Pro) | Not affected |
 
 ### How the air-gap is kept from lingering
 
@@ -165,6 +169,17 @@ If canary decoy files are tampered with or renamed and trigger the emergency air
 ### ClamAV quarantine resilience & collision handling
 
 All newly added or modified files across watched directories (Downloads, Desktop, Documents) qualify for instant ClamAV inspection regardless of `.tmp` extension naming or `com.apple.quarantine` extended attribute presence (e.g. terminal copies via `cp`, `curl`, `wget`). In the event that a previously quarantined threat with the exact same filename already exists in `~/Library/Application Support/RoamSwitch/Quarantine/`, RoamSwitch automatically detects ClamAV `--move` collision skips and falls back to isolating the new threat under a timestamped unique filename, eliminating residual infected files at the original location.
+
+### Link Guard (blocking phishing connections) — 1.7.2 and later
+
+Menu bar → "Malware Protection" → "Link Guard" (Pro). Blocks connections to phishing/scam sites on-device, across every browser and app.
+
+- **How it works.** Instead of an Apple Network Extension (content filter), the privileged helper writes the target domains into a delimited managed section of `/etc/hosts` as `0.0.0.0`, then flushes the cache with `dscacheutil -flushcache` and `killall -HUP mDNSResponder`. The name resolution fails, so the TCP connection behind it is never made. Lines outside the delimiter markers are left untouched.
+- **Three modes.** "Off" removes the section. "Warn only (don't block)" loads the feed but does not rewrite `/etc/hosts`. "Auto-block obvious scam sites (recommended)" blocks. **The default is block as of 1.7.2.**
+- **Only clear cases are blocked.** A listing on the threat feed, or a brand-name Unicode homograph — everything else (high-risk TLDs, subdomain impersonation, …) is a warning. The verdict engine is shared with the Linux edition and sends URLs nowhere.
+- **Recovering from a wrong block.** Allow a domain from the notification or the menu (5 minutes or permanent). The allow-list is subtracted when the section is regenerated.
+- **Pro-gated.** Enforcement (`applyMode()`) only happens on a valid Pro license. Without Pro the mode is stored but `/etc/hosts` is never touched. Activating or lapsing a license takes effect mid-session.
+- **Feed and bundled seed.** The block list comes from the signed threat feed (§7, verified with a feed-dedicated key). It works on the app's bundled seed (~60,000 entries) even before the first fetch, and turning off "Auto-update" means no outbound traffic.
 
 ## §6. Everyday untrusted-network protection
 
@@ -191,12 +206,14 @@ None of this is a new blocking mechanism that RoamSwitch adds — it is just tog
 | License token | Keychain com.tetsuharu.RoamSwitch.license | An Ed25519-signed token. `kSecAttrAccessibleAfterFirstUnlock` |
 | App settings / guard on-off | UserDefaults suite com.tetsuharu.RoamSwitch | Trusted-network registrations, protection policy, exclusion lists, and so on |
 | pf state | /Library/Application Support/RoamSwitch/ | The air-gap timestamp, JSON of the guarded ports, the temp file for the ruleset being applied |
+| Link Guard threat feed | ~/Library/Application Support/RoamSwitch/threatfeed/feed.txt | The downloaded phishing/scam domain list (or the app's bundled seed if not yet fetched). The feed version is in UserDefaults |
+| Link Guard managed section | /etc/hosts | A delimited section bounded by `# BEGIN RoamSwitch link guard` … `# END`, nulling blocked domains to `0.0.0.0`. Removed when the mode is "Off" (§5) |
 | Device fallback UUID | UserDefaults | A random value, generated only when IOKit does not return a UUID (§9) |
 | Logs | os.Logger / NSLog | Unified logging. Nothing is sent externally |
 
 ### Traffic that leaves the machine (the complete list)
 
-There is no code anywhere that collects and sends diagnostic results, port information, URLs, or logs. No analytics SDK and no crash-reporter SDK are included. The only external library is Sparkle (updates). What goes out to the network is these four, and that is all.
+There is no code anywhere that collects and sends diagnostic results, port information, URLs, or logs. No analytics SDK and no crash-reporter SDK are included. The only external library is Sparkle (updates). What goes out to the network is these five, and that is all.
 
 **Outbound connections RoamSwitch makes**
 
@@ -204,18 +221,23 @@ There is no code anywhere that collects and sends diagnostic results, port infor
 | --- | --- | --- | --- |
 | License activation / deactivation | lafine.net /api/v1/license/* | Only when the user enters a license key, or deactivates Pro | License key, device hash, host name, app version. Personal information is handled by Stripe at purchase; the app does not handle it |
 | Update check | lafine.net /updates/appcast.xml | Sparkle, every 24 hours and at launch | An HTTP request (a standard UA and version). The downloaded item is verified by EdDSA signature (§10) |
+| Link Guard threat feed | lafine.net /updates/v1/{manifest, feed/&lt;version&gt;.txt} | When Link Guard (§5) is on and "Auto-update" is enabled, every 24 hours (and at launch). Turning "Auto-update" off removes this path | A `GET` only. No query string, no cookies, nothing that identifies the machine. A **receive-only** signed static file. The manifest and the feed body are both verified with Ed25519. The signing key is **dedicated to the feed** — a **separate key** from the app-update `SUPublicEDKey` (so a leak is confined to "a bad blocklist") |
 | ClamAV virus-definition update | ClamAV official mirrors | Only when the user has installed ClamAV and uses the scan feature. It launches `freshclam` | A standard ClamAV definition fetch. It contains no RoamSwitch-derived information |
 | Checkout page | Stripe Checkout | Only when the user presses the buy button (it opens in the browser) | — (a browser navigation) |
 
 > **The scope of "Zero Telemetry"**
 >
-> "Zero Telemetry" here means that there is no telemetry that collects and sends usage data or diagnostic results. It does not mean there is no network traffic at all. The four paths in the table above do exist. But each of them is either something the user initiates or a signature-verified update check, and the diagnostic results, ports, URLs, and file contents on the Mac never leave it.
+> "Zero Telemetry" here means that there is no telemetry that collects and sends usage data or diagnostic results. It does not mean there is no network traffic at all. The five paths in the table above do exist. But each of them is either something the user initiates or a signature-verified, **receive-only** fetch, and the diagnostic results, ports, URLs, and file contents on the Mac never leave it.
+>
+> The Link Guard threat feed (row 3) adds "it does pull updates" on top of the "it sends nothing" defense. The two are kept separate; the Linux whitepaper v1.1 §1.1 likewise splits "Zero Telemetry" from "receive-only updates". Turn "Auto-update" off and Link Guard runs on the bundled data (~60,000 phishing/scam domains) plus offline homograph detection, and this path does not occur.
 >
 > The in-app "link safety check" sheet sends a `HEAD` request to the target URL to see where a shortened URL lands (following redirects to private or local addresses is stopped by the v1.4.5 SSRF mitigation). The MCP `audit_url_safety`, by contrast, is offline analysis that completes on the spot and sends the URL nowhere (§8).
 
 ### Measured (2026-08-29)
 
 This is not just asserted. On 2026-08-29 a running 1.4.7 install was audited with `tcpdump` + per-process attribution (`nettop` / `lsof` / a filtered `pktap` capture) + LuLu, over a ~2-hour window, with the security level pinned to Maximum Lockdown and the appcast check forced. **Result: no outbound flow attributed to `RoamSwitch`, `RoamSwitchHelper`, or `RoamSwitchMCPServer` other than the appcast check to `lafine.net`; the MCP server's only sockets were to localhost; the entitlements dumps are empty.** Full write-up and the repeatable script: [`audit/RESULTS-2026-08-29.md`](https://github.com/lafine1211/roamswitch-support/blob/main/audit/RESULTS-2026-08-29.md) and [`audit/`](https://github.com/lafine1211/roamswitch-support/tree/main/audit). Run `./audit/rs-zerotel-audit.sh all` to reproduce it on your own machine.
+
+> This measurement is from 1.4.7, before the Link Guard threat feed (added in 1.7.2, row 3 of the table above). Audited on 1.7.2 or later, you will see **two receive-only `GET`s to `lafine.net`** (the appcast and the threat feed). Both are signature-verified and send nothing. To stop the feed: "Link Guard" → "Auto-update: Off".
 
 ## §8. The MCP server security model
 
@@ -329,8 +351,10 @@ Before an update is applied, the **EdDSA signature** listed in the appcast is ve
 | Attack surface | How it is contained |
 | --- | --- |
 | A LaunchDaemon that runs as root, and its mach service (`com.tetsuharu.RoamSwitch.Helper`) | The operation surface is fixed to `HelperProtocol` (the §3 table). There is no arbitrary-command channel. Connections are authorized by a code-signing requirement, using `audit_token`. |
-| If `RoamSwitch.app` itself is compromised, all of the helper's operations pass to the attacker | Hardened Runtime is enabled, and the app is given no unnecessary privileges. Outbound traffic is limited to the four paths above. We plan to have this reviewed by a third party. |
+| If `RoamSwitch.app` itself is compromised, all of the helper's operations pass to the attacker | Hardened Runtime is enabled, and the app is given no unnecessary privileges. Outbound traffic is limited to the five paths above. We plan to have this reviewed by a third party. |
 | The system-binary paths the helper spawns | Absolute paths like `/sbin/pfctl` are specified directly, with no dependence on `PATH`. Arguments are hard-coded too (apart from port numbers and DNS strings). |
+| Link Guard rewriting `/etc/hosts` (`setLinkGuardSinkhole`) | Writes are confined to a delimited managed section; lines outside it are preserved verbatim. Domains are normalized and validated, IPs and junk are dropped, the list is capped at 60,000, and the file is written via a temp file + atomic replace. It only sinkholes clear cases (threat-feed listing or brand-name homograph), decided by a local-only verdict engine. The block list itself comes from the signature-verified threat feed (feed-dedicated key). |
+| Link Guard's threat-feed fetch (a receive-only daily `GET`) | A static-file fetch with no query string and no identifiers. The manifest and feed body are both Ed25519-verified, and a fetch that fails verification is discarded (no fallback to unsigned data). "Auto-update: Off" removes the path entirely. |
 | The MCP server passing system state to an LLM (a confused deputy) | It is read-only, with no write API implemented. URL checks are offline. The settings domain is referenced read-only. |
 | Hijacking the update path | EdDSA signature verification (`SUPublicEDKey`), plus a bundled notarization ticket. The appcast is over HTTPS. |
 
@@ -422,6 +446,32 @@ nslookup test.dns9.quad9.net
 # Write harmless industry-standard EICAR test string into Downloads directory
 echo 'X5O!P%@AP[4\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*' > ~/Downloads/eicar_test.com
 # → FSEvents triggers immediate ClamAV background scan, auto-quarantines file, and displays alert
+```
+
+### Link Guard (blocking phishing connections)
+
+```sh
+# Is the managed section written? (BEGIN/END = 2 lines, on Pro + the default mode)
+sudo grep -c 'RoamSwitch link guard' /etc/hosts
+
+# Section contents and sinkhole count
+sudo sed -n '/BEGIN RoamSwitch link guard/,/END RoamSwitch link guard/p' /etc/hosts | head -4
+sudo sed -n '/BEGIN RoamSwitch link guard/,/END RoamSwitch link guard/p' /etc/hosts | grep -c '^0\.0\.0\.0'
+
+# Is it actually taking effect? (one entry from the section; harmless)
+D=$(sudo sed -n '/BEGIN RoamSwitch/,/END RoamSwitch/p' /etc/hosts | awk '/^0\.0\.0\.0/{print $2; exit}')
+dscacheutil -q host -a name "$D"   # → ip_address: 0.0.0.0 (resolution is blocked)
+
+# Menu → "Link Guard" → "Off" should then remove the section
+```
+
+### The receive-only threat feed (signature-verified)
+
+```sh
+# The public feed and manifest (anyone can fetch and verify)
+curl -s https://lafine.net/updates/v1/manifest        # version/generated/threatfeed{version,url,sha256,signature}
+curl -sI https://lafine.net/updates/v1/manifest.sig   # → text/plain
+# What is sent is a GET with no query string, no cookies, no identifiers. Confirm with tcpdump alongside.
 ```
 
 ### Automated Defense & Penetration Verification Suite
