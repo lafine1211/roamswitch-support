@@ -13,6 +13,27 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.0.10
+
+- **Added an "Upgrade now" button to the Updates tab.** When the update check
+  finds a newer version, one click (after a graphical administrator‑password
+  prompt) runs the upgrade via apt / dnf / zypper. Copying the command to run in
+  a terminal still works as before.
+- **Reconciled behaviour with the macOS version** (`docs/MAC_PARITY.md`):
+  - Confirmation dialogs when toggling a guard on/off are back, for the same
+    guards as macOS (Port Anomaly, ARP auto‑containment, USB Storage, BadUSB
+    keyboard, Bluetooth). The 1.0.9 "dialog on every launch" bug is fixed at its
+    root cause (GTK re‑emits the toggle signal even for a programmatic state
+    sync) and the confirm was re‑implemented correctly. Bluetooth confirms on
+    enable only, matching macOS.
+  - **USB Storage Guard and Bluetooth Guard now default to OFF**, matching the
+    macOS version. Turning either on shows a confirmation dialog.
+  - Toggling DNS threat protection no longer shows a confirmation dialog
+    (matches macOS).
+- **Bug fix**: the Bluetooth guard and "gateway ARP lock" ran when joining an
+  untrusted network even if you had turned them off — the daemon was not
+  checking the config switches.
+
 ### 1.0.9
 
 - Fixed a confirmation dialog ("Enable / Disable this protection?") popping up
