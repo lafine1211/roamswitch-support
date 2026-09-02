@@ -60,6 +60,14 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 
 ## RoamSwitch for Mac
 
+## 1.7.1
+
+- 🚀 Smoother first-time setup (privileged helper approval):
+  - Added a gate that detects when RoamSwitch is running from outside the Applications folder (Downloads, the disk image, etc.) — macOS won't let the helper register from there — and guides you to fix it before the approval step, with a "Move to Applications & relaunch" button.
+  - Added recovery paths when helper approval doesn't complete: a retry button on registration failure, clearer guidance on exactly which switch to turn on, and a re-download prompt if the helper is missing.
+  - When the helper is not connected, the menu bar now shows an "⚠️ Approve the helper…" item that takes you straight to the right Settings pane.
+  - New screens and strings localized in all 10 languages.
+
 ## 1.7.0
 
 - 🔌 BadUSB & Physical Keyboard Approval Guard (`USBKeyboardGuard`):
