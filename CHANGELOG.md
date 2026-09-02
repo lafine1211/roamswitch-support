@@ -13,6 +13,17 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.0.13
+
+- **Added a VPN tunnel with a kill-switch** (the "VPN Tunnel" tab). Import a
+  WireGuard config (`.conf`) and RoamSwitch brings an encrypted tunnel up
+  automatically when you join an untrusted network (a café, public Wi-Fi). A
+  **kill-switch** blocks everything except the tunnel and its handshake until
+  the tunnel is established (and while it's down), so ARP/NDP spoofing or
+  packet sniffing sees only ciphertext. This is the primary anti-MITM defence;
+  the ARP/NDP lock and detection are secondary to it. Trusted networks are left
+  alone. Requires `wireguard-tools` (`sudo apt install wireguard-tools`, etc.).
+
 ### 1.0.12
 
 - **ARP spoofing detection now matches the macOS response model.** In Lockdown
