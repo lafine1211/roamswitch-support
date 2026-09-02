@@ -166,6 +166,15 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 
 ## RoamSwitch for Mac
 
+## 1.7.4
+
+- **USB Storage Guard no longer ejects an unknown drive outright.** An
+  unrecognised external drive is now mounted read-only and an approval prompt
+  is shown — "Allow read-write", "Allow read-only", or "Eject". Approving adds
+  it to the allow-list and applies the chosen permission (after the usual
+  ClamAV scan). This matches the Linux edition's insert-time prompt and means a
+  mistaken eject can't lose in-flight work.
+
 ## 1.7.3
 
 - Fixed "Link Guard" (added in 1.7.2) not appearing in the menu bar. The
