@@ -12,6 +12,12 @@ Linux 版（別系列・1.0.x）でバージョン番号は独立しています
 Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）。
 詳しくは <https://lafine.net/linux>。
 
+### 1.0.20
+
+- **VPN 画面（Tailscale / WireGuard）のデーモン通信不具合および Exit Node 入力 UI を修正**:
+  - VPN タブで Tailscale および WireGuard の状態取得時に「デーモンに接続できません」と誤表示され設定が読み込めなくなる IPC レスポンス解析の不具合を修正しました。
+  - Tailscale の Exit Node 選択欄を入力対応コンボボックスに改修し、Tailscale が検出した候補からのドロップダウン選択に加え、任意のホスト名や IP アドレスをキーボードから直接手動入力できるように改善しました。
+
 ### 1.0.19
 
 - **ランサムウェア暗号化検知しきい値の適正化と判定ロジックのリファクタリング**:

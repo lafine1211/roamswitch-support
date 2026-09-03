@@ -13,6 +13,12 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.0.20
+
+- **Fixed VPN status daemon IPC response parsing & upgraded Exit Node input UI**:
+  - Resolved an IPC response decoding defect where Tailscale and WireGuard tabs incorrectly reported "Cannot reach the daemon" despite the daemon service running properly.
+  - Upgraded the Tailscale Exit Node selector to an editable combo box, allowing direct manual text input of arbitrary hostnames or IP addresses in addition to auto-detected candidates.
+
 ### 1.0.19
 
 - **Optimized ransomware encryption thresholds & streamlined detection architecture**:
