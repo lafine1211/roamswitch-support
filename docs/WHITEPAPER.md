@@ -258,7 +258,7 @@ There is no code anywhere that collects and sends diagnostic results, port infor
 >
 > "Zero Telemetry" here means that there is no telemetry that collects and sends usage data or diagnostic results. It does not mean there is no network traffic at all. The six paths in the table above do exist. But each of them is either something the user initiates or a signature-verified, **receive-only** fetch, and the diagnostic results, ports, URLs, and file contents on the Mac never leave it.
 >
-> The Link Guard threat feed (row 3) adds "it does pull updates" on top of the "it sends nothing" defense. The two are kept separate; the Linux whitepaper v1.1 §1.1 likewise splits "Zero Telemetry" from "receive-only updates". Turn "Auto-update" off and Link Guard runs on the bundled data (~60,000 phishing/scam domains) plus offline homograph detection, and this path does not occur.
+> The Link Guard threat feed (row 3) adds "it does pull updates" on top of the "it sends nothing" defense. The two are kept separate; the Linux whitepaper §1.1 likewise splits "Zero Telemetry" from "receive-only updates". Turn "Auto-update" off and Link Guard runs on the bundled data (~60,000 phishing/scam domains) plus offline homograph detection, and this path does not occur.
 >
 > The VPN tunnel (row 5) only happens if the user configures their own WireGuard server; the destination and the contents are under the user's control. RoamSwitch only brings the tunnel up and holds the kill-switch — it adds no identifier and no usage data. Without a VPN configured, this path does not exist.
 >
