@@ -13,6 +13,13 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.0.18
+
+- **Prevent false positive ransomware detections & Air-Gap triggers on Chrome / Chromium**:
+  - Excluded web browser HTTP disk caches (`~/.cache/`), GPU shader caches, and IndexedDB / LevelDB storage (`.ldb`, `.sst` files) from ransomware Shannon-entropy burst heuristics.
+  - Added major web browsers (`chromium-browse`, `chrome`, `google-chrome`, `firefox`, `brave`, etc.) and Raspberry Pi OS desktop shell components (`wayfire`, `labwc`, `wf-panel-pi`, `pcmanfm-pi`, etc.) to the entropy allowlist and non-freezable process protection list.
+  - All file writes across the entire filesystem remain strictly inspected by YARA with zero bypass.
+
 ### 1.0.17
 
 - **Fixed task and tray icon display issues on Raspberry Pi OS & Linux desktop environments**:

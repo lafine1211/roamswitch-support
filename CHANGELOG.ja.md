@@ -12,6 +12,13 @@ Linux 版（別系列・1.0.x）でバージョン番号は独立しています
 Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）。
 詳しくは <https://lafine.net/linux>。
 
+### 1.0.18
+
+- **Chrome / Chromium 実行時のランサムウェア誤検知および Air-Gap 誤発動を防止**:
+  - Chrome / Chromium（Raspberry Pi OS 標準の `chromium-browser` 等）や Firefox、Brave が起動時・閲覧時に生成するディスクキャッシュ（`~/.cache/`）、GPU シェーダーキャッシュ、IndexedDB（LevelDB の `.ldb` ファイル等）をランサムウェア暗号化判定の対象から除外しました。
+  - 主要ブラウザ（`chromium-browse`, `chrome`, `google-chrome`, `firefox` 等）および Raspberry Pi OS のデスクトップ環境（`wayfire`, `labwc`, `wf-panel-pi`, `pcmanfm-pi` 等）を暗号化監視の保護対象リストに追加し、誤ったプロセス凍結（SIGSTOP）や Air-Gap 発動を防止しました。
+  - ※YARA によるマルウェア検知はゼロバイパスで引き続き漏れなく全件実施されます。
+
 ### 1.0.17
 
 - **Raspberry Pi OS / Linux デスクトップでのタスク・トレイアイコン表示不具合を修正**:
