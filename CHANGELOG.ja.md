@@ -12,6 +12,12 @@ Linux 版（別系列・1.0.x）でバージョン番号は独立しています
 Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）。
 詳しくは <https://lafine.net/linux>。
 
+### 1.0.30
+
+- **Ubuntu / GNOME 環境での起動直後タスクバーアイコン表示の即時反映**:
+  - Ubuntu（GNOME AppIndicator）において起動直後にアイコンが「...」と表示される問題を修正しました。
+  - アプリ起動直後の SNI シグナル即時配信（`update`）と、GNOME Shell が直接参照する `/usr/share/pixmaps` へのアイコン配置およびテーマパス解決を最適化し、起動直後から正しい保護モードアイコンが表示されるように改善しました。
+
 ### 1.0.29
 
 - **UI スレッドの完全非同期化（手動保護モード切替・VPN 接続時のフリーズ解消）**:

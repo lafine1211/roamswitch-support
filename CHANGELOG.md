@@ -13,6 +13,12 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.0.30
+
+- **Immediate StatusNotifierItem icon resolution on Ubuntu GNOME at startup**:
+  - Fixed an issue where the tray icon initially showed a placeholder "..." on GNOME Shell AppIndicator until the security profile changed.
+  - Added immediate DBus signal broadcast on startup and normalized icon lookup across `/usr/share/pixmaps` and scalable icon directories.
+
 ### 1.0.29
 
 - **Fully asynchronous UI actions to prevent GTK thread blocking**:
