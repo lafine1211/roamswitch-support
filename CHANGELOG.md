@@ -363,6 +363,24 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 
 ## RoamSwitch for Mac
 
+## 1.8.0
+
+- **Link Guard is now enforced by a content-filter system extension** (Pro). It
+  inspects the actual outbound connection *after* name resolution, so it blocks
+  phishing/scam sites even when the browser does its own encrypted DNS
+  (DoH/DoT); it also parses the TLS ClientHello (SNI). It needs a one-time
+  approval in System Settings (no Apple review required). The previous
+  `/etc/hosts` method stays as a fallback until the extension is approved.
+  In "Warn only" mode a suspicious connection now raises a notification with an
+  "Always block" button.
+- **The VPN tunnel backend is now selectable between WireGuard and Tailscale**
+  (Pro, off by default). Under "Ports & Device Monitoring" → "VPN Tunnel" →
+  "Backend". With Tailscale you pick an **exit node** from your existing tailnet
+  to route all traffic through the tunnel on untrusted networks. RoamSwitch
+  never runs `tailscale up` / logs in / installs it — it reads status and sets
+  the exit node. The standalone CLI (`brew install tailscale`) is recommended.
+- Helper updated to 1.8.2 — re-approve on first launch.
+
 ## 1.7.6
 
 - **Added a VPN tunnel with a kill-switch** (Pro, off by default). Import a

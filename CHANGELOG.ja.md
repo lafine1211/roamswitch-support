@@ -351,6 +351,23 @@ Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）
 
 ## RoamSwitch for Mac
 
+## 1.8.0
+
+- **リンク保護をコンテンツフィルタ機能拡張で強化**（Pro）。名前解決の後に
+  実際の外向き接続を見るため、ブラウザーが独自に DNS 暗号化（DoH／DoT）を
+  使っていてもフィッシング／詐欺サイトへの接続を遮断できます。TLS の
+  ClientHello（SNI）も検査します。初回のみシステム設定での承認が必要です
+  （Apple の申請は不要）。承認前・拒否時は従来の `/etc/hosts` 方式が
+  フォールバックとして動きます。「警告のみ」モードでは、疑わしい接続を
+  検知したときに「常にブロック」ボタン付きの通知を出します。
+- **VPN トンネルのバックエンドを WireGuard／Tailscale から選択可能に**
+  （Pro・既定オフ）。「ポート・デバイス監視」→「VPN トンネル」→
+  「バックエンド」。Tailscale を選ぶと、既存の tailnet の **Exit Node** を
+  指定して未信頼ネットワークで全通信をトンネル経由にできます。RoamSwitch は
+  `tailscale up`／ログイン／導入は行わず、状態を読んで Exit Node を設定する
+  だけです。CLI 版（`brew install tailscale`）を推奨します。
+- ヘルパーを 1.8.2 に更新。初回起動時に再承認を求めます。
+
 ## 1.7.6
 
 - **VPN トンネル（キルスイッチ付き）を追加**（Pro・既定オフ）。WireGuard の
