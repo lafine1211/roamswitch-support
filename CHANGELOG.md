@@ -13,6 +13,25 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.0.15
+
+- **Bug fix — the VPN tunnel would not connect on Ubuntu 24.04+**: the
+  WireGuard config was stored under `/etc/roamswitch/wireguard/`, which the
+  AppArmor `wg-quick` profile on Ubuntu 24.04+ / Debian 13 does not allow
+  `wg-quick` to read, so the tunnel never came up. It is now stored at the
+  standard `/etc/wireguard/roamswitch.conf`.
+- **Bug fix — the kill-switch could fail to apply**: when installing the
+  nftables kill-switch before the tunnel interface exists, the interface-name
+  match style could make the ruleset fail to load.
+- **The "protection profile switched" notification now states the reason** —
+  "an unregistered network", "your setting for the registered network X", or
+  "no network connection" (all 10 languages).
+- **Ran the hardware-equivalent verification**: in isolated network
+  namespaces, confirmed that the preventive ARP/NDP lock ignores a spoofed
+  ARP, that the kill-switch blocks off-tunnel traffic while letting the
+  WireGuard handshake through, that nothing leaks when the tunnel drops, and
+  that connectivity is restored on disconnect.
+
 ### 1.0.14
 
 - **Bug fix**: with a manually pinned protection level ("until next
