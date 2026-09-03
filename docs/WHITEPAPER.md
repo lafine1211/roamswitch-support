@@ -2,8 +2,9 @@
 
 > This document explains what privileges RoamSwitch runs with and what it does at that boundary. It contains no marketing language; everything stated here can be verified against the shipping app binary and its actual behavior.
 
-**Version** v1.2 · **Covers** RoamSwitch 1.7.6 (build 46) · **Requires** macOS 13.0+ / Apple Silicon · **Published** 2026-09-03 · **Team ID** GV76B6G4YU
+**Version** v1.3 · **Covers** RoamSwitch 1.8.0 · **Requires** macOS 13.0+ / Apple Silicon · **Published** 2026-09-03 · **Team ID** GV76B6G4YU
 
+*v1.3: adds a **NEFilterDataProvider system extension** as the link-guard enforcement point (§3 / §5 / §7) — it inspects the actual outbound TCP flow after name resolution, so it covers browsers doing their own DoH/DoT and never rewrites `/etc/hosts`. Makes the VPN backend **selectable between WireGuard and Tailscale** (§4 / §5 / §7). Helper 1.8.0.*
 *v1.2: adds the VPN tunnel + kill-switch (§4 / §5 / §7, 1.7.6), the preventive gateway ARP/NDP lock (§5, 1.7.5), and the USB storage approval prompt (§11, 1.7.4). Helper 1.6.0.*
 *v1.1: adds Link Guard (§5, `/etc/hosts` blocking of phishing connections) and its threat feed (§7 / §11, a receive-only daily fetch with a feed-dedicated signing key).*
 
@@ -104,12 +105,15 @@ The privileged operations defined in `Shared/HelperProtocol.swift` are all of th
 | enableNetworkAirGap(...) disableNetworkAirGap(...) | Applies and lifts the emergency full block (`block drop all`). Goes through `PFRulesetCoordinator` (§4) | /sbin/pfctl -f / -e / -sr |
 | setGuardedDevServerPorts(_:) | Uses pf to block only **external** connections to the given dev-server ports (localhost passes through). Passing an empty array lifts all of them | /sbin/pfctl (also via the Coordinator) |
 | setSecureDNSServers(_:) restoreOriginalDNSServers(...) getCurrentDNSServers(...) | Switches the DNS of active network services to malware-blocking DNS (Quad9 `9.9.9.9` / Cloudflare `1.1.1.2`), backing up the original settings and restoring them | /usr/sbin/networksetup -listallnetworkservices / -getdnsservers / -setdnsservers |
-| setLinkGuardSinkhole(_:) | Link Guard (§5). Writes the given phishing/scam domains into a delimited managed section of `/etc/hosts` as `0.0.0.0`, then flushes the DNS cache. An empty array removes the section. Domains are normalized and de-duplicated; IPs and junk are dropped; capped at 60,000; written via a temp file + atomic replace | rewrites /etc/hosts (`FileManager.replaceItemAt`) / /usr/bin/dscacheutil -flushcache / /usr/bin/killall -HUP mDNSResponder |
+| setLinkGuardSinkhole(_:) | Link Guard (§5) fallback path. Writes the given phishing/scam domains into a delimited managed section of `/etc/hosts` as `0.0.0.0`, then flushes the DNS cache. An empty array removes the section. Domains are normalized and de-duplicated; IPs and junk are dropped; capped at 60,000; written via a temp file + atomic replace | rewrites /etc/hosts (`FileManager.replaceItemAt`) / /usr/bin/dscacheutil -flushcache / /usr/bin/killall -HUP mDNSResponder |
+| publishLinkFilterState(feedPath:extra:allowlist:mode:sinkhole:) | Link Guard (§5, 1.8.0+). Publishes the content-filter system extension's working set to `/Library/Application Support/RoamSwitch/linkfilter/` (dir `0755`, files `0644`). `feedPath` is validated to be under `/Users/*/Library/Application Support/RoamSwitch/` then copied (not marshalled through XPC). With `sinkhole` true, also rebuilds the `/etc/hosts` fallback from the same working set (so the ~700k-host feed is never walked on the app's main actor) | file copy/write / /etc/hosts rebuild (same path as above) |
+| tailscaleReconcile(exitNode:tunnelInterface:engage:) | VPN tunnel's Tailscale backend (§5, 1.8.0+). `engage` true: install the kill-switch, then `tailscale set --exit-node=<node>`. false: clear the exit node + remove the kill-switch (never `tailscale down`). The `--exit-node` argument is restricted to alphanumerics, `.`, `-`, `:` | `tailscale set` (CLI) / /sbin/pfctl (via `PFRulesetCoordinator`, §4) |
+| tailscaleKillSwitchActive(...) | Whether the Tailscale kill-switch (`pf`) is currently loaded | — |
 | lockGatewayARP(_:) unlockGatewayARP(...) getGatewayARPLockStatus(...) | Preventive gateway ARP/NDP lock (§5). Pins the given `IP → MAC` mappings (the IPv4 gateway, the IPv6 default router, on-link DNS resolvers) as `permanent` neighbour-cache entries. IP and MAC formats are validated; a reconcile model (pins not in the request are removed). The pin set is persisted to `gateway_arp_lock.json` so it can be unlocked across an XPC reconnect | /usr/sbin/arp -s / -d, /usr/sbin/ndp -s / -d |
 | wireGuardImport(_:) wireGuardForget(...) | VPN tunnel (§5). The helper saves / deletes the WireGuard `.conf` text at `0600` | file write only |
 | wireGuardUp(endpointIPv4:endpointIPv6:port:) wireGuardDown(...) wireGuardStatus(...) | Bring the tunnel up / down / read status. The endpoint hostname is **resolved by the app** and the IP is passed to the helper (the helper's DNS can be cut by the kill-switch) | Homebrew `wg-quick up/down`, `wg show` (`wireguard-tools`; disabled if not installed) |
 | terminateProcess(pid:forceKill:) | Suspends (SIGSTOP) or force-quits (SIGKILL) a process. Used to contain ransomware-like processes. `pid > 1` only | kill(2) system call (not a subprocess) |
-| getHelperVersion(...) | Returns the helper's version string (used for app-compatibility checks; currently 1.6.0) | — |
+| getHelperVersion(...) | Returns the helper's version string (used for app-compatibility checks; currently 1.8.0) | — |
 
 > **Design trade-off**
 >
@@ -122,7 +126,7 @@ The privileged operations defined in `Shared/HelperProtocol.swift` are all of th
 
 ## §4. How the packet filter (pf) is handled
 
-Three features touch pf: the emergency air-gap, the dev-server port guard, and the VPN tunnel's kill-switch (§5, 1.7.6 and later). All of them always go through a single entry point, **`PFRulesetCoordinator`**, and never run `pfctl -f` themselves.
+Four features touch pf: the emergency air-gap, the dev-server port guard, the VPN tunnel's WireGuard kill-switch (§5, 1.7.6+), and the VPN tunnel's Tailscale kill-switch (§5, 1.8.0+). All of them always go through a single entry point, **`PFRulesetCoordinator`**, and never run `pfctl -f` themselves. The WireGuard and Tailscale kill-switches are never both up (only the selected backend's).
 
 ### Why there is a single entry point
 
@@ -133,7 +137,8 @@ Previously the two features each loaded rules with `pfctl -f` independently, com
 - **Rebuilt in full every time.** The entire required ruleset is rebuilt from the current state and applied in one shot. It is never applied as a diff.
 - **One serial queue.** Every pf change runs on the same `DispatchQueue`, so whether it came from an XPC connection, the helper's startup, or the failsafe timer, changes are processed in order.
 - **The priority is as follows (higher wins):** Emergency air-gap → `set skip on lo0` and `block drop all` (nothing else is considered)
-- VPN kill-switch → `block drop all` plus `pass quick` for only: `lo`, the tunnel interface (`utunN`), the UDP handshake to the pinned endpoint IP(s), DHCP, and ICMP
+- VPN kill-switch (WireGuard) → `block drop all` plus `pass quick` for only: `lo`, the tunnel interface (`utunN`), the UDP handshake to the pinned endpoint IP(s), DHCP, and ICMP
+- VPN kill-switch (Tailscale) → `block drop all` plus `pass quick` for only: `lo`, Tailscale's `utunN`, CGNAT `100.64.0.0/10` + `fd7a:115c:a1e0::/48`, MagicDNS `100.100.100.100:53`, STUN `udp/3478`, `udp/41641`, DERP `tcp/443`, DHCP, ICMP (wider than WireGuard's — see §5)
 - Dev-server guard → `block drop in quick proto tcp ... port { … }`
 - None → reload `/etc/pf.conf` and return pf to its original state
 - **Read back after applying.** `pfctl -sr` reads the rules back to confirm that `block drop all`, or each port's rule, is actually loaded. A case where `pfctl -f` was silently ignored is not treated as success.
@@ -155,7 +160,8 @@ Previously the two features each loaded rules with `pfctl -f` independently, com
 | VPN kill-switch | Everything except the tunnel, its handshake, DHCP, and ICMP | When the VPN tunnel (§5, Pro, off by default) is on and you join an untrusted network. Held until the tunnel is established (and while it is down) | Passed through with `set skip on lo0` |
 | Dev-server port guard | Only **external** TCP connections to the given ports | A one-click manual isolation, or automatic blocking when an unfamiliar listening port is detected (Pro) | From localhost, unchanged |
 | Everyday untrusted-network protection | Firewall and stealth, sharing stopped (§6). pf is not used | When you connect to a network you have not registered | — |
-| Link Guard | Only name resolution of phishing/scam domains (`0.0.0.0` via `/etc/hosts`). pf is not used | A destination on the threat feed, or a brand-name homograph. On by default (Pro) | Not affected |
+| Link Guard (extension, 1.8.0+) | Only outbound TCP flows to phishing/scam domains (`NEFilterDataProvider` `.drop()`). Name from OS resolution or TLS SNI, so DoH/DoT are covered; QUIC also blocked in `block` mode. pf is not used | A destination on the threat feed, or a brand-name homograph. On by default (Pro) | Not affected |
+| Link Guard (`/etc/hosts` fallback) | Only while the extension is unapproved/declined. Name resolution only (`0.0.0.0` via `/etc/hosts`). pf is not used | Same as above; capped at 60,000 | Not affected |
 | Preventive ARP/NDP lock | Only the MAC of the gateway, the IPv6 router, and on-link DNS (neighbour cache). pf is not used | On joining an untrusted network (Pro, off by default). Re-pinned on every network change | Not affected |
 
 ### How the air-gap is kept from lingering
@@ -177,12 +183,23 @@ If canary decoy files are tampered with or renamed and trigger the emergency air
 
 All newly added or modified files across watched directories (Downloads, Desktop, Documents) qualify for instant ClamAV inspection regardless of `.tmp` extension naming or `com.apple.quarantine` extended attribute presence (e.g. terminal copies via `cp`, `curl`, `wget`). In the event that a previously quarantined threat with the exact same filename already exists in `~/Library/Application Support/RoamSwitch/Quarantine/`, RoamSwitch automatically detects ClamAV `--move` collision skips and falls back to isolating the new threat under a timestamped unique filename, eliminating residual infected files at the original location.
 
-### Link Guard (blocking phishing connections) — 1.7.2 and later
+### Link Guard (blocking phishing connections) — 1.7.2 and later, hardened in 1.8.0
 
 Menu bar → "Malware Protection" → "Link Guard" (Pro). Blocks connections to phishing/scam sites on-device, across every browser and app.
 
-- **How it works.** Instead of an Apple Network Extension (content filter), the privileged helper writes the target domains into a delimited managed section of `/etc/hosts` as `0.0.0.0`, then flushes the cache with `dscacheutil -flushcache` and `killall -HUP mDNSResponder`. The name resolution fails, so the TCP connection behind it is never made. Lines outside the delimiter markers are left untouched.
-- **Three modes.** "Off" removes the section. "Warn only (don't block)" loads the feed but does not rewrite `/etc/hosts`. "Auto-block obvious scam sites (recommended)" blocks. **The default is block as of 1.7.2.**
+**There are two enforcement points, used together in priority order.**
+
+1. **Content-filter system extension (`RoamSwitchLinkFilter`, 1.8.0+, preferred once approved).** A `NEFilterDataProvider` system extension. **No Apple review** — content-filter providers have been self-serve since 2016, with no approval queue (the supervised-device restriction is iOS-only). Developer ID-signed + notarized, runs on ordinary Macs; the user approves it once in System Settings.
+   - It sees the actual outbound TCP flow *after* name resolution. The destination name comes from (a) the OS-resolved `remoteHostname`, or failing that (b) the **TLS SNI** parsed from the flow's first outbound bytes. Because of (b), a browser doing its own DoH/DoT and connecting to a bare IP is still blocked.
+   - `block` → `.drop()` the flow. `warn` → allow (see below). QUIC (UDP/443) carries an encrypted ClientHello with no readable SNI, so in `block` mode it is dropped, forcing the browser to fall back to HTTP/2 over TCP.
+   - It never rewrites `/etc/hosts`, and it attributes each flow to a process.
+   - Its working set (feed / user block additions / allow-list / mode) is published by the helper to `/Library/Application Support/RoamSwitch/linkfilter/` (root-owned, world-readable — the extension runs as root and cannot read `~/Library`). The feed body is copied by path, not marshalled through XPC (it can be hundreds of thousands of hosts).
+2. **`/etc/hosts` sinkhole (fallback, while the extension is unapproved / declined).** The privileged helper writes the target domains into a delimited managed section of `/etc/hosts` as `0.0.0.0` and flushes the cache with `dscacheutil -flushcache` / `killall -HUP mDNSResponder`. Lines outside the markers are untouched. Capped at 60,000 (the feed can be larger; the first 60,000 are used).
+
+Once the extension is active the `/etc/hosts` managed section is removed and the extension takes over. The verdict engine (feed match + homograph detection) and the signed feed are shared by both paths and with the Linux edition.
+
+- **Three modes.** "Off" disables it. "Warn only (don't block)" loads the feed and lets the connection through but notifies (below). "Auto-block obvious scam sites (recommended)" blocks. **The default is block as of 1.7.2.**
+- **Real `warn` (1.8.0+).** The extension appends each `block`/`warn` verdict to `/Library/Application Support/RoamSwitch/linkfilter/events.log` (one line per host per hour); the app tails it and raises a notification — `warn`: "…resembles a brand / on the feed (connection allowed)" with an "Always block" button; `block`: "Blocked …" with an "Allow once (5 min)" button.
 - **Only clear cases are blocked.** A listing on the threat feed, or a brand-name Unicode homograph — everything else (high-risk TLDs, subdomain impersonation, …) is a warning. The verdict engine is shared with the Linux edition and sends URLs nowhere.
 - **Recovering from a wrong block.** Allow a domain from the notification or the menu (5 minutes or permanent). The allow-list is subtracted when the section is regenerated.
 - **Pro-gated.** Enforcement (`applyMode()`) only happens on a valid Pro license. Without Pro the mode is stored but `/etc/hosts` is never touched. Activating or lapsing a license takes effect mid-session.
@@ -197,15 +214,23 @@ Menu bar → "Port & Device Monitor" → "Pin the gateway's ARP/NDP on untrusted
 - **`arp -s` is preventive; the air-gap is after the fact.** This pin exists so a spoof can't succeed; ARP-spoofing detection (`ARPSpoofContainmentManager`) and the emergency air-gap exist to "cut faster than a human" once one is seen. They run independently.
 - **Persistence.** The pin set is saved to `/Library/Application Support/RoamSwitch/gateway_arp_lock.json` so it can be unlocked across an XPC reconnect or a helper restart.
 
-### The VPN tunnel (WireGuard) and its kill-switch — 1.7.6 and later
+### The VPN tunnel (WireGuard / Tailscale) and its kill-switch — 1.7.6 and later, selectable backend in 1.8.0
 
-Menu bar → "Port & Device Monitor" → "VPN Tunnel" (Pro, off by default). This is the **primary** anti-MITM defense — it does not depend on the integrity of L2 (ARP/NDP).
+Menu bar → "Port & Device Monitor" → "VPN Tunnel" (Pro, off by default). This is the **primary** anti-MITM defense — it does not depend on the integrity of L2 (ARP/NDP). **The backend is selectable** (submenu → "Backend") between "WireGuard (config file)" and "Tailscale (Exit Node)". RoamSwitch implements no cryptography itself; it rides an existing VPN / tailnet. Only the chosen backend is armed; the other is stood down.
 
-- **How it works.** It does not use the Apple Network Extension entitlement; it drives Homebrew's `wireguard-tools` (`wg-quick` + `wireguard-go`) — the same "optional CLI via Homebrew" model as `blueutil` (the feature is disabled if it is not installed). When you import your own WireGuard config (`.conf`), the helper saves it at `0600`.
-- **Automatic.** The tunnel comes up when you join an untrusted network (protection level other than "Trusted (open)") and comes down when you return to a trusted one. Both enabling and disabling show a macOS-style confirmation dialog.
-- **Kill-switch.** Until the tunnel is established (and while it is down), pf is `block drop all` plus a `pass quick` only for `lo`, the tunnel interface, the UDP handshake to the pinned endpoint IP(s), DHCP, and ICMP. So even under ARP/NDP spoofing or packet sniffing, no plaintext leaks. The endpoint hostname is **resolved by the app** and the IP is passed to the helper (the helper's DNS does not pass while the kill-switch is up).
+**Common behaviour.** The tunnel / exit node comes up when you join an untrusted network (protection level other than "Trusted (open)") and comes down when you return to a trusted one. If the Pro license lapses, it is lifted.
+
+**(A) WireGuard backend.** It does not use the Apple Network Extension entitlement; it drives Homebrew's `wireguard-tools` (`wg-quick` + `wireguard-go`) — the same "optional CLI via Homebrew" model as `blueutil`. When you import your own WireGuard config (`.conf`), the helper saves it at `0600`.
+
+- **Kill-switch.** Until the tunnel is established (and while it is down), pf is `block drop all` plus a `pass quick` only for `lo`, the tunnel interface, the UDP handshake to the pinned endpoint IP(s), DHCP, and ICMP. The endpoint hostname is **resolved by the app** and the IP is passed to the helper (the helper's DNS does not pass while the kill-switch is up).
 - **Split-tunnel warning.** If you import a config whose `AllowedIPs` is not `0.0.0.0/0, ::/0`, it warns that some traffic will leave outside the tunnel.
-- **On license loss.** If the Pro license lapses, the tunnel and the kill-switch are lifted.
+
+**(B) Tailscale backend (1.8.0+).** For users who already run Tailscale. RoamSwitch does **not** run `tailscale up` / log in / install `tailscaled` — it reads `tailscale status --json` and, via the helper, runs `tailscale set --exit-node=<node>` / `--exit-node=` (clear). (The CLI is searched for under `/usr/local/bin`, Homebrew, and `Tailscale.app`; the `--exit-node` argument is restricted to alphanumerics, `.`, `-`, `:`.)
+
+- **An exit node is required.** Anti-MITM protection is established by choosing an exit node that routes *all* traffic through the tunnel. Without one the feature does not arm. If the chosen exit node goes offline it is disarmed automatically and you are notified (routing everything through a dead node — black-holing the connection — is worse than "not protected").
+- **Kill-switch (`pf`, `block drop all`).** Looser than the WireGuard one: Tailscale's transport can't be pinned to one endpoint IP (direct UDP to roaming peers + DERP relays over TCP 443 / UDP 3478). It permits: the Tailscale tun (`utunN` — dynamic on macOS, so at arm time the interface holding a `100.64.0.0/10` address is found via `ifconfig`), the CGNAT ranges `100.64.0.0/10` and `fd7a:115c:a1e0::/48`, MagicDNS `100.100.100.100:53`, STUN `udp/3478`, Tailscale direct `udp/41641`, DERP `tcp/443`, DHCP, ICMP. **Everything else (DNS to the local resolver, SMB, mDNS, plaintext HTTP, arbitrary TCP) is dropped.**
+- **Known limits (kill-switch).** An observer on the same L2 can infer "the fact that Tailscale is in use, the DERP region, timing" and can block or delay it — but cannot read the tunnel contents. Where direct UDP is blocked, Tailscale falls back to DERP (TCP 443).
+- Traffic through the exit node has its destination and contents under your tailnet / chosen exit node, unrelated to lafine.
 
 ## §6. Everyday untrusted-network protection
 
@@ -233,7 +258,10 @@ None of this is a new blocking mechanism that RoamSwitch adds — it is just tog
 | App settings / guard on-off | UserDefaults suite com.tetsuharu.RoamSwitch | Trusted-network registrations, protection policy, exclusion lists, and so on |
 | pf state | /Library/Application Support/RoamSwitch/ | The air-gap timestamp, JSON of the guarded ports, the VPN kill-switch state, the temp file for the ruleset being applied |
 | Link Guard threat feed | ~/Library/Application Support/RoamSwitch/threatfeed/feed.txt | The downloaded phishing/scam domain list (or the app's bundled seed if not yet fetched). The feed version is in UserDefaults |
-| Link Guard managed section | /etc/hosts | A delimited section bounded by `# BEGIN RoamSwitch link guard` … `# END`, nulling blocked domains to `0.0.0.0`. Removed when the mode is "Off" (§5) |
+| Link Guard managed section | /etc/hosts | A delimited section bounded by `# BEGIN RoamSwitch link guard` … `# END`, nulling blocked domains to `0.0.0.0`. Removed when the mode is "Off", when the extension is active, or when not Pro (§5) |
+| Link Guard extension working set (1.8.0+) | /Library/Application Support/RoamSwitch/linkfilter/{feed.txt, extra.txt, allowlist.txt, mode, events.log} | The feed / user block additions / allow-list / mode the content-filter extension reads, plus the verdict log it writes (the source for notifications). Root-owned, world-readable (no secrets). Published by the helper |
+| VPN backend selection · Tailscale exit node (1.8.0+) | UserDefaults | `RoamSwitch.VPNBackend` (`wireguard` / `tailscale`), `RoamSwitch.VPNTailscaleExitNode` (the chosen exit node's DNS name; empty = none) |
+| Tailscale kill-switch state (1.8.0+) | /Library/Application Support/RoamSwitch/pf_tailscale_killswitch.json | The Tailscale tun interface name identified while armed |
 | ARP/NDP lock pins | /Library/Application Support/RoamSwitch/gateway_arp_lock.json | The `IP → MAC` set made `permanent` by the preventive lock (§5). Deleted when unlocked |
 | WireGuard config | /Library/Application Support/RoamSwitch/ (helper area, `0600`) | The `.conf` the user imported. The endpoint hostname is also stashed in UserDefaults (the app resolves it) |
 | Device fallback UUID | UserDefaults | A random value, generated only when IOKit does not return a UUID (§9) |
@@ -251,7 +279,8 @@ There is no code anywhere that collects and sends diagnostic results, port infor
 | Update check | lafine.net /updates/appcast.xml | Sparkle, every 24 hours and at launch | An HTTP request (a standard UA and version). The downloaded item is verified by EdDSA signature (§10) |
 | Link Guard threat feed | lafine.net /updates/v1/{manifest, feed/&lt;version&gt;.txt} | When Link Guard (§5) is on and "Auto-update" is enabled, every 24 hours (and at launch). Turning "Auto-update" off removes this path | A `GET` only. No query string, no cookies, nothing that identifies the machine. A **receive-only** signed static file. The manifest and the feed body are both verified with Ed25519. The signing key is **dedicated to the feed** — a **separate key** from the app-update `SUPublicEDKey` (so a leak is confined to "a bad blocklist") |
 | ClamAV virus-definition update | ClamAV official mirrors | Only when the user has installed ClamAV and uses the scan feature. It launches `freshclam` | A standard ClamAV definition fetch. It contains no RoamSwitch-derived information |
-| VPN tunnel (§5) | The WireGuard endpoint the user configured | Only when the user has set up the VPN tunnel (Pro, off by default) and joins an untrusted network. The endpoint hostname is resolved via DNS once before the tunnel comes up | The WireGuard handshake (UDP) and the traffic inside the tunnel. **The destination is the user's own VPN server** and the contents are the user's own traffic. RoamSwitch adds no identifier and no diagnostic data |
+| VPN tunnel (§5, WireGuard backend) | The WireGuard endpoint the user configured | Only when the user has selected WireGuard for the VPN tunnel (Pro, off by default) and joins an untrusted network. The endpoint hostname is resolved via DNS once before the tunnel comes up | The WireGuard handshake (UDP) and the traffic inside the tunnel. **The destination is the user's own VPN server** and the contents are the user's own traffic. RoamSwitch adds no identifier and no diagnostic data |
+| VPN tunnel (§5, Tailscale backend, 1.8.0+) | The user's tailnet, the chosen exit node, and Tailscale's DERP relays | Only when the user has selected Tailscale and an exit node, and joins an untrusted network | Tailscale's transport (direct UDP / DERP over TCP 443) and the exit-node-routed traffic. Controlled by `tailscaled` (a separate process). **The destination is the user's tailnet / exit node**, unrelated to lafine. RoamSwitch only reads `tailscale status` and sets `--exit-node` |
 | Checkout page | Stripe Checkout | Only when the user presses the buy button (it opens in the browser) | — (a browser navigation) |
 
 > **The scope of "Zero Telemetry"**

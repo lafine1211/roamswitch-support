@@ -2,8 +2,9 @@
 
 > RoamSwitch がどのような権限で動作し、その境界で何を行っているのかを説明する技術文書です。 宣伝的な表現は使わず、記載した内容はすべて、配布中のアプリのバイナリと実際の動作から確認できるようにしています。
 
-**版** v1.2 · **対象** RoamSwitch 1.7.6 (build 46) · **要件** macOS 13.0+ / Apple Silicon · **発行** 2026-09-03 · **Team ID** GV76B6G4YU
+**版** v1.3 · **対象** RoamSwitch 1.8.0 · **要件** macOS 13.0+ / Apple Silicon · **発行** 2026-09-03 · **Team ID** GV76B6G4YU
 
+*v1.3: リンク保護の強制ポイントに **NEFilterDataProvider システム拡張**を追加（§3・§5・§7）——名前解決後の TCP フローを直接見るため DoH／DoT を使うブラウザも遮断でき、`/etc/hosts` を書き換えない。VPN バックエンドを **WireGuard／Tailscale から選択可能**に（§4・§5・§7）。ヘルパー 1.8.0。*
 *v1.2: VPN トンネル + キルスイッチ（§4・§5・§7、1.7.6）、予防的ゲートウェイ ARP/NDP 固定（§5、1.7.5）、USB ストレージの承認プロンプト（§11、1.7.4）を追記。ヘルパー 1.6.0。*
 *v1.1: リンク保護（§5、フィッシング接続の `/etc/hosts` 遮断）と、その脅威フィード（§7・§11、受信専用の日次取得、フィード専用署名鍵）を追記。*
 
@@ -103,12 +104,15 @@ identifier "com.tetsuharu.RoamSwitch"
 | enableNetworkAirGap(...) disableNetworkAirGap(...) | 緊急時の全遮断（`block drop all`）の適用・解除。`PFRulesetCoordinator` を経由します（§4） | /sbin/pfctl -f / -e / -sr |
 | setGuardedDevServerPorts(_:) | 指定した開発サーバーポートへの**外部からの**接続だけを pf で遮断します（localhost は素通し）。空配列を渡すと全解除します | /sbin/pfctl（同じく Coordinator 経由） |
 | setSecureDNSServers(_:) restoreOriginalDNSServers(...) getCurrentDNSServers(...) | アクティブなネットワークサービスの DNS を、マルウェア遮断 DNS（Quad9 `9.9.9.9` / Cloudflare `1.1.1.2`）へ切り替え、元の設定をバックアップして復元します | /usr/sbin/networksetup -listallnetworkservices / -getdnsservers / -setdnsservers |
-| setLinkGuardSinkhole(_:) | リンク保護（§5）。渡されたフィッシング／詐欺ドメインを `/etc/hosts` の区切り付き管理セクションに `0.0.0.0` で書き込み、DNS キャッシュをフラッシュします。空配列でセクションを削除。ドメインは正規化・重複排除し、IP や不正な文字列は捨て、上限 6 万件でキャップします。書き込みは一時ファイル + アトミック置換 | /etc/hosts の書き換え（`FileManager.replaceItemAt`）／ /usr/bin/dscacheutil -flushcache ／ /usr/bin/killall -HUP mDNSResponder |
+| setLinkGuardSinkhole(_:) | リンク保護（§5）のフォールバック経路。渡されたフィッシング／詐欺ドメインを `/etc/hosts` の区切り付き管理セクションに `0.0.0.0` で書き込み、DNS キャッシュをフラッシュします。空配列でセクションを削除。ドメインは正規化・重複排除し、IP や不正な文字列は捨て、上限 6 万件でキャップします。書き込みは一時ファイル + アトミック置換 | /etc/hosts の書き換え（`FileManager.replaceItemAt`）／ /usr/bin/dscacheutil -flushcache ／ /usr/bin/killall -HUP mDNSResponder |
+| publishLinkFilterState(feedPath:extra:allowlist:mode:sinkhole:) | リンク保護（§5、1.8.0〜）。コンテンツフィルタ システム拡張の作業セットを `/Library/Application Support/RoamSwitch/linkfilter/`（`0755`、ファイル `0644`）へ配信します。`feedPath` は `/Users/*/Library/Application Support/RoamSwitch/` 配下であることを検証してからコピー（XPC に本文を流さない）。`sinkhole` true なら同じ作業セットから `/etc/hosts` フォールバックも再構築します（70 万件規模のフィード全走査をアプリのメインアクターから外すため） | ファイルコピー・書き込み／ /etc/hosts 再構築（上記と同じ経路） |
+| tailscaleReconcile(exitNode:tunnelInterface:engage:) | VPN トンネルの Tailscale バックエンド（§5、1.8.0〜）。`engage` true でキルスイッチ設置 → `tailscale set --exit-node=<ノード>`。false で Exit Node クリア + キルスイッチ撤去（`tailscale down` はしません）。`exit-node` 引数は英数・`.`・`-`・`:` のみ許可 | `tailscale set`（CLI）／ /sbin/pfctl（`PFRulesetCoordinator` 経由、§4） |
 | lockGatewayARP(_:) unlockGatewayARP(...) getGatewayARPLockStatus(...) | 予防的ゲートウェイ ARP/NDP 固定（§5）。渡された `IP → MAC` の対応（IPv4 ゲートウェイ・IPv6 デフォルトルーター・同一リンク上の DNS リゾルバ）を `permanent` エントリとして近隣キャッシュに固定します。IP・MAC の形式を検証し、要求に無いピンは解除する reconcile 方式。ピン集合は `gateway_arp_lock.json` に永続化し XPC 再接続をまたいで解除できます | /usr/sbin/arp -s / -d ／ /usr/sbin/ndp -s / -d |
 | wireGuardImport(_:) wireGuardForget(...) | VPN トンネル（§5）。WireGuard の `.conf` テキストをヘルパーが `0600` で保存 / 削除します | ファイル書き込みのみ |
 | wireGuardUp(endpointIPv4:endpointIPv6:port:) wireGuardDown(...) wireGuardStatus(...) | トンネルの起動 / 停止 / 状態取得。エンドポイントのホスト名は**アプリ側で解決**して IP をヘルパーに渡します（ヘルパーの DNS はキルスイッチで切れ得るため） | Homebrew の `wg-quick up/down` ／ `wg show`（`wireguard-tools`。未導入時は無効） |
 | terminateProcess(pid:forceKill:) | プロセスの一時停止（SIGSTOP）または強制終了（SIGKILL）。ランサムウェア様プロセスの封じ込めに使います。`pid > 1` のみ | kill(2) システムコール（サブプロセスではありません） |
-| getHelperVersion(...) | ヘルパーのバージョン文字列を返します（アプリとの互換性確認に使います。現行 1.6.0） | — |
+| tailscaleKillSwitchActive(...) | Tailscale キルスイッチ（`pf`）が現在ロードされているかを返します | — |
+| getHelperVersion(...) | ヘルパーのバージョン文字列を返します（アプリとの互換性確認に使います。現行 1.8.0） | — |
 
 > **設計上のトレードオフ**
 >
@@ -121,7 +125,7 @@ identifier "com.tetsuharu.RoamSwitch"
 
 ## §4. パケットフィルタ（pf）の扱い
 
-pf を操作する機能は 3 つあります。緊急 Air-Gap、開発サーバーのポートガード、そして VPN トンネルのキルスイッチ（§5、1.7.6 以降）です。いずれも **`PFRulesetCoordinator` という 1 つの窓口**を必ず経由し、自分で `pfctl -f` を実行することはありません。
+pf を操作する機能は 4 つあります。緊急 Air-Gap、開発サーバーのポートガード、VPN トンネルの WireGuard キルスイッチ（§5、1.7.6 以降）、VPN トンネルの Tailscale キルスイッチ（§5、1.8.0 以降）です。いずれも **`PFRulesetCoordinator` という 1 つの窓口**を必ず経由し、自分で `pfctl -f` を実行することはありません。WireGuard と Tailscale のキルスイッチは同時には立ちません（選ばれたバックエンドの分だけ）。
 
 ### なぜ窓口を 1 つにしたか
 
@@ -132,7 +136,8 @@ pf を操作する機能は 3 つあります。緊急 Air-Gap、開発サーバ
 - **毎回、丸ごと組み直します。**現在の状態から、必要なルールセット全体を作り直し、一括で適用します。差分での適用は行いません。
 - **直列キューは 1 本です。**pf を変更する処理はすべて同じ `DispatchQueue` に乗るため、どの XPC 接続から来ても、ヘルパーの起動処理でも、フェイルセーフタイマーでも、順番に処理されます。
 - **優先順位は次のとおりです（上にあるものが優先されます）。** 緊急 Air-Gap → `set skip on lo0` と `block drop all`（ほかは考慮しません）
-- VPN キルスイッチ → `block drop all` ＋ 「`lo` / トンネル インターフェース（`utunN`）／ 固定したエンドポイント IP への UDP ハンドシェイク ／ DHCP ／ ICMP」だけを `pass quick` で通す
+- VPN キルスイッチ（WireGuard）→ `block drop all` ＋ 「`lo` / トンネル インターフェース（`utunN`）／ 固定したエンドポイント IP への UDP ハンドシェイク ／ DHCP ／ ICMP」だけを `pass quick` で通す
+- VPN キルスイッチ（Tailscale）→ `block drop all` ＋ 「`lo` / Tailscale の `utunN` / CGNAT `100.64.0.0/10`・`fd7a:115c:a1e0::/48` / MagicDNS `100.100.100.100:53` / STUN `udp/3478` / `udp/41641` / DERP `tcp/443` / DHCP / ICMP」だけを `pass quick` で通す（WireGuard より広め、理由は §5）
 - 開発サーバーガード → `block drop in quick proto tcp ... port { … }`
 - どれもない場合 → `/etc/pf.conf` を読み直し、pf を元の状態に戻します
 - **適用したあとに読み返します。**`pfctl -sr` でルールを読み戻し、`block drop all` や各ポートのルールが実際に載っているかを確認します。`pfctl -f` が黙って無視された場合を「成功」とは扱いません。
@@ -154,7 +159,8 @@ pf を操作する機能は 3 つあります。緊急 Air-Gap、開発サーバ
 | VPN キルスイッチ | トンネルとハンドシェイク・DHCP・ICMP 以外の全通信 | VPN トンネル（§5、Pro・既定オフ）が有効で、未信頼ネットワークに接続したとき。トンネル確立まで（および切断時）継続 | `set skip on lo0` で通します |
 | 開発サーバーポートガード | 指定ポートへの、**外からの** TCP 接続だけ | ボタン 1 つでの手動隔離、または、見慣れない待ち受けポートを検知したときの自動遮断（Pro） | localhost からは、今までどおりです |
 | ふだんの未信頼ネットワーク保護 | ファイアウォールとステルス、共有の停止（§6）。pf は使いません | 登録していないネットワークに接続したとき | — |
-| リンク保護 | フィッシング／詐欺ドメインへの名前解決だけ（`/etc/hosts` で `0.0.0.0`）。pf は使いません | 脅威フィード掲載またはブランド ホモグラフ偽装に該当する接続先。既定でオン（Pro） | 影響しません |
+| リンク保護（拡張、1.8.0〜） | フィッシング／詐欺ドメインへの外向き TCP フローだけ（`NEFilterDataProvider` が `.drop()`）。名前は OS 解決名または TLS SNI から得るため DoH／DoT も対象。`block` 時は QUIC も遮断。pf は使いません | 脅威フィード掲載またはブランド ホモグラフ偽装に該当する接続先。既定でオン（Pro） | 影響しません |
+| リンク保護（`/etc/hosts` フォールバック） | 拡張が未承認・拒否のときだけ。名前解決だけ（`/etc/hosts` で `0.0.0.0`）。pf は使いません | 同上。上限 6 万件 | 影響しません |
 | 予防的 ARP/NDP 固定 | ゲートウェイ・IPv6 ルーター・同一リンク上 DNS の MAC のみ（近隣キャッシュ）。pf は使いません | 未信頼ネットワークに接続したとき（Pro・既定オフ）。ネットワーク変更ごとに再固定 | 影響しません |
 
 ### Air-Gap を居座らせない仕組み
@@ -176,12 +182,23 @@ pf を操作する機能は 3 つあります。緊急 Air-Gap、開発サーバ
 
 ダウンロードフォルダやデスクトップ、書類フォルダに新規配置されたファイルは、`.tmp` 拡張子や `com.apple.quarantine` 属性の有無（ターミナル経由のコピー等）に関わらず即座に ClamAV スキャン対象となります。また、隔離先フォルダ（`Quarantine`）に過去に隔離された同名ファイルが既に存在する場合でも、ClamAV の移動スキップを自動検知してタイムスタンプ付きのユニーク名で隔離フォルダへ確実に退避・強制移動し、脅威が元の場所に残存する検疫漏れを完全に排除します。
 
-### リンク保護（フィッシング接続の遮断） — 1.7.2 以降
+### リンク保護（フィッシング接続の遮断） — 1.7.2 以降、1.8.0 で強化
 
 メニューバー →「マルウェア対策」→「リンク保護」（Pro）。フィッシング／詐欺サイトへの接続を、ブラウザやアプリを問わず端末側で遮断します。
 
-- **仕組み。**Apple の Network Extension（コンテンツフィルタ）を使わず、特権ヘルパーが `/etc/hosts` の区切り付き管理セクションに対象ドメインを `0.0.0.0` で書き込み、`dscacheutil -flushcache` と `killall -HUP mDNSResponder` でキャッシュを流します。名前解決の段階で落ちるため、その先の TCP は張られません。区切りマーカーの外にある行には触れません。
-- **3 モード。**「オフ」＝セクション削除。「警告のみ（遮断しない）」＝フィードは読み込むが `/etc/hosts` は書き換えない。「明らかな詐欺サイトは自動でブロック（推奨）」＝遮断。**1.7.2 以降の既定はブロック**。
+**強制ポイントは 2 つあり、優先順に併用します。**
+
+1. **コンテンツフィルタ システム拡張（`RoamSwitchLinkFilter`、1.8.0〜、承認後に優先）。**`NEFilterDataProvider` の system extension です。**Apple の申請は不要**——コンテンツフィルタ プロバイダは 2016 年からセルフサービスで、審査キューはありません（監視対象デバイス限定という制約は iOS 側だけの話）。Developer ID 署名 + notarization 済みで、一般の Mac で動きます。初回のみシステム設定での承認が要ります。
+   - 名前解決の**後**に、実際の外向き TCP フローを見ます。宛先の名前は (a) OS が解決した `remoteHostname`、無ければ (b) 外向き最初のバイト列から **TLS ClientHello の SNI** をパースして得ます。(b) があるので、ブラウザが自前で DoH／DoT 解決して生 IP に繋ぐケースも遮断できます。
+   - `block` 時はフローを `.drop()`。`warn` 時は通します（下記）。QUIC（UDP/443）は ClientHello が暗号化されていて SNI を読めないため、`block` モードでは drop してブラウザを HTTP/2（TCP）にフォールバックさせます。
+   - `/etc/hosts` は書き換えません。プロセス単位の帰属が取れます。
+   - フィルタの作業セット（フィード／ユーザー追加ブロック／許可リスト／モード）は、ヘルパーが `/Library/Application Support/RoamSwitch/linkfilter/` に配信します（root 所有・誰でも読める。拡張は root で動き `~/Library` を読めないため）。フィード本文は XPC で流さず、パスを渡してヘルパーがコピーします（本文は 70 万件規模になり得るため）。
+2. **`/etc/hosts` シンクホール（フォールバック、拡張が未承認・拒否のとき）。**特権ヘルパーが `/etc/hosts` の区切り付き管理セクションに対象ドメインを `0.0.0.0` で書き込み、`dscacheutil -flushcache` と `killall -HUP mDNSResponder` でキャッシュを流します。名前解決の段階で落ちます。区切りマーカーの外にある行には触れません。上限 6 万件（フィードはそれより大きい場合があり、先頭 6 万件が入ります）。
+
+拡張が有効になると `/etc/hosts` の管理セクションは撤去され、以降は拡張が担当します。判定エンジン（フィード照合 + ホモグラフ検知）と署名付きフィードは両経路・Linux 版と共通です。
+
+- **3 モード。**「オフ」＝無効。「警告のみ（遮断しない）」＝フィードは読み込み、該当接続は**通す**が通知する（下記）。「明らかな詐欺サイトは自動でブロック（推奨）」＝遮断。**1.7.2 以降の既定はブロック**。
+- **実 `warn`（1.8.0〜）。**拡張は `block`／`warn` の判定を `/Library/Application Support/RoamSwitch/linkfilter/events.log` に追記し（ホスト単位 1 時間デデュープ）、アプリがこれを追尾して通知を出します——`warn` は「〜はブランド偽装／詐欺サイトの疑い（接続は許可）」＋「常にブロック」ボタン、`block` は「〜をブロックしました」＋「今回は許可（5 分）」ボタン。
 - **遮断は明確なケースだけ。**「脅威フィード掲載」または「ブランド名の Unicode ホモグラフ偽装」に該当するときだけブロックし、それ以外（高リスク TLD、サブドメイン偽装など）は警告に留めます。判定エンジンは Linux 版と共通で、URL をどこにも送りません。
 - **誤遮断からの戻し方。**通知またはメニューからドメインを「許可」（5 分間 or 恒久）。許可リストはセクション再生成時に差し引かれます。
 - **Pro ゲート。**遮断の適用（`applyMode()`）は Pro ライセンスが有効なときだけ行われます。非 Pro ではモード設定は保存されますが `/etc/hosts` は一切変更されません。ライセンスの有効化・失効はセッション中でも反映されます。
@@ -196,15 +213,23 @@ pf を操作する機能は 3 つあります。緊急 Air-Gap、開発サーバ
 - **`arp -s` は予防、Air-Gap は事後。**この固定は「なりすましを成立させない」ための予防策で、ARP スプーフィング検知（`ARPSpoofContainmentManager`）と緊急 Air-Gap は「検知したら人間より速く切る」ための事後策です。両者は独立して動きます。
 - **永続化。**ピン集合は `/Library/Application Support/RoamSwitch/gateway_arp_lock.json` に保存され、XPC 再接続やヘルパー再起動をまたいで解除できます。
 
-### VPN トンネル（WireGuard）とキルスイッチ — 1.7.6 以降
+### VPN トンネル（WireGuard／Tailscale）とキルスイッチ — 1.7.6 以降、1.8.0 でバックエンド選択
 
-メニューバー →「ポート・デバイス監視」→「VPN トンネル」（Pro・既定オフ）。L2（ARP/NDP）の完全性に依存しない、中間者攻撃対策の**本命**です。
+メニューバー →「ポート・デバイス監視」→「VPN トンネル」（Pro・既定オフ）。L2（ARP/NDP）の完全性に依存しない、中間者攻撃対策の**本命**です。**バックエンドは「WireGuard（設定ファイル）」または「Tailscale（Exit Node）」から選べます**（サブメニュー →「バックエンド」）。RoamSwitch 自身は暗号処理を実装せず、既存の VPN／tailnet に相乗りします。選ばれた方だけを arm し、他方は stand down します。
 
-- **仕組み。**Apple の Network Extension エンタイトルメントは使わず、Homebrew の `wireguard-tools`（`wg-quick` + `wireguard-go`）を呼び出します（`blueutil` と同じ「Homebrew 経由の任意 CLI」モデル。未導入なら機能は無効）。ユーザーが自分の WireGuard 設定（`.conf`）を読み込むと、ヘルパーが `0600` で保存します。
-- **自動適用。**未信頼ネットワーク（保護レベルが「信頼（オープン）」以外）に接続するとトンネルを起動し、信頼済みネットワークに戻すと停止します。有効化・無効化ともに Mac パターンの確認ダイアログを出します。
-- **キルスイッチ。**トンネルが確立するまで（および切断時）、pf の `block drop all` に「`lo` ／ トンネル インターフェース ／ 固定したエンドポイント IP への UDP ハンドシェイク ／ DHCP ／ ICMP」だけの `pass quick` を足した状態にします。したがって、ARP/NDP スプーフィングやパケット盗聴があっても、平文が漏れることはありません。エンドポイントのホスト名は**アプリ側で解決**して IP をヘルパーに渡します（キルスイッチ中はヘルパーの DNS が通らないため）。
+**共通の動き。**未信頼ネットワーク（保護レベルが「信頼（オープン）」以外）に接続するとトンネル／Exit Node を起動し、信頼済みネットワークに戻すと停止します。Pro ライセンスが失効すると解除されます。
+
+**(A) WireGuard バックエンド。**Apple の Network Extension エンタイトルメントは使わず、Homebrew の `wireguard-tools`（`wg-quick` + `wireguard-go`）を呼び出します（`blueutil` と同じ「Homebrew 経由の任意 CLI」モデル。未導入なら機能は無効）。ユーザーが自分の WireGuard 設定（`.conf`）を読み込むと、ヘルパーが `0600` で保存します。
+
+- **キルスイッチ。**トンネルが確立するまで（および切断時）、pf の `block drop all` に「`lo` ／ トンネル インターフェース ／ 固定したエンドポイント IP への UDP ハンドシェイク ／ DHCP ／ ICMP」だけの `pass quick` を足した状態にします。ARP/NDP スプーフィングやパケット盗聴があっても平文は漏れません。エンドポイントのホスト名は**アプリ側で解決**して IP をヘルパーに渡します（キルスイッチ中はヘルパーの DNS が通らないため）。
 - **スプリット トンネル警告。**`AllowedIPs` が `0.0.0.0/0, ::/0` でない設定を読み込んだ場合、一部の通信がトンネル外に出る旨を警告します。
-- **ライセンス失効時。**Pro ライセンスが失効するとトンネルとキルスイッチは解除されます。
+
+**(B) Tailscale バックエンド（1.8.0〜）。**既に Tailscale を使っているユーザー向け。RoamSwitch は `tailscale up`／ログイン／`tailscaled` の導入は**行いません**——`tailscale status --json` を読み、ヘルパー経由で `tailscale set --exit-node=<ノード>`／`--exit-node=`（解除）を実行するだけです（CLI は `/usr/local/bin`、Homebrew、Tailscale.app を探索。`--exit-node` 引数は英数・`.`・`-`・`:` のみ許可）。
+
+- **Exit Node 必須。**中間者攻撃対策は「全通信を経由させる Exit Node」の指定で成立します。Exit Node を選んでいなければ機能は arm しません。選択した Exit Node がオフラインになった場合は自動で解除し通知します（死んだノードに全通信を流して黒穴にするより「未保護」の方がマシ）。
+- **キルスイッチ（`pf`、`block drop all`）。**WireGuard より許可範囲は広めです。Tailscale のトランスポートは単一エンドポイント IP に固定できない（ローミングするピアへの直結 UDP ＋ DERP リレーの TCP 443／UDP 3478）ためです。許可するのは：Tailscale の tun（`utunN`。macOS では動的なので、arm 時に `100.64.0.0/10` を持つ IF を `ifconfig` から特定）、CGNAT レンジ `100.64.0.0/10` と `fd7a:115c:a1e0::/48`、MagicDNS `100.100.100.100:53`、STUN `udp/3478`、Tailscale 直結 `udp/41641`、DERP `tcp/443`、DHCP、ICMP。**それ以外（ローカル リゾルバへの DNS、SMB、mDNS、平文 HTTP、任意 TCP）は全遮断**します。
+- **既知の限界（キルスイッチ）。**同一 L2 上の観測者は「Tailscale 利用の事実、DERP リージョン、タイミング」を推定でき、遮断・遅延も可能です——ただしトンネル内容は読めません。直結 UDP を塞がれた環境では Tailscale は DERP（TCP/443）へフォールバックします。
+- Exit Node を経由する通信の宛先・内容はユーザーの tailnet と選んだ Exit Node の管理下にあり、lafine とは無関係です。
 
 ## §6. ふだんの未信頼ネットワーク保護
 
@@ -232,7 +257,10 @@ pf を操作する機能は 3 つあります。緊急 Air-Gap、開発サーバ
 | アプリ設定 / ガードの ON-OFF | UserDefaults suite com.tetsuharu.RoamSwitch | 信頼ネットワークの登録、保護ポリシー、除外リストなど |
 | pf 状態 | /Library/Application Support/RoamSwitch/ | Air-Gap のタイムスタンプ、ガード対象ポートの JSON、VPN キルスイッチ状態、適用中ルールの一時ファイル |
 | リンク保護の脅威フィード | ~/Library/Application Support/RoamSwitch/threatfeed/feed.txt | ダウンロード済みのフィッシング／詐欺ドメイン一覧（未取得ならアプリ同梱のシードを使用）。フィード版数は UserDefaults |
-| リンク保護の管理セクション | /etc/hosts | `# BEGIN RoamSwitch link guard` 〜 `# END` で囲まれた区切り付きセクション。ブロック対象を `0.0.0.0` で無効化。モード「オフ」で削除されます（§5） |
+| リンク保護の管理セクション | /etc/hosts | `# BEGIN RoamSwitch link guard` 〜 `# END` で囲まれた区切り付きセクション。ブロック対象を `0.0.0.0` で無効化。モード「オフ」・拡張が有効なとき・非 Pro のとき削除されます（§5） |
+| リンク保護 拡張の作業セット（1.8.0〜） | /Library/Application Support/RoamSwitch/linkfilter/{feed.txt, extra.txt, allowlist.txt, mode, events.log} | コンテンツフィルタ拡張が読むフィード／ユーザー追加ブロック／許可リスト／モードと、拡張が書き通知の元になる判定ログ。root 所有・誰でも読める（秘密は含まない）。ヘルパーが配信 |
+| VPN バックエンド選択・Tailscale Exit Node（1.8.0〜） | UserDefaults | `RoamSwitch.VPNBackend`（`wireguard`／`tailscale`）、`RoamSwitch.VPNTailscaleExitNode`（選んだ Exit Node の DNS 名、空＝なし） |
+| Tailscale キルスイッチ状態（1.8.0〜） | /Library/Application Support/RoamSwitch/pf_tailscale_killswitch.json | arm 中に特定した Tailscale の tun インターフェース名 |
 | ARP/NDP 固定ピン | /Library/Application Support/RoamSwitch/gateway_arp_lock.json | 予防ロック（§5）で `permanent` 化した `IP → MAC` の集合。固定解除時に削除 |
 | WireGuard 設定 | /Library/Application Support/RoamSwitch/（ヘルパー領域、`0600`） | ユーザーが読み込んだ `.conf` の内容。エンドポイントのホスト名は UserDefaults にも退避（アプリ側で解決するため） |
 | デバイスフォールバック UUID | UserDefaults | IOKit が UUID を返さないときにのみ生成される乱数（§9） |
@@ -250,7 +278,8 @@ pf を操作する機能は 3 つあります。緊急 Air-Gap、開発サーバ
 | アップデート確認 | lafine.net /updates/appcast.xml | Sparkle が 24 時間ごと、および起動時に実施 | HTTP リクエスト（標準的な UA・バージョン）。取得物は EdDSA 署名で検証します（§10） |
 | リンク保護の脅威フィード | lafine.net /updates/v1/{manifest, feed/&lt;版&gt;.txt} | リンク保護（§5）が有効で「自動更新」がオンのとき、24 時間ごと（＋起動時）。「自動更新」オフでこの経路は消えます | `GET` のみ。クエリ文字列・Cookie・端末を識別する情報はありません。**受信専用**の署名付き静的ファイルです。マニフェストとフィード本体を Ed25519 で検証します。署名鍵は**フィード専用**で、アプリ更新の `SUPublicEDKey` とは**別鍵**です（漏洩時の影響を「誤ったブロックリスト」に閉じ込めるため） |
 | ClamAV ウイルス定義更新 | ClamAV 公式ミラー | ユーザーが ClamAV を導入し、スキャン機能を使うときだけ。`freshclam` を起動します | ClamAV 標準の定義取得。RoamSwitch 由来の情報は含みません |
-| VPN トンネル（§5） | ユーザーが設定した WireGuard エンドポイント | VPN トンネル（Pro・既定オフ）を設定し、未信頼ネットワークに接続したときだけ。トンネル起動前にエンドポイントのホスト名を 1 回 DNS 解決します | WireGuard のハンドシェイク（UDP）とトンネル内の通信。**宛先はユーザー自身の VPN サーバー**で、内容はユーザーの通信そのものです。RoamSwitch は識別子・診断結果を一切足しません |
+| VPN トンネル（§5、WireGuard バックエンド） | ユーザーが設定した WireGuard エンドポイント | VPN トンネル（Pro・既定オフ）で WireGuard を選び、未信頼ネットワークに接続したときだけ。トンネル起動前にエンドポイントのホスト名を 1 回 DNS 解決します | WireGuard のハンドシェイク（UDP）とトンネル内の通信。**宛先はユーザー自身の VPN サーバー**で、内容はユーザーの通信そのものです。RoamSwitch は識別子・診断結果を一切足しません |
+| VPN トンネル（§5、Tailscale バックエンド、1.8.0〜） | ユーザーの tailnet と選んだ Exit Node、Tailscale の DERP リレー | VPN トンネルで Tailscale を選び Exit Node を指定し、未信頼ネットワークに接続したときだけ | Tailscale のトランスポート（直結 UDP／DERP over TCP 443）と Exit Node 経由の通信。制御は `tailscaled`（別プロセス）。**宛先はユーザーの tailnet／Exit Node** で lafine とは無関係。RoamSwitch は `tailscale status` を読み `--exit-node` を設定するだけ |
 | 決済ページ | Stripe Checkout | ユーザーが購入ボタンを押したときだけ（ブラウザで開きます） | —（ブラウザ側の遷移です） |
 
 > **「Zero Telemetry」の範囲**
@@ -438,6 +467,15 @@ sudo pfctl -sr
 
 # ヘルパーの状態ディレクトリ
 ls -la "/Library/Application Support/RoamSwitch/"
+
+# リンク保護 コンテンツフィルタ拡張の状態（1.8.0〜）
+systemextensionsctl list | grep -i roamswitch          # activated enabled になっているか
+ls -la "/Library/Application Support/RoamSwitch/linkfilter/"   # 作業セット（秘密は含まない）
+
+# フィルタが効いているか（フィード掲載ドメインへ system DNS と DoH の両方で）
+D=$(grep -m1 -E '\.(com|net|dev)$' "/Library/Application Support/RoamSwitch/linkfilter/feed.txt")
+curl -sS -m 8 -o /dev/null -w '%{http_code}\n' "https://$D/"                         # 接続失敗
+curl -sS -m 8 --doh-url https://cloudflare-dns.com/dns-query -o /dev/null "https://$D/" # 接続失敗（SNI 経路）
 ```
 
 ### MCP サーバーの応答（オフライン確認）
