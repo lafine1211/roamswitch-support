@@ -12,6 +12,20 @@ Linux 版（別系列・1.0.x）でバージョン番号は独立しています
 Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）。
 詳しくは <https://lafine.net/linux>。
 
+### 1.0.14
+
+- **不具合修正**: 手動で保護レベルを固定（「次回切断まで」）していると、
+  PC を起動するたびに「手動オーバーライドを解除しました」と表示され、
+  設定が解除されていました。同じネットワークに再接続した場合は解除されず、
+  実際に別のネットワークへ移動したときだけ解除されるようになりました。
+- **apt の Notice を解消**: `apt update` のたびに表示される
+  「リポジトリ … がアーキテクチャ 'i386' をサポートしないため …
+  main/binary-i386/Packages の取得をスキップ」の Notice を出さないよう、
+  apt ソース行を `arch=amd64,arm64` に限定しました（このバージョンへの
+  アップグレード時に既存の `/etc/apt/sources.list.d/roamswitch.list` も
+  自動修正されます）。手動で直す場合は次の 1 行です:
+  `sudo sed -i 's|deb \[signed-by=|deb [arch=amd64,arm64 signed-by=|' /etc/apt/sources.list.d/roamswitch.list`
+
 ### 1.0.13
 
 - **VPN トンネル（キルスイッチ付き）を追加**しました（「VPN トンネル」タブ）。

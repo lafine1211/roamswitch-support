@@ -13,6 +13,19 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.0.14
+
+- **Bug fix**: with a manually pinned protection level ("until next
+  disconnect"), every boot printed "Manual override cleared" and dropped the
+  setting. It is now kept when you reconnect to the same network and only
+  cleared when you actually move to a different network.
+- **Silenced the apt Notice** printed on every `apt update` about skipping
+  `main/binary-i386/Packages` because the repository does not support the
+  `i386` architecture. The apt source line is now scoped to
+  `arch=amd64,arm64` (upgrading to this version also fixes an existing
+  `/etc/apt/sources.list.d/roamswitch.list` automatically). To fix it by hand:
+  `sudo sed -i 's|deb \[signed-by=|deb [arch=amd64,arm64 signed-by=|' /etc/apt/sources.list.d/roamswitch.list`
+
 ### 1.0.13
 
 - **Added a VPN tunnel with a kill-switch** (the "VPN Tunnel" tab). Import a
