@@ -12,6 +12,11 @@ Linux 版（別系列・1.0.x）でバージョン番号は独立しています
 Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）。
 詳しくは <https://lafine.net/linux>。
 
+### 1.0.23
+
+- **Snap 版 Tailscale（`/snap/bin/tailscale`）の自動検出に対応**:
+  - Ubuntu 等で Snap パッケージ経由でインストールされた Tailscale（`/snap/bin/tailscale`, `/var/lib/snapd/snap/bin/tailscale`）をデーモンが自動検出し、ネイティブパッケージ同様にシームレスに Exit Node 制御およびキルスイッチを連動できるようにしました。
+
 ### 1.0.22
 
 - **セキュリティレベル切り替え時の VPN / Tailscale 自動連動および手動接続操作を改善**:

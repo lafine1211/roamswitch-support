@@ -13,6 +13,11 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.0.23
+
+- **Added auto-detection for Snap-based Tailscale installations (`/snap/bin/tailscale`)**:
+  - RoamSwitch daemon now automatically searches `/snap/bin/tailscale` and `/var/lib/snapd/snap/bin/tailscale` in addition to standard `/usr/bin` locations, ensuring full compatibility on Ubuntu and Snap-managed setups.
+
 ### 1.0.22
 
 - **Enhanced VPN / Tailscale automatic reconciliation on profile switch & manual connection controls**:
