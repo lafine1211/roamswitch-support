@@ -13,6 +13,13 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.0.31
+
+- **Tailscale VPN connection sequence & kill-switch rule optimization & VPN UI fix**:
+  - Reordered Tailscale reconciliation to set the exit node before activating the kill-switch, and permitted STUN (UDP 3478) and WireGuard (UDP 41641) in kill-switch ruleset to eliminate connection timeouts/freezes.
+  - Offloaded VPN tab periodic status refresh onto a background async channel and added button state management for responsive UI interactions.
+  - Fixed GTK3 container visibility behavior so the Exit Node selection dropdown in the Tailscale settings panel renders reliably.
+
 ### 1.0.30
 
 - **Immediate StatusNotifierItem icon resolution on Ubuntu GNOME at startup**:
