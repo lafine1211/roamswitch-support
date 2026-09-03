@@ -199,6 +199,19 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 
 ## RoamSwitch for Mac
 
+## 1.7.6
+
+- **Added a VPN tunnel with a kill-switch** (Pro, off by default). Import a
+  WireGuard config (`.conf`) and RoamSwitch brings an encrypted tunnel up
+  automatically when you join an untrusted network. A pf kill-switch blocks
+  everything except the tunnel and its handshake until the tunnel is
+  established (and while it's down), so ARP/NDP spoofing or sniffing sees only
+  ciphertext. This is the primary anti-MITM defence; the ARP/NDP lock and
+  detection are secondary to it. Trusted networks are left alone. Backed by
+  Homebrew's `wireguard-tools` (`brew install wireguard-tools`) — no Apple
+  Network Extension entitlement required. Under "Ports & Device Monitoring" →
+  "VPN Tunnel".
+
 ## 1.7.5
 
 - **Added a preventive gateway ARP/NDP lock** (Pro, off by default). When you

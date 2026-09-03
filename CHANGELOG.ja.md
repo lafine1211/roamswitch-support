@@ -188,6 +188,19 @@ Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）
 
 ## RoamSwitch for Mac
 
+## 1.7.6
+
+- **VPN トンネル（キルスイッチ付き）を追加**（Pro・既定オフ）。WireGuard の
+  設定ファイル（`.conf`）を読み込むと、未信頼ネットワークに接続したときに
+  自動で暗号化トンネルを張ります。pf キルスイッチにより、トンネルが確立する
+  まで（および切断時）はトンネルとハンドシェイク以外の通信をすべて遮断する
+  ため、ARP/NDP スプーフィングやパケット盗聴があっても内容は漏れません。
+  これが中間者攻撃対策の本命で、ARP/NDP 固定・検知はその補助という位置づけ
+  です。信頼済みネットワークではトンネルを張りません。Homebrew の
+  `wireguard-tools`（`brew install wireguard-tools`）を使用します（Apple の
+  Network Extension エンタイトルメント不要）。「ポート・デバイス監視」→
+  「VPN トンネル」から設定できます。
+
 ## 1.7.5
 
 - **予防的なゲートウェイ ARP/NDP 固定を追加**（Pro・既定オフ）。カフェや公衆
