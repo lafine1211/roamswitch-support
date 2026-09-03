@@ -12,6 +12,12 @@ Linux 版（別系列・1.0.x）でバージョン番号は独立しています
 Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）。
 詳しくは <https://lafine.net/linux>。
 
+### 1.0.29
+
+- **UI スレッドの完全非同期化（手動保護モード切替・VPN 接続時のフリーズ解消）**:
+  - メインウィンドウでの手動保護モード切り替え（Lockdown / Balanced / Open / Auto）および VPN 接続・切断操作時の IPC 通信を非同期スレッド（`call_daemon_ipc_bg` および `glib::MainContext::channel`）で処理するように改善しました。
+  - デーモン側でのファイアウォール適用や共有サービス制御、VPN 適用処理中も GTK メインスレッドが一切ブロックされず、ウィンドウが瞬時に応答するようになりました。
+
 ### 1.0.28
 
 - **信頼ネットワーク・標準保護モード時の VPN 挙動を最適化（待機状態を維持）**:

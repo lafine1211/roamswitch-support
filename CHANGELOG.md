@@ -13,6 +13,12 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.0.29
+
+- **Fully asynchronous UI actions to prevent GTK thread blocking**:
+  - Offloaded manual security profile switching (Lockdown / Balanced / Open / Auto) and VPN connect/disconnect IPC operations onto background threads with `glib::MainContext::channel`.
+  - Prevents window freeze/hang during nftables rule flush, service isolation, and Tailscale routing adjustments.
+
 ### 1.0.28
 
 - **Adjusted VPN reconciliation for trusted networks and balanced protection (Standby by default)**:
