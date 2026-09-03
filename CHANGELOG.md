@@ -13,6 +13,13 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.0.22
+
+- **Enhanced VPN / Tailscale automatic reconciliation on profile switch & manual connection controls**:
+  - Fixed daemon logic so manually switching security level (Balanced / Lockdown) immediately triggers VPN / Tailscale Exit Node reconciliation.
+  - Enabled manual "Connect now" and "Disconnect" controls for Tailscale, allowing instant activation and testing of Exit Node tunnels directly from any network.
+  - Improved active Exit Node matching logic to handle hostname / DNS name and case differences reliably.
+
 ### 1.0.21
 
 - **Fixed VPN backend switching UI synchronization & resolved main window freeze**:

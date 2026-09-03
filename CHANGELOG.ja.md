@@ -12,6 +12,13 @@ Linux 版（別系列・1.0.x）でバージョン番号は独立しています
 Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）。
 詳しくは <https://lafine.net/linux>。
 
+### 1.0.22
+
+- **セキュリティレベル切り替え時の VPN / Tailscale 自動連動および手動接続操作を改善**:
+  - セキュリティレベル（Balanced / Lockdown）を手動で切り替えた際に、設定済みの VPN（Tailscale Exit Node / WireGuard）が自動で適用・連動するようデーモン処理を修正しました。
+  - Tailscale バックエンド選択時にも「今すぐ接続」「切断」ボタンを操作可能にし、信頼済みネットワーク上からでも Exit Node トンネルを即座にテスト・手動適用できるように改善しました。
+  - Exit Node のホスト名・DNS名および大文字小文字の差異を吸収し、トンネル稼働状態（`✅ Exit Node: 経由中` / `待機中`）が正しく画面に反映されるよう判定ロジックを最適化しました。
+
 ### 1.0.21
 
 - **VPN バックエンド切り替え（WireGuard ⇔ Tailscale）時の UI 連動とメインウィンドウのフリーズを修正**:
