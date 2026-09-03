@@ -12,6 +12,11 @@ Linux 版（別系列・1.0.x）でバージョン番号は独立しています
 Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）。
 詳しくは <https://lafine.net/linux>。
 
+### 1.0.24
+
+- **Tailscale バックエンド選択時に WireGuard の設定ボタンが混ざって表示される UI 不具合を修正**:
+  - GTK コンテナの `show_all` 伝播により、Tailscale 選択中にも WireGuard 設定用ボタン（「WireGuard設定(.conf)を読み込む」「設定を削除」）が表示されてしまう問題を修正し、選択中のバックエンド専用の UI のみが確実に表示されるよう改善しました。
+
 ### 1.0.23
 
 - **Snap 版 Tailscale（`/snap/bin/tailscale`）の自動検出に対応**:

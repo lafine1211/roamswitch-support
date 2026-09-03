@@ -13,6 +13,11 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.0.24
+
+- **Fixed WireGuard configuration buttons appearing when Tailscale backend is active**:
+  - Configured GTK subpanels with proper `no_show_all` properties so WireGuard buttons (import/remove config) are strictly hidden when Tailscale is selected as the VPN backend.
+
 ### 1.0.23
 
 - **Added auto-detection for Snap-based Tailscale installations (`/snap/bin/tailscale`)**:
