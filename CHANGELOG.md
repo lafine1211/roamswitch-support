@@ -13,6 +13,27 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.0.16
+
+- **The VPN backend is now selectable — WireGuard or Tailscale** (the backend
+  chooser in the "VPN Tunnel" tab).
+  - **WireGuard**: import a config file (`.conf`) as before.
+  - **Tailscale**: if you already use Tailscale, just pick an **exit node** that
+    routes all traffic. On an untrusted network RoamSwitch routes everything
+    through that exit node and arms a kill-switch. Log in first with
+    `sudo tailscale up`. With no exit node there is no MITM protection (the UI
+    says "not protected"). If the chosen exit node goes offline, protection is
+    disarmed automatically and you're notified.
+  - The Tailscale kill-switch is looser than the WireGuard one (its transport
+    can't be pinned to one endpoint): it allows only `tailscale0`, the tailnet
+    (`100.64.0.0/10`), STUN, DERP (tcp/443), DHCP and MagicDNS — everything
+    else, DNS included, is dropped.
+  - The `tailscale` package was added to Recommends / optdepends.
+- **Verified the Tailscale kill-switch in isolated network namespaces** (SP-10,
+  16/16 PASS): off-tunnel plaintext traffic and DNS to a local resolver are
+  blocked, DERP-shaped traffic and MagicDNS are allowed, and connectivity is
+  restored correctly across enable/disable.
+
 ### 1.0.15
 
 - **Bug fix — the VPN tunnel would not connect on Ubuntu 24.04+**: the

@@ -12,6 +12,25 @@ Linux 版（別系列・1.0.x）でバージョン番号は独立しています
 Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）。
 詳しくは <https://lafine.net/linux>。
 
+### 1.0.16
+
+- **VPN のバックエンドを WireGuard と Tailscale から選べるようになりました**
+  （「VPN トンネル」タブのバックエンド選択）。
+  - **WireGuard**: これまでどおり設定ファイル（`.conf`）を読み込みます。
+  - **Tailscale**: すでに Tailscale を使っている場合、**Exit Node**（全通信を
+    経由させる出口ノード）を選ぶだけで、未信頼ネットワーク接続時に自動で全通信を
+    その Exit Node 経由にし、キルスイッチを有効にします。ログインは事前に
+    `sudo tailscale up` で済ませてください。Exit Node を指定しないと中間者攻撃
+    対策にはなりません（「保護されていません」と表示されます）。選んだ Exit Node
+    がオフラインになった場合は保護を自動解除して通知します。
+  - Tailscale のキルスイッチは、単一エンドポイントに固定できない性質上
+    WireGuard よりゆるめです（`tailscale0` / tailnet（100.64.0.0/10）/ STUN /
+    DERP(443) / DHCP / MagicDNS のみ許可、それ以外は DNS も含め全遮断）。
+  - `tailscale` パッケージを Recommends / optdepends に追加。
+- **独立ネットワーク名前空間で Tailscale キルスイッチの動作を検証**（SP-10、
+  16/16 PASS）: トンネル外の平文通信・ローカル DNS が遮断され、DERP 形の
+  通信・MagicDNS は許可されること、有効化／無効化の往復で疎通が正しく戻ること。
+
 ### 1.0.15
 
 - **不具合修正 — VPN トンネルが Ubuntu 24.04 以降で接続できない**: WireGuard の
