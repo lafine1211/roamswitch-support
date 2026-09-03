@@ -12,6 +12,12 @@ Linux 版（別系列・1.0.x）でバージョン番号は独立しています
 Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）。
 詳しくは <https://lafine.net/linux>。
 
+### 1.0.26
+
+- **Tailscale Exit Node 適用処理と稼働状態（経由中／待機中）の判定ロジックを強化**:
+  - `tailscale set --exit-node` コマンド実行時に SSH 警告を回避するフラグ（`--accept-risk=lose-ssh`）の自動フォールバックを追加し、Exit Node の適用失敗を防ぐよう改善しました。
+  - Exit Node のホスト名・DNS名・ノードIDの照合処理（`find_node` / `matches`）を刷新し、Tailscale の JSON ステータス（`ExitNodeStatus` / Peer `ExitNode` / 内部State）と確実に同期して `✅ Exit Node: 経由中` が正しく反映されるようにしました。
+
 ### 1.0.25
 
 - **タスクバー／システムトレイアイコンの動的切り替えの確実性を向上**:

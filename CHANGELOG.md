@@ -13,6 +13,12 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.0.26
+
+- **Hardened Tailscale Exit Node application and active status reconciliation**:
+  - Added `--accept-risk=lose-ssh` fallback to `tailscale set --exit-node` command execution, preventing silent exit node activation blocks on systems with Tailscale SSH enabled.
+  - Rewrote exit node identifier matching (`find_node` / `matches`) to reliably correlate `ExitNodeStatus`, Peer `ExitNode`, and internal state across host names, fully-qualified DNS names, and peer IDs.
+
 ### 1.0.25
 
 - **Enhanced StatusNotifierItem tray icon updates across all Linux desktop environments**:
