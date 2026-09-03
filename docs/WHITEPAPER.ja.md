@@ -137,7 +137,7 @@ pf を操作する機能は 4 つあります。緊急 Air-Gap、開発サーバ
 - **直列キューは 1 本です。**pf を変更する処理はすべて同じ `DispatchQueue` に乗るため、どの XPC 接続から来ても、ヘルパーの起動処理でも、フェイルセーフタイマーでも、順番に処理されます。
 - **優先順位は次のとおりです（上にあるものが優先されます）。** 緊急 Air-Gap → `set skip on lo0` と `block drop all`（ほかは考慮しません）
 - VPN キルスイッチ（WireGuard）→ `block drop all` ＋ 「`lo` / トンネル インターフェース（`utunN`）／ 固定したエンドポイント IP への UDP ハンドシェイク ／ DHCP ／ ICMP」だけを `pass quick` で通す
-- VPN キルスイッチ（Tailscale）→ `block drop all` ＋ 「`lo` / Tailscale の `utunN` / CGNAT `100.64.0.0/10`・`fd7a:115c:a1e0::/48` / MagicDNS `100.100.100.100:53` / STUN `udp/3478` / `udp/41641` / DERP `tcp/443` / DHCP / ICMP」だけを `pass quick` で通す（WireGuard より広め、理由は §5）
+- VPN キルスイッチ（Tailscale）→ `block drop all` ＋ 「`lo` / Tailscale の `utunN` / CGNAT `100.64.0.0/10`・`fd7a:115c:a1e0::/48` / DNS（`udp`/`tcp` port 53） / STUN `udp/3478` / `udp/41641` / DERP `tcp/443` / DHCP / ICMP」だけを `pass quick` で通す（WireGuard より広め、理由は §5）
 - 開発サーバーガード → `block drop in quick proto tcp ... port { … }`
 - どれもない場合 → `/etc/pf.conf` を読み直し、pf を元の状態に戻します
 - **適用したあとに読み返します。**`pfctl -sr` でルールを読み戻し、`block drop all` や各ポートのルールが実際に載っているかを確認します。`pfctl -f` が黙って無視された場合を「成功」とは扱いません。
@@ -227,7 +227,8 @@ pf を操作する機能は 4 つあります。緊急 Air-Gap、開発サーバ
 **(B) Tailscale バックエンド（1.8.0〜）。**既に Tailscale を使っているユーザー向け。RoamSwitch は `tailscale up`／ログイン／`tailscaled` の導入は**行いません**——`tailscale status --json` を読み、ヘルパー経由で `tailscale set --exit-node=<ノード>`／`--exit-node=`（解除）を実行するだけです（CLI は `/usr/local/bin`、Homebrew、Tailscale.app を探索。`--exit-node` 引数は英数・`.`・`-`・`:` のみ許可）。
 
 - **Exit Node 必須。**中間者攻撃対策は「全通信を経由させる Exit Node」の指定で成立します。Exit Node を選んでいなければ機能は arm しません。選択した Exit Node がオフラインになった場合は自動で解除し通知します（死んだノードに全通信を流して黒穴にするより「未保護」の方がマシ）。
-- **キルスイッチ（`pf`、`block drop all`）。**WireGuard より許可範囲は広めです。Tailscale のトランスポートは単一エンドポイント IP に固定できない（ローミングするピアへの直結 UDP ＋ DERP リレーの TCP 443／UDP 3478）ためです。許可するのは：Tailscale の tun（`utunN`。macOS では動的なので、arm 時に `100.64.0.0/10` を持つ IF を `ifconfig` から特定）、CGNAT レンジ `100.64.0.0/10` と `fd7a:115c:a1e0::/48`、MagicDNS `100.100.100.100:53`、STUN `udp/3478`、Tailscale 直結 `udp/41641`、DERP `tcp/443`、DHCP、ICMP。**それ以外（ローカル リゾルバへの DNS、SMB、mDNS、平文 HTTP、任意 TCP）は全遮断**します。
+- **有効化の順序。**まず `tailscale set --exit-node=<ノード>` を実行し、`tailscale status` で実際にそのノードが Exit Node として有効になるのを最大 12 秒待ってから、キルスイッチを張ります。Exit Node が有効にならなければキルスイッチは張らず、通知して撤退します（先にキルスイッチを張ると Tailscale 自身の control／DERP 接続が切れて `tailscaled` が停止するため）。
+- **キルスイッチ（`pf`、`block drop all`）。**WireGuard より許可範囲は広めです。Tailscale のトランスポートは単一エンドポイント IP に固定できない（ローミングするピアへの直結 UDP ＋ DERP リレーの TCP 443／UDP 3478）ためです。許可するのは：Tailscale の tun（`utunN`。macOS では動的なので、arm 時に `100.64.0.0/10` を持つ IF を `ifconfig` から特定）、CGNAT レンジ `100.64.0.0/10` と `fd7a:115c:a1e0::/48`、**DNS（`udp`/`tcp` port 53。`tailscaled` が control／DERP のホスト名を解決できないと停止するため）**、STUN `udp/3478`、Tailscale 直結 `udp/41641`、DERP `tcp/443`、DHCP、ICMP。**それ以外（SMB、mDNS、平文 HTTP、任意 TCP）は全遮断**します。DNS を許可するぶん WireGuard キルスイッチより「漏れにくい」止まりで「漏れない」ではありません。
 - **既知の限界（キルスイッチ）。**同一 L2 上の観測者は「Tailscale 利用の事実、DERP リージョン、タイミング」を推定でき、遮断・遅延も可能です——ただしトンネル内容は読めません。直結 UDP を塞がれた環境では Tailscale は DERP（TCP/443）へフォールバックします。
 - Exit Node を経由する通信の宛先・内容はユーザーの tailnet と選んだ Exit Node の管理下にあり、lafine とは無関係です。
 
