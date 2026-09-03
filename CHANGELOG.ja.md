@@ -12,6 +12,12 @@ Linux 版（別系列・1.0.x）でバージョン番号は独立しています
 Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）。
 詳しくは <https://lafine.net/linux>。
 
+### 1.0.32
+
+- **パッケージマネージャー（apt / dpkg / rpm / dnf / pacman 等）のランサムウェア誤検知防止**:
+  - `apt upgrade` やパッケージ展開時（`dpkg`、`rpm` 等）に大量の圧縮ドキュメント（`.gz.dpkg-new` 等）が展開される際、ランサムウェア暗号化バーストと誤判定されてプロセスが凍結（`SIGSTOP`）される問題を修正しました。
+  - ランサムウェア・エントロピー監視の免除リストおよび緊急凍結除外リストに Linux の主要パッケージマネージャー・インストーラー群（`dpkg`, `apt`, `rpm`, `dnf`, `pacman`, `zypper`, `flatpak`, `snapd` 等）を追加し、一時展開拡張子（`.dpkg-new`, `.rpmnew` 等）を高エントロピー判定から除外しました。
+
 ### 1.0.31
 
 - **Tailscale VPN 接続処理・キルスイッチ適用順序の最適化 & VPN タブ UI の改善**:

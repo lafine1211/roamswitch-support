@@ -13,6 +13,12 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.0.32
+
+- **Prevent false positive ransomware detection during package manager operations (apt / dpkg / rpm / dnf / pacman)**:
+  - Fixed an issue where `apt upgrade` or package extractions (`dpkg`, `rpm`, etc.) writing numerous compressed documentation files (e.g. `.gz.dpkg-new`) triggered ransomware mass-encryption burst heuristics and frozen the process via `SIGSTOP`.
+  - Added Linux package managers and installers (`dpkg`, `apt`, `rpm`, `dnf`, `pacman`, `zypper`, `flatpak`, `snapd`, etc.) to the entropy analysis allowlist and critical non-freezable process list, and excluded temporary package extract suffixes (`.dpkg-new`, `.rpmnew`, etc.) from high-entropy evaluation.
+
 ### 1.0.31
 
 - **Tailscale VPN connection sequence & kill-switch rule optimization & VPN UI fix**:
