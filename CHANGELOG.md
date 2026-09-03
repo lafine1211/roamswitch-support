@@ -13,6 +13,12 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.0.33
+
+- **Optimize window dimensions for 1280x720 displays & adjust VPN/DNS dropdown widths**:
+  - Refined base window metrics and dynamic CSS scale factors so that on 1280x720 displays the main window fits comfortably with generous margins (~360px horizontal, ~200px vertical) rather than overflowing screen edges.
+  - Adjusted dropdown combo-box layouts in VPN settings (Tailscale Exit Node / Backend selector) and DNS settings so they no longer expand across the entire window width, aligning neatly with a natural fixed width (260–320px).
+
 ### 1.0.32
 
 - **Prevent false positive ransomware detection during package manager operations (apt / dpkg / rpm / dnf / pacman)**:
