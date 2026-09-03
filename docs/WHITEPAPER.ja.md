@@ -4,7 +4,7 @@
 
 **版** v1.3 · **対象** RoamSwitch 1.8.0 · **要件** macOS 13.0+ / Apple Silicon · **発行** 2026-09-03 · **Team ID** GV76B6G4YU
 
-*v1.3: リンク保護の強制ポイントに **NEFilterDataProvider システム拡張**を追加（§3・§5・§7）——名前解決後の TCP フローを直接見るため DoH／DoT を使うブラウザも遮断でき、`/etc/hosts` を書き換えない。VPN バックエンドを **WireGuard／Tailscale から選択可能**に（§4・§5・§7）。ヘルパー 1.8.0。*
+*v1.3: リンク保護の強制ポイントに **NEFilterDataProvider システム拡張**を追加（§3・§5・§7）——名前解決後の TCP フローを直接見るため DoH／DoT を使うブラウザも遮断でき、`/etc/hosts` を書き換えない。VPN バックエンドを **WireGuard／Tailscale から選択可能**に（§4・§5・§7）。ヘルパー 1.8.2。*
 *v1.2: VPN トンネル + キルスイッチ（§4・§5・§7、1.7.6）、予防的ゲートウェイ ARP/NDP 固定（§5、1.7.5）、USB ストレージの承認プロンプト（§11、1.7.4）を追記。ヘルパー 1.6.0。*
 *v1.1: リンク保護（§5、フィッシング接続の `/etc/hosts` 遮断）と、その脅威フィード（§7・§11、受信専用の日次取得、フィード専用署名鍵）を追記。*
 
@@ -224,10 +224,13 @@ pf を操作する機能は 4 つあります。緊急 Air-Gap、開発サーバ
 - **キルスイッチ。**トンネルが確立するまで（および切断時）、pf の `block drop all` に「`lo` ／ トンネル インターフェース ／ 固定したエンドポイント IP への UDP ハンドシェイク ／ DHCP ／ ICMP」だけの `pass quick` を足した状態にします。ARP/NDP スプーフィングやパケット盗聴があっても平文は漏れません。エンドポイントのホスト名は**アプリ側で解決**して IP をヘルパーに渡します（キルスイッチ中はヘルパーの DNS が通らないため）。
 - **スプリット トンネル警告。**`AllowedIPs` が `0.0.0.0/0, ::/0` でない設定を読み込んだ場合、一部の通信がトンネル外に出る旨を警告します。
 
-**(B) Tailscale バックエンド（1.8.0〜）。**既に Tailscale を使っているユーザー向け。RoamSwitch は `tailscale up`／ログイン／`tailscaled` の導入は**行いません**——`tailscale status --json` を読み、ヘルパー経由で `tailscale set --exit-node=<ノード>`／`--exit-node=`（解除）を実行するだけです（CLI は `/usr/local/bin`、Homebrew、Tailscale.app を探索。`--exit-node` 引数は英数・`.`・`-`・`:` のみ許可）。
+**(B) Tailscale バックエンド（1.8.0〜）。**既に Tailscale を使っているユーザー向け。RoamSwitch は `tailscale up`／ログイン／`tailscaled` の導入は**行いません**——`tailscale status --json` を読み、`tailscale set --exit-node=<ノード>`／`--exit-node=`（解除）を実行するだけです。
 
-- **Exit Node 必須。**中間者攻撃対策は「全通信を経由させる Exit Node」の指定で成立します。Exit Node を選んでいなければ機能は arm しません。選択した Exit Node がオフラインになった場合は自動で解除し通知します（死んだノードに全通信を流して黒穴にするより「未保護」の方がマシ）。
-- **有効化の順序。**まず `tailscale set --exit-node=<ノード>` を実行し、`tailscale status` で実際にそのノードが Exit Node として有効になるのを最大 12 秒待ってから、キルスイッチを張ります。Exit Node が有効にならなければキルスイッチは張らず、通知して撤退します（先にキルスイッチを張ると Tailscale 自身の control／DERP 接続が切れて `tailscaled` が停止するため）。
+- **CLI 版（standalone）推奨。**`brew install tailscale` → `sudo tailscaled install-system-daemon` で入る CLI（`/opt/homebrew/bin/tailscale` 等）なら、RoamSwitch はヘルパー（root）経由で確実に制御します（`--socket /var/run/tailscaled.socket` を明示）。**App Store 版（GUI）はアプリ外から `tailscale set` を実行できない**（sandbox）ため、その場合は Tailscale アプリで Exit Node を選び、RoamSwitch は状態表示とキルスイッチのみを担当します（root で App Store 版 CLI を叩くと GUI 側の `tailscaled` が落ちるため、絶対に行いません）。`--exit-node` 引数は英数・`.`・`-`・`:` のみ許可。
+- **Exit Node 必須。**中間者攻撃対策は「全通信を経由させる Exit Node」の指定で成立します。Exit Node を選んでいなければ機能は arm しません。選択した Exit Node がオフライン／到達不能（`tailscale ping` で確認）の場合は自動で解除し通知します（死んだノードに全通信を流して黒穴にするより「未保護」の方がマシ）。
+- **切断時のネットワーク再構成。**standalone の macOS `tailscaled` は Exit Node を解除したとき routing と DNS（`100.100.100.100` 上書き）を正しく元に戻さず、インターフェースをリセットするまで通信が復旧しない既知の症状があります。RoamSwitch は Exit Node が実際に有効だった状態からの解除時に、ヘルパーが**アクティブなネットワークサービスを bounce**します（`networksetup -setnetworkserviceenabled <サービス> off/on`——「Wi-Fi を手動でトグル」と同じ。IPv4 アドレスを持つサービスだけが対象で、複数 NIC・static IP でも安全）。この間 5〜10 秒ほど通信が途切れ、その間 RoamSwitch は保護レベルを降格しません（`beginNetworkReconfiguration` の抑制窓）。
+- **有効化の順序。**まず exit node を設定し、`tailscale status` で実際にそのノードが有効になるのを最大 12 秒待ってから、（オプトインなら）キルスイッチを張ります。先にキルスイッチを張ると Tailscale 自身の control／DERP 接続が切れて `tailscaled` が停止するためです。
+- **キルスイッチは既定オフ・オプトイン。**Exit Node 自体が全通信をトンネル経由にするので、pf `block drop all` は「Tailscale が乱れても平文が漏れない」を足す上級者向けです（環境によっては Tailscale の接続を切ることがあるため任意）。
 - **キルスイッチ（`pf`、`block drop all`）。**WireGuard より許可範囲は広めです。Tailscale のトランスポートは単一エンドポイント IP に固定できない（ローミングするピアへの直結 UDP ＋ DERP リレーの TCP 443／UDP 3478）ためです。許可するのは：Tailscale の tun（`utunN`。macOS では動的なので、arm 時に `100.64.0.0/10` を持つ IF を `ifconfig` から特定）、CGNAT レンジ `100.64.0.0/10` と `fd7a:115c:a1e0::/48`、**DNS（`udp`/`tcp` port 53。`tailscaled` が control／DERP のホスト名を解決できないと停止するため）**、STUN `udp/3478`、Tailscale 直結 `udp/41641`、DERP `tcp/443`、DHCP、ICMP。**それ以外（SMB、mDNS、平文 HTTP、任意 TCP）は全遮断**します。DNS を許可するぶん WireGuard キルスイッチより「漏れにくい」止まりで「漏れない」ではありません。
 - **既知の限界（キルスイッチ）。**同一 L2 上の観測者は「Tailscale 利用の事実、DERP リージョン、タイミング」を推定でき、遮断・遅延も可能です——ただしトンネル内容は読めません。直結 UDP を塞がれた環境では Tailscale は DERP（TCP/443）へフォールバックします。
 - Exit Node を経由する通信の宛先・内容はユーザーの tailnet と選んだ Exit Node の管理下にあり、lafine とは無関係です。
