@@ -517,7 +517,7 @@ nslookup test.dns9.quad9.net
 
 ```sh
 # 無害なアンチウイルス標準テスト文字列（EICAR）を Downloads に作成
-echo 'X5O!P%@AP[4\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*' > ~/Downloads/eicar_test.com
+printf 'X5O!P%%@AP[4\PZX54(P^)7CC)7}$' > ~/Downloads/eicar_test.com && printf 'EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*\n' >> ~/Downloads/eicar_test.com
 # → FSEvents 検知により ClamAV が即時スキャンし、隔離マネージャーへ退避 & 警告通知が発火すること
 ```
 

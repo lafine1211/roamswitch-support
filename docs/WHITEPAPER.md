@@ -507,7 +507,7 @@ nslookup test.dns9.quad9.net
 
 ```sh
 # Write harmless industry-standard EICAR test string into Downloads directory
-echo 'X5O!P%@AP[4\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*' > ~/Downloads/eicar_test.com
+printf 'X5O!P%%@AP[4\PZX54(P^)7CC)7}$' > ~/Downloads/eicar_test.com && printf 'EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*\n' >> ~/Downloads/eicar_test.com
 # → FSEvents triggers immediate ClamAV background scan, auto-quarantines file, and displays alert
 ```
 
