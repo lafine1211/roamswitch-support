@@ -13,6 +13,11 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.0.25
+
+- **Enhanced StatusNotifierItem tray icon updates across all Linux desktop environments**:
+  - Implemented embedded ARGB `icon_pixmap` rendering from vector SVG assets and normalized `icon_theme_path`, ensuring immediate tray icon transitions on GNOME, KDE, Wayfire, Sway, and XFCE upon security profile changes.
+
 ### 1.0.24
 
 - **Fixed WireGuard configuration buttons appearing when Tailscale backend is active**:

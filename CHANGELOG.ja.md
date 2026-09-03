@@ -12,6 +12,11 @@ Linux 版（別系列・1.0.x）でバージョン番号は独立しています
 Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）。
 詳しくは <https://lafine.net/linux>。
 
+### 1.0.25
+
+- **タスクバー／システムトレイアイコンの動的切り替えの確実性を向上**:
+  - 全デスクトップ環境（GNOME / KDE / XFCE / Wayfire / Sway）において、保護モード（開放・標準・最高・Air-Gap）変更時にトレイアイコンがリアルタイムに切り替わるよう、SNI 仕様に準拠した `icon_pixmap` ARGB レンダリングおよびテーマパス解決を強化しました。
+
 ### 1.0.24
 
 - **Tailscale バックエンド選択時に WireGuard の設定ボタンが混ざって表示される UI 不具合を修正**:
