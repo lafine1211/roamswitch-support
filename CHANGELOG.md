@@ -13,6 +13,14 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.0.19
+
+- **Optimized ransomware encryption thresholds & streamlined detection architecture**:
+  - Replaced ad-hoc per-application path exclusions with robust, realistic detection thresholds (**20 distinct files within 5 seconds with Shannon entropy ≥ 7.92**).
+  - Prevents false-positive SIGSTOP freezes from normal desktop apps and developer tools while reliably capturing genuine mass-encryption attacks.
+  - Streamlined and cleaned up path filter heuristics for a cleaner, more resilient security design.
+  - Canary decoy file monitoring and universal YARA malware scanning remain actively enforced.
+
 ### 1.0.18
 
 - **Prevent false positive ransomware detections & Air-Gap triggers on Chrome / Chromium**:
