@@ -22,6 +22,9 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 - **Improved notification and confirmation dialog for Port Anomaly Guard auto-blocks**:
   - When an unknown `0.0.0.0` port is auto-blocked, a confirmation dialog now pops up allowing you to permanently whitelist the port with a single click ("Allow This Port").
   - Fixed alert queue polling timestamp synchronization to millisecond accuracy to prevent missed event notifications.
+- **Enhanced file protection precision (Separation of YARA scanning & Ransomware entropy tracking)**:
+  - All filesystem writes across user directories, caches (`~/.cache/`), and `node_modules/` are strictly scanned by YARA with zero bypass.
+  - Refined ransomware entropy burst heuristics to exclude naturally compressed archives (`.tgz`, `.zip`) and verified package manager caches (npm, cargo) to eliminate false-positive SIGSTOP process freezes.
 
 ### 1.0.16
 
