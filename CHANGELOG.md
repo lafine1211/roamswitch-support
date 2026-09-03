@@ -13,6 +13,12 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.0.28
+
+- **Adjusted VPN reconciliation for trusted networks and balanced protection (Standby by default)**:
+  - Preserved VPN standby state on trusted networks and under Open / Balanced protection levels.
+  - VPN tunnel only activates when explicitly requested via the "Connect" button or automatically upon entering Lockdown (highest protection).
+
 ### 1.0.27
 
 - **Optimized Tailscale Exit Node parameter resolution (Verified on local live system)**:
