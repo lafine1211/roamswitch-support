@@ -12,6 +12,12 @@ Linux 版（別系列・1.0.x）でバージョン番号は独立しています
 Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）。
 詳しくは <https://lafine.net/linux>。
 
+### 1.0.27
+
+- **Tailscale Exit Node 適用時の引数フォーマットを最適化（ローカル実機検証済み）**:
+  - Tailscale CLI（`tailscale set --exit-node`）の仕様に合わせて、完全修飾ドメイン名だけでなく Tailscale IP アドレス（`100.x.y.z`）およびホスト名を自動解決して渡すフォールバック処理を実装しました。
+  - 実機ローカル環境にて `vpn_up`、`vpn_down`、保護モード変更（開放 ⇔ 最高）時の Tailscale Exit Node 連動・キルスイッチ設定・状態同期が完全に動作することを確認しました。
+
 ### 1.0.26
 
 - **Tailscale Exit Node 適用処理と稼働状態（経由中／待機中）の判定ロジックを強化**:

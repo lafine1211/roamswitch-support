@@ -13,6 +13,12 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.0.27
+
+- **Optimized Tailscale Exit Node parameter resolution (Verified on local live system)**:
+  - Added multi-candidate resolution (Tailscale IP `100.x.y.z`, base host name, stripped domain) for `tailscale set --exit-node` to comply with Tailscale CLI syntax requirements.
+  - Verified end-to-end functionality on live system for `vpn_up`, `vpn_down`, profile-level switching (Open ⇔ Lockdown), kill-switch attachment, and status synchronization.
+
 ### 1.0.26
 
 - **Hardened Tailscale Exit Node application and active status reconciliation**:
