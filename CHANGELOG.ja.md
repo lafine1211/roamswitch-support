@@ -12,6 +12,12 @@ Linux 版（別系列・1.0.x）でバージョン番号は独立しています
 Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）。
 詳しくは <https://lafine.net/linux>。
 
+### 1.0.21
+
+- **VPN バックエンド切り替え（WireGuard ⇔ Tailscale）時の UI 連動とメインウィンドウのフリーズを修正**:
+  - WireGuard と Tailscale を切り替えた際に、説明文や案内カードが WireGuard のまま残る問題を修正し、選択されたバックエンド（Tailscale / WireGuard）に合わせて説明・ガイドが動的に切り替わるよう改善しました。
+  - VPN 画面のウィジェット更新時に発生していた GTK シグナルの再帰ループを解消し、メインウィンドウがフリーズする不具合を完全に修正しました。
+
 ### 1.0.20
 
 - **VPN 画面（Tailscale / WireGuard）のデーモン通信不具合および Exit Node 入力 UI を修正**:

@@ -13,6 +13,12 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.0.21
+
+- **Fixed VPN backend switching UI synchronization & resolved main window freeze**:
+  - Fixed an issue where WireGuard descriptions and instructions remained visible when switching between WireGuard and Tailscale, making explanation cards dynamically adapt to the active backend.
+  - Eliminated recursive GTK signal loops during VPN widget updates that could cause the main window to freeze.
+
 ### 1.0.20
 
 - **Fixed VPN status daemon IPC response parsing & upgraded Exit Node input UI**:
