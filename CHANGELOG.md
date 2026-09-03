@@ -13,6 +13,16 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.0.17
+
+- **Fixed task and tray icon display issues on Raspberry Pi OS & Linux desktop environments**:
+  - Ensured status SVG icons (`roamswitch-open.svg`, etc.) are packaged into standard hicolor icon paths.
+  - Added `librsvg2-common` to `.deb` package dependencies to guarantee SVG rendering on Raspberry Pi OS (Wayfire / Labwc).
+  - Enhanced runtime icon search fallback to properly display window and brand icons even when run directly from source (`cargo run`).
+- **Improved notification and confirmation dialog for Port Anomaly Guard auto-blocks**:
+  - When an unknown `0.0.0.0` port is auto-blocked, a confirmation dialog now pops up allowing you to permanently whitelist the port with a single click ("Allow This Port").
+  - Fixed alert queue polling timestamp synchronization to millisecond accuracy to prevent missed event notifications.
+
 ### 1.0.16
 
 - **The VPN backend is now selectable — WireGuard or Tailscale** (the backend
