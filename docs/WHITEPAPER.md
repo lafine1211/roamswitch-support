@@ -2,8 +2,9 @@
 
 > This document explains what privileges RoamSwitch runs with and what it does at that boundary. It contains no marketing language; everything stated here can be verified against the shipping app binary and its actual behavior.
 
-**Version** v1.1 · **Covers** RoamSwitch 1.7.3 (build 43) · **Requires** macOS 13.0+ / Apple Silicon · **Published** 2026-09-03 · **Team ID** GV76B6G4YU
+**Version** v1.2 · **Covers** RoamSwitch 1.7.6 (build 46) · **Requires** macOS 13.0+ / Apple Silicon · **Published** 2026-09-03 · **Team ID** GV76B6G4YU
 
+*v1.2: adds the VPN tunnel + kill-switch (§4 / §5 / §7, 1.7.6), the preventive gateway ARP/NDP lock (§5, 1.7.5), and the USB storage approval prompt (§11, 1.7.4). Helper 1.6.0.*
 *v1.1: adds Link Guard (§5, `/etc/hosts` blocking of phishing connections) and its threat feed (§7 / §11, a receive-only daily fetch with a feed-dedicated signing key).*
 
 *Canonical (rendered): <https://lafine.net/security.en.html>. This Markdown mirror exists for its Git history; the content is identical.*
@@ -104,8 +105,11 @@ The privileged operations defined in `Shared/HelperProtocol.swift` are all of th
 | setGuardedDevServerPorts(_:) | Uses pf to block only **external** connections to the given dev-server ports (localhost passes through). Passing an empty array lifts all of them | /sbin/pfctl (also via the Coordinator) |
 | setSecureDNSServers(_:) restoreOriginalDNSServers(...) getCurrentDNSServers(...) | Switches the DNS of active network services to malware-blocking DNS (Quad9 `9.9.9.9` / Cloudflare `1.1.1.2`), backing up the original settings and restoring them | /usr/sbin/networksetup -listallnetworkservices / -getdnsservers / -setdnsservers |
 | setLinkGuardSinkhole(_:) | Link Guard (§5). Writes the given phishing/scam domains into a delimited managed section of `/etc/hosts` as `0.0.0.0`, then flushes the DNS cache. An empty array removes the section. Domains are normalized and de-duplicated; IPs and junk are dropped; capped at 60,000; written via a temp file + atomic replace | rewrites /etc/hosts (`FileManager.replaceItemAt`) / /usr/bin/dscacheutil -flushcache / /usr/bin/killall -HUP mDNSResponder |
+| lockGatewayARP(_:) unlockGatewayARP(...) getGatewayARPLockStatus(...) | Preventive gateway ARP/NDP lock (§5). Pins the given `IP → MAC` mappings (the IPv4 gateway, the IPv6 default router, on-link DNS resolvers) as `permanent` neighbour-cache entries. IP and MAC formats are validated; a reconcile model (pins not in the request are removed). The pin set is persisted to `gateway_arp_lock.json` so it can be unlocked across an XPC reconnect | /usr/sbin/arp -s / -d, /usr/sbin/ndp -s / -d |
+| wireGuardImport(_:) wireGuardForget(...) | VPN tunnel (§5). The helper saves / deletes the WireGuard `.conf` text at `0600` | file write only |
+| wireGuardUp(endpointIPv4:endpointIPv6:port:) wireGuardDown(...) wireGuardStatus(...) | Bring the tunnel up / down / read status. The endpoint hostname is **resolved by the app** and the IP is passed to the helper (the helper's DNS can be cut by the kill-switch) | Homebrew `wg-quick up/down`, `wg show` (`wireguard-tools`; disabled if not installed) |
 | terminateProcess(pid:forceKill:) | Suspends (SIGSTOP) or force-quits (SIGKILL) a process. Used to contain ransomware-like processes. `pid > 1` only | kill(2) system call (not a subprocess) |
-| getHelperVersion(...) | Returns the helper's version string (used for app-compatibility checks) | — |
+| getHelperVersion(...) | Returns the helper's version string (used for app-compatibility checks; currently 1.6.0) | — |
 
 > **Design trade-off**
 >
@@ -118,7 +122,7 @@ The privileged operations defined in `Shared/HelperProtocol.swift` are all of th
 
 ## §4. How the packet filter (pf) is handled
 
-Two features touch pf: the emergency air-gap, and the dev-server port guard. Both of them always go through a single entry point, **`PFRulesetCoordinator`**, and never run `pfctl -f` themselves.
+Three features touch pf: the emergency air-gap, the dev-server port guard, and the VPN tunnel's kill-switch (§5, 1.7.6 and later). All of them always go through a single entry point, **`PFRulesetCoordinator`**, and never run `pfctl -f` themselves.
 
 ### Why there is a single entry point
 
@@ -129,8 +133,9 @@ Previously the two features each loaded rules with `pfctl -f` independently, com
 - **Rebuilt in full every time.** The entire required ruleset is rebuilt from the current state and applied in one shot. It is never applied as a diff.
 - **One serial queue.** Every pf change runs on the same `DispatchQueue`, so whether it came from an XPC connection, the helper's startup, or the failsafe timer, changes are processed in order.
 - **The priority is as follows (higher wins):** Emergency air-gap → `set skip on lo0` and `block drop all` (nothing else is considered)
+- VPN kill-switch → `block drop all` plus `pass quick` for only: `lo`, the tunnel interface (`utunN`), the UDP handshake to the pinned endpoint IP(s), DHCP, and ICMP
 - Dev-server guard → `block drop in quick proto tcp ... port { … }`
-- Neither → reload `/etc/pf.conf` and return pf to its original state
+- None → reload `/etc/pf.conf` and return pf to its original state
 - **Read back after applying.** `pfctl -sr` reads the rules back to confirm that `block drop all`, or each port's rule, is actually loaded. A case where `pfctl -f` was silently ignored is not treated as success.
 - **The temp file is written to a path containing a `UUID` and deleted once applied** (v1.4.5 dropped the fixed path in favor of a hard-to-guess one). The state directory is `/Library/Application Support/RoamSwitch`.
 
@@ -146,10 +151,12 @@ Previously the two features each loaded rules with `pfctl -f` independently, com
 
 | Kind | Scope | Trigger | loopback |
 | --- | --- | --- | --- |
-| Emergency air-gap | Stops all traffic, incoming and outgoing | When ransomware-like encryption activity, or ARP spoofing (= a man-in-the-middle attack), is detected. **Not used for everyday away-from-home protection** (outgoing browsing needs to stay available) | Passed through with `set skip on lo0` |
+| Emergency air-gap | Stops all traffic, incoming and outgoing | When ransomware-like encryption activity is detected. On ARP-spoofing detection it fires immediately only in Lockdown; on Balanced / trusted networks it notifies instead (you trigger it manually). **Not used for everyday away-from-home protection** | Passed through with `set skip on lo0` |
+| VPN kill-switch | Everything except the tunnel, its handshake, DHCP, and ICMP | When the VPN tunnel (§5, Pro, off by default) is on and you join an untrusted network. Held until the tunnel is established (and while it is down) | Passed through with `set skip on lo0` |
 | Dev-server port guard | Only **external** TCP connections to the given ports | A one-click manual isolation, or automatic blocking when an unfamiliar listening port is detected (Pro) | From localhost, unchanged |
 | Everyday untrusted-network protection | Firewall and stealth, sharing stopped (§6). pf is not used | When you connect to a network you have not registered | — |
 | Link Guard | Only name resolution of phishing/scam domains (`0.0.0.0` via `/etc/hosts`). pf is not used | A destination on the threat feed, or a brand-name homograph. On by default (Pro) | Not affected |
+| Preventive ARP/NDP lock | Only the MAC of the gateway, the IPv6 router, and on-link DNS (neighbour cache). pf is not used | On joining an untrusted network (Pro, off by default). Re-pinned on every network change | Not affected |
 
 ### How the air-gap is kept from lingering
 
@@ -181,6 +188,25 @@ Menu bar → "Malware Protection" → "Link Guard" (Pro). Blocks connections to 
 - **Pro-gated.** Enforcement (`applyMode()`) only happens on a valid Pro license. Without Pro the mode is stored but `/etc/hosts` is never touched. Activating or lapsing a license takes effect mid-session.
 - **Feed and bundled seed.** The block list comes from the signed threat feed (§7, verified with a feed-dedicated key). It works on the app's bundled seed (~60,000 entries) even before the first fetch, and turning off "Auto-update" means no outbound traffic.
 
+### Preventive gateway ARP/NDP lock — 1.7.5 and later
+
+Menu bar → "Port & Device Monitor" → "Pin the gateway's ARP/NDP on untrusted networks (preventive)" (Pro, off by default).
+
+- **How it works.** On joining an untrusted network, the current MAC of the IPv4 gateway, the IPv6 default router, and on-link DNS resolvers is collected from `route` / `scutil --dns` / `arp -n` / `ndp -an`, and the helper pins each as a `permanent` entry with `arp -s` / `ndp -s` (trust-on-first-use — the first MAC observed is trusted). Spoofed ARP/NDP replies for those IPs are then ignored, so a man-in-the-middle attack cannot be set up.
+- **Scope.** Only those three kinds of entry are pinned. Trusted (open) networks are never pinned. On every network change it unlocks once and re-pins. Off-link public resolvers (8.8.8.8, …) have no on-link ARP entry and are automatically excluded.
+- **`arp -s` is preventive; the air-gap is after the fact.** This pin exists so a spoof can't succeed; ARP-spoofing detection (`ARPSpoofContainmentManager`) and the emergency air-gap exist to "cut faster than a human" once one is seen. They run independently.
+- **Persistence.** The pin set is saved to `/Library/Application Support/RoamSwitch/gateway_arp_lock.json` so it can be unlocked across an XPC reconnect or a helper restart.
+
+### The VPN tunnel (WireGuard) and its kill-switch — 1.7.6 and later
+
+Menu bar → "Port & Device Monitor" → "VPN Tunnel" (Pro, off by default). This is the **primary** anti-MITM defense — it does not depend on the integrity of L2 (ARP/NDP).
+
+- **How it works.** It does not use the Apple Network Extension entitlement; it drives Homebrew's `wireguard-tools` (`wg-quick` + `wireguard-go`) — the same "optional CLI via Homebrew" model as `blueutil` (the feature is disabled if it is not installed). When you import your own WireGuard config (`.conf`), the helper saves it at `0600`.
+- **Automatic.** The tunnel comes up when you join an untrusted network (protection level other than "Trusted (open)") and comes down when you return to a trusted one. Both enabling and disabling show a macOS-style confirmation dialog.
+- **Kill-switch.** Until the tunnel is established (and while it is down), pf is `block drop all` plus a `pass quick` only for `lo`, the tunnel interface, the UDP handshake to the pinned endpoint IP(s), DHCP, and ICMP. So even under ARP/NDP spoofing or packet sniffing, no plaintext leaks. The endpoint hostname is **resolved by the app** and the IP is passed to the helper (the helper's DNS does not pass while the kill-switch is up).
+- **Split-tunnel warning.** If you import a config whose `AllowedIPs` is not `0.0.0.0/0, ::/0`, it warns that some traffic will leave outside the tunnel.
+- **On license loss.** If the Pro license lapses, the tunnel and the kill-switch are lifted.
+
 ## §6. Everyday untrusted-network protection
 
 When you connect to a network you have not registered, the "protection level" switch does not use pf. It simply changes standard OS settings in a way that can be reversed later.
@@ -205,15 +231,17 @@ None of this is a new blocking mechanism that RoamSwitch adds — it is just tog
 | --- | --- | --- |
 | License token | Keychain com.tetsuharu.RoamSwitch.license | An Ed25519-signed token. `kSecAttrAccessibleAfterFirstUnlock` |
 | App settings / guard on-off | UserDefaults suite com.tetsuharu.RoamSwitch | Trusted-network registrations, protection policy, exclusion lists, and so on |
-| pf state | /Library/Application Support/RoamSwitch/ | The air-gap timestamp, JSON of the guarded ports, the temp file for the ruleset being applied |
+| pf state | /Library/Application Support/RoamSwitch/ | The air-gap timestamp, JSON of the guarded ports, the VPN kill-switch state, the temp file for the ruleset being applied |
 | Link Guard threat feed | ~/Library/Application Support/RoamSwitch/threatfeed/feed.txt | The downloaded phishing/scam domain list (or the app's bundled seed if not yet fetched). The feed version is in UserDefaults |
 | Link Guard managed section | /etc/hosts | A delimited section bounded by `# BEGIN RoamSwitch link guard` … `# END`, nulling blocked domains to `0.0.0.0`. Removed when the mode is "Off" (§5) |
+| ARP/NDP lock pins | /Library/Application Support/RoamSwitch/gateway_arp_lock.json | The `IP → MAC` set made `permanent` by the preventive lock (§5). Deleted when unlocked |
+| WireGuard config | /Library/Application Support/RoamSwitch/ (helper area, `0600`) | The `.conf` the user imported. The endpoint hostname is also stashed in UserDefaults (the app resolves it) |
 | Device fallback UUID | UserDefaults | A random value, generated only when IOKit does not return a UUID (§9) |
 | Logs | os.Logger / NSLog | Unified logging. Nothing is sent externally |
 
 ### Traffic that leaves the machine (the complete list)
 
-There is no code anywhere that collects and sends diagnostic results, port information, URLs, or logs. No analytics SDK and no crash-reporter SDK are included. The only external library is Sparkle (updates). What goes out to the network is these five, and that is all.
+There is no code anywhere that collects and sends diagnostic results, port information, URLs, or logs. No analytics SDK and no crash-reporter SDK are included. The only external library is Sparkle (updates). What goes out to the network is these six, and that is all (the sixth only if the user configures a VPN).
 
 **Outbound connections RoamSwitch makes**
 
@@ -223,13 +251,16 @@ There is no code anywhere that collects and sends diagnostic results, port infor
 | Update check | lafine.net /updates/appcast.xml | Sparkle, every 24 hours and at launch | An HTTP request (a standard UA and version). The downloaded item is verified by EdDSA signature (§10) |
 | Link Guard threat feed | lafine.net /updates/v1/{manifest, feed/&lt;version&gt;.txt} | When Link Guard (§5) is on and "Auto-update" is enabled, every 24 hours (and at launch). Turning "Auto-update" off removes this path | A `GET` only. No query string, no cookies, nothing that identifies the machine. A **receive-only** signed static file. The manifest and the feed body are both verified with Ed25519. The signing key is **dedicated to the feed** — a **separate key** from the app-update `SUPublicEDKey` (so a leak is confined to "a bad blocklist") |
 | ClamAV virus-definition update | ClamAV official mirrors | Only when the user has installed ClamAV and uses the scan feature. It launches `freshclam` | A standard ClamAV definition fetch. It contains no RoamSwitch-derived information |
+| VPN tunnel (§5) | The WireGuard endpoint the user configured | Only when the user has set up the VPN tunnel (Pro, off by default) and joins an untrusted network. The endpoint hostname is resolved via DNS once before the tunnel comes up | The WireGuard handshake (UDP) and the traffic inside the tunnel. **The destination is the user's own VPN server** and the contents are the user's own traffic. RoamSwitch adds no identifier and no diagnostic data |
 | Checkout page | Stripe Checkout | Only when the user presses the buy button (it opens in the browser) | — (a browser navigation) |
 
 > **The scope of "Zero Telemetry"**
 >
-> "Zero Telemetry" here means that there is no telemetry that collects and sends usage data or diagnostic results. It does not mean there is no network traffic at all. The five paths in the table above do exist. But each of them is either something the user initiates or a signature-verified, **receive-only** fetch, and the diagnostic results, ports, URLs, and file contents on the Mac never leave it.
+> "Zero Telemetry" here means that there is no telemetry that collects and sends usage data or diagnostic results. It does not mean there is no network traffic at all. The six paths in the table above do exist. But each of them is either something the user initiates or a signature-verified, **receive-only** fetch, and the diagnostic results, ports, URLs, and file contents on the Mac never leave it.
 >
 > The Link Guard threat feed (row 3) adds "it does pull updates" on top of the "it sends nothing" defense. The two are kept separate; the Linux whitepaper v1.1 §1.1 likewise splits "Zero Telemetry" from "receive-only updates". Turn "Auto-update" off and Link Guard runs on the bundled data (~60,000 phishing/scam domains) plus offline homograph detection, and this path does not occur.
+>
+> The VPN tunnel (row 5) only happens if the user configures their own WireGuard server; the destination and the contents are under the user's control. RoamSwitch only brings the tunnel up and holds the kill-switch — it adds no identifier and no usage data. Without a VPN configured, this path does not exist.
 >
 > The in-app "link safety check" sheet sends a `HEAD` request to the target URL to see where a shortened URL lands (following redirects to private or local addresses is stopped by the v1.4.5 SSRF mitigation). The MCP `audit_url_safety`, by contrast, is offline analysis that completes on the spot and sends the URL nowhere (§8).
 
@@ -237,7 +268,7 @@ There is no code anywhere that collects and sends diagnostic results, port infor
 
 This is not just asserted. On 2026-08-29 a running 1.4.7 install was audited with `tcpdump` + per-process attribution (`nettop` / `lsof` / a filtered `pktap` capture) + LuLu, over a ~2-hour window, with the security level pinned to Maximum Lockdown and the appcast check forced. **Result: no outbound flow attributed to `RoamSwitch`, `RoamSwitchHelper`, or `RoamSwitchMCPServer` other than the appcast check to `lafine.net`; the MCP server's only sockets were to localhost; the entitlements dumps are empty.** Full write-up and the repeatable script: [`audit/RESULTS-2026-08-29.md`](https://github.com/lafine1211/roamswitch-support/blob/main/audit/RESULTS-2026-08-29.md) and [`audit/`](https://github.com/lafine1211/roamswitch-support/tree/main/audit). Run `./audit/rs-zerotel-audit.sh all` to reproduce it on your own machine.
 
-> This measurement is from 1.4.7, before the Link Guard threat feed (added in 1.7.2, row 3 of the table above). Audited on 1.7.2 or later, you will see **two receive-only `GET`s to `lafine.net`** (the appcast and the threat feed). Both are signature-verified and send nothing. To stop the feed: "Link Guard" → "Auto-update: Off".
+> This measurement is from 1.4.7, before the Link Guard threat feed (1.7.2, row 3) and the VPN tunnel (1.7.6, row 5). Audited on 1.7.2 or later, you will see **two receive-only `GET`s to `lafine.net`** (the appcast and the threat feed); if a VPN is configured you will also see UDP to the user's own WireGuard server (destination and contents under the user's control). All of it goes away with "Auto-update: Off" and no VPN configured.
 
 ## §8. The MCP server security model
 
@@ -330,19 +361,19 @@ Before an update is applied, the **EdDSA signature** listed in the appcast is ve
 
 - Probing and attacks from an attacker on the same LAN, or from a compromised IoT device. It responds with stealth, exposed-port auditing, and isolation from outside.
 - Exposure on a network you don't trust. It automatically stops sharing services and AirDrop.
-- Detecting ARP spoofing (a man-in-the-middle attack), and an emergency air-gap on detection. "Preventing" it on a home router is essentially impossible, so the approach is to "notice it and cut faster than a human would."
+- **Man-in-the-middle attacks (ARP/NDP spoofing).** As of 1.7.6 this is layered: (1) the VPN tunnel + kill-switch (§5, the primary defense — does not depend on L2 integrity), (2) a preventive gateway ARP/NDP pin on untrusted networks (§5), and (3) spoofing detection with an emergency air-gap (after the fact). All Pro, off by default (detection is on by default).
 - Finding dev servers and databases (Redis, MongoDB, Elasticsearch, and so on) exposed on `0.0.0.0` without authentication, and blocking them from outside.
 - Catching ransomware-like unauthorized encryption activity early and stopping all traffic (it does not rely on signatures).
 - BadUSB and physical keyboard approval guard (`USBKeyboardGuard`, CGEventTap + IOKit) that intercepts and drops keystrokes from unapproved USB keyboards/cables (Rubber Ducky, O.MG Cable, etc.) to prevent automated command injection attacks.
-- Auto-ejecting USB storage that is not allowed, and automatically running a ClamAV scan on attached storage (optional).
+- An approval prompt for unknown USB storage (an unrecognized drive is held read-only rather than ejected immediately), and an automatic ClamAV scan on attached storage (optional).
 
 ### What we have decided not to do
 
 - **It is not a replacement for antivirus.** ClamAV and XProtect are used as auxiliaries; RoamSwitch on its own is not a general-purpose malware detector.
 - **It is not a guarantee.** It is one layer in a defense-in-depth stack, not something that "completely prevents ransomware." Marketing copy is reviewed on this premise too.
 - **It cannot protect an already-compromised root or kernel.** If an attacker already has root, they can remove the helper's pf rules too.
-- **It does not prevent ARP spoofing** (only detection and after-the-fact blocking).
-- It is not a substitute for enterprise DHCP snooping or Dynamic ARP Inspection.
+- **It does not restore L2 integrity itself.** The preventive ARP/NDP pin is trust-on-first-use — if an attacker is already in place before you connect, it can pin a spoofed MAC. The VPN tunnel (§5) is the answer when you don't want to make that assumption: even with L2 poisoned, the contents are encrypted and the kill-switch stops plaintext from leaking. It is not a substitute for enterprise DHCP snooping or Dynamic ARP Inspection.
+- **It does not provide a VPN server.** The tunnel feature uses a WireGuard config the user supplies; RoamSwitch does not become a VPN provider.
 
 ### Attack surface that installing RoamSwitch adds
 
@@ -351,10 +382,12 @@ Before an update is applied, the **EdDSA signature** listed in the appcast is ve
 | Attack surface | How it is contained |
 | --- | --- |
 | A LaunchDaemon that runs as root, and its mach service (`com.tetsuharu.RoamSwitch.Helper`) | The operation surface is fixed to `HelperProtocol` (the §3 table). There is no arbitrary-command channel. Connections are authorized by a code-signing requirement, using `audit_token`. |
-| If `RoamSwitch.app` itself is compromised, all of the helper's operations pass to the attacker | Hardened Runtime is enabled, and the app is given no unnecessary privileges. Outbound traffic is limited to the five paths above. We plan to have this reviewed by a third party. |
-| The system-binary paths the helper spawns | Absolute paths like `/sbin/pfctl` are specified directly, with no dependence on `PATH`. Arguments are hard-coded too (apart from port numbers and DNS strings). |
+| If `RoamSwitch.app` itself is compromised, all of the helper's operations pass to the attacker | Hardened Runtime is enabled, and the app is given no unnecessary privileges. Outbound traffic is limited to the six paths above (the sixth only if the user configures a VPN). We plan to have this reviewed by a third party. |
+| The system-binary paths the helper spawns | Absolute paths like `/sbin/pfctl` are specified directly, with no dependence on `PATH`. Arguments are hard-coded too (apart from port numbers, DNS strings, the ARP IP/MAC pairs, and the VPN endpoint IP — all of which are format-validated). |
 | Link Guard rewriting `/etc/hosts` (`setLinkGuardSinkhole`) | Writes are confined to a delimited managed section; lines outside it are preserved verbatim. Domains are normalized and validated, IPs and junk are dropped, the list is capped at 60,000, and the file is written via a temp file + atomic replace. It only sinkholes clear cases (threat-feed listing or brand-name homograph), decided by a local-only verdict engine. The block list itself comes from the signature-verified threat feed (feed-dedicated key). |
 | Link Guard's threat-feed fetch (a receive-only daily `GET`) | A static-file fetch with no query string and no identifiers. The manifest and feed body are both Ed25519-verified, and a fetch that fails verification is discarded (no fallback to unsigned data). "Auto-update: Off" removes the path entirely. |
+| Preventive ARP/NDP pin (`lockGatewayARP`) | Only the neighbour-cache entries for "the gateway, the IPv6 router, on-link DNS" are pinned. The IP/MAC pairs passed in are format-validated and reconciled against the request set (it never adds entries on its own). It runs only on untrusted networks; Pro, off by default. The trust-on-first-use limit is stated in §11 "What we have decided not to do". |
+| VPN tunnel (`wireGuardImport/Up/…`, Homebrew `wireguard-tools`) | The `.conf` is stored by the helper at `0600`. The endpoint IP is resolved by the app and passed to the helper (the helper never resolves an arbitrary hostname). The tunnel's destination and contents are under the user's control. The feature is disabled if `wireguard-tools` is not installed. Pro, off by default. The kill-switch goes through `PFRulesetCoordinator` (§4). |
 | The MCP server passing system state to an LLM (a confused deputy) | It is read-only, with no write API implemented. URL checks are offline. The settings domain is referenced read-only. |
 | Hijacking the update path | EdDSA signature verification (`SUPublicEDKey`), plus a bundled notarization ticket. The appcast is over HTTPS. |
 
@@ -472,6 +505,31 @@ dscacheutil -q host -a name "$D"   # → ip_address: 0.0.0.0 (resolution is bloc
 curl -s https://lafine.net/updates/v1/manifest        # version/generated/threatfeed{version,url,sha256,signature}
 curl -sI https://lafine.net/updates/v1/manifest.sig   # → text/plain
 # What is sent is a GET with no query string, no cookies, no identifiers. Confirm with tcpdump alongside.
+```
+
+### Preventive ARP/NDP lock (§5, 1.7.5+)
+
+```sh
+# With the preventive lock on, join an untrusted network → check the permanent entries
+arp -an | grep -i permanent          # the gateway etc. show as (permanent)
+ndp -an | grep -i 'P '               # IPv6 side (P = permanent)
+sudo cat "/Library/Application Support/RoamSwitch/gateway_arp_lock.json"  # the pinned IP→MAC set
+# Unlock from the menu → the above clears
+```
+
+### VPN tunnel + kill-switch (§5, 1.7.6+)
+
+```sh
+# wireguard-tools (Homebrew) is a prerequisite
+brew list wireguard-tools >/dev/null && echo "wireguard-tools: OK"
+
+# Enable the VPN on an untrusted network → before the tunnel is up, pf is in kill-switch mode
+sudo pfctl -sr | grep -E 'block drop all|pass .*(utun|udp)'   # block drop all + a narrow pass quick
+
+# After the tunnel is up (wg-quick up done)
+wg show                              # handshake / transfer are moving
+route -n get default | grep interface  # → utunN (default route is the tunnel)
+# Disable the VPN → kill-switch lifts, pf returns to normal
 ```
 
 ### Automated Defense & Penetration Verification Suite
