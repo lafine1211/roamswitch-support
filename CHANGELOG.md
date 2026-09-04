@@ -13,6 +13,19 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.0.51
+
+- **Fixed the main window freezing whenever the Networks tab was open during
+  Air-Gap.** That tab's 800ms refresh looks up the current Wi-Fi security,
+  which pings the gateway to nudge the ARP cache before ever checking whether
+  a cached answer already exists — and a `ping` given a target that never
+  answers (exactly what happens under Air-Gap, which drops every outbound
+  packet) blocks for its full 1-second timeout. Repeated every 800ms, that
+  left the window blocked almost continuously for as long as Air-Gap was
+  engaged and that tab stayed open. The lookup now checks the existing ARP
+  cache first (only pinging when there's genuinely nothing cached yet) and
+  runs on a background thread, so it can no longer block the window at all.
+
 ### 1.0.50
 
 - **Fixed the security level staying at "lockdown" after an ARP-spoofing
