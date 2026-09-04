@@ -13,6 +13,17 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.0.39
+
+- **Bug fix: the on-access malware guard could stay off until the next daemon
+  restart.** `fanotify_init` can fail transiently when the per-user group limit
+  (`fs.fanotify.max_user_groups`, default 128) is briefly exhausted. The daemon
+  now retries with backoff and recovers within about a minute instead of leaving
+  the guard down.
+- **Approval dialog button colors.** In the "dangerous file blocked" and malware
+  prompts, "Allow" (the risky choice) is now a neutral dark button and the safe
+  choice ("Keep blocking" / "Move to Quarantine") is green and the default.
+
 ### 1.0.38
 
 - **Link protection: a blocked phishing site no longer spams notifications.**
