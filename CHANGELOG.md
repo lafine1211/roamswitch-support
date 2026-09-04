@@ -13,6 +13,16 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.0.43
+
+- **`roamswitch <command> --help` now shows that command's usage.** Previously
+  `roamswitch status --help` just ran the scan. Works without the daemon.
+- **Added a `roamswitch(1)` man page**, bundled by every package (deb / rpm /
+  tarball).
+- **New CLI / headless operations guide** ([LINUX_CLI.md](docs/LINUX_CLI.md)):
+  the daemon service, every subcommand, `config.json` fields, runtime-state
+  files, calling the IPC directly, and cron / monitoring recipes.
+
 ### 1.0.42
 
 - **Security confirmation dialogs now always come to the front.** A blocked-port

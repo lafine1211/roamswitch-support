@@ -12,6 +12,16 @@ Linux 版（別系列・1.0.x）でバージョン番号は独立しています
 Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）。
 詳しくは <https://lafine.net/linux>。
 
+### 1.0.43
+
+- **`roamswitch <コマンド> --help` でそのコマンドの使い方を表示。** 従来は
+  `roamswitch status --help` が診断を実行してしまっていました。デーモン
+  未接続でも動作します。
+- **`roamswitch(1)` man page を追加**（deb / rpm / tarball すべてに同梱）。
+- **CLI / ヘッドレス運用ガイドを新設**（[LINUX_CLI.ja.md](docs/LINUX_CLI.ja.md)）:
+  デーモン(systemd)、全サブコマンド、`config.json` の主要キー、ログ・
+  state.json、IPC の直接呼び出し、cron/監視の自動化レシピ。
+
 ### 1.0.42
 
 - **セキュリティ確認ダイアログが常に最前面に出るようになりました。** ポート
