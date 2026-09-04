@@ -13,6 +13,21 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.0.50
+
+- **Fixed the security level staying at "lockdown" after an ARP-spoofing
+  attack actually stopped, requiring a manual network reconnect to recover.**
+  Nothing was forcing the kernel to re-verify a spoofed gateway's cached ARP
+  entry — it isn't refreshed just because it's read, and the kernel's own
+  reachability timers can keep trusting the last answer for a while (or
+  indefinitely, if the attacker keeps sending unsolicited replies) even after
+  the attacker stops. The gateway's neighbour entry is now actively flushed
+  both on every cycle it's still implicated in a spoofing signal (so the
+  system can notice on its own once the attacker really stops, no manual
+  reconnect needed) and when you click "release" on the emergency dialog (so
+  an attack that already ended doesn't still read back as lockdown and look
+  like release did nothing).
+
 ### 1.0.49
 
 - **Added a "Block now" button to the ARP-spoofing warning on
