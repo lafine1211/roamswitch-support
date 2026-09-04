@@ -13,6 +13,34 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.0.44
+
+- **Fixed ARP-spoofing detection that could structurally never trigger.**
+  Found live during an external penetration test: the guard looked for one IP
+  resolving to two different MACs within a single read of the kernel's ARP
+  table — impossible, since the table holds exactly one MAC per IP and a
+  poisoned entry always *replaces* the legitimate one rather than sitting next
+  to it. Replaced with a real spatial check (one MAC serving several IPs at
+  once — catches broad LAN poisoning) plus a new temporal check that diffs the
+  ARP cache across polling cycles (catches a single targeted host, e.g.
+  `arpspoof -t <you> <gateway>`), corroborated against a Wi-Fi SSID signal so
+  a spoof isn't silently absorbed as an ordinary network move.
+- **Stopped permanently pinning an unconfirmed (possibly spoofed) gateway
+  MAC.** A second bug found in the same incident: the preventive gateway-ARP
+  lock feature re-pinned whatever MAC the ARP table currently reported as
+  `PERMANENT` on every profile switch, with no check against whether that
+  change looked like spoofing — so a successful spoof got cemented into the
+  kernel by RoamSwitch itself, turning a transient attack into a persistent
+  one. A gateway-MAC change is now only pinned once it's corroborated as a
+  genuine network move; an unconfirmed one is left alone and reported by the
+  ARP guard instead.
+- **Fixed a daemon/GUI responsiveness issue** surfaced while verifying the
+  above live: a burst of profile switches and an Air-Gap engage in quick
+  succession could stall the daemon's IPC listener long enough to freeze
+  `roamswitch-app`'s main window. The security-check cycle's `ip`/`nft`/`nmcli`
+  calls now run off the daemon's core async threads, and GUI actions that
+  don't need the daemon's reply no longer block the window waiting for one.
+
 ### 1.0.43
 
 - **`roamswitch <command> --help` now shows that command's usage.** Previously
