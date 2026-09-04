@@ -13,6 +13,19 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.0.42
+
+- **Security confirmation dialogs now always come to the front.** A blocked-port
+  / Air-Gap / malware / phishing approval dialog could open *behind* other
+  windows while the main window stopped repainting behind it — which looked like
+  the app had frozen. These dialogs now raise the (de-iconified) app window and
+  present themselves on top with an urgency hint.
+- **Threat-protection DNS reconcile moved off the sentinel lock.** Since 1.0.40
+  it ran `resolvectl` per interface every 3 seconds while holding the internal
+  lock, which could stall the IPC the GUI uses. It now runs detached, one pass
+  at a time, and a quiet trusted network stops shelling out after the first
+  pass.
+
 ### 1.0.41
 
 - **Per-item "Harden" buttons in the Security Diagnostic tab.** In addition to
