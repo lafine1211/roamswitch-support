@@ -13,6 +13,22 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.0.35
+
+- **Link guard: "warn" mode is now usable**. When link protection is set to
+  *warn* and you open a flagged site, the connection is held while you decide —
+  but the hold was 30 seconds, longer than a browser or server keeps a half-open
+  connection alive, so that first request died before it could be let through.
+  The hold is now **8 seconds**: with no answer it fails open and connects, and
+  the Allow / Block prompt stays up so your later choice applies to the next
+  request. (`warn` is not the default mode.)
+- Link guard: the danger verdict for a host is re-evaluated after you change the
+  link-protection mode or the allow / block lists (it was previously cached and
+  could keep applying the old decision).
+- Link guard: its five notifications (dangerous DNS lookup, blocked connection,
+  connection-on-hold ×2, possible-danger warning) are now localized in all 10
+  languages (previously Japanese only).
+
 ### 1.0.34
 
 - **Malware scan no longer quarantines files by surprise**:
