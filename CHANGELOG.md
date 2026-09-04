@@ -13,6 +13,17 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.0.46
+
+- **Fixed "Allow" on a malware-detection dialog not actually clearing the
+  pending approval.** "隔離" (Quarantine) always worked correctly. "許可する"
+  (Allow), however, sent the daemon a generic `resolve_approval` call that was
+  only ever wired up for USB device approvals — it silently mis-routed the
+  malware file's approval id into the USB-keyboard code path instead of
+  resolving it, so the approval stayed stuck internally until a 3-minute
+  fail-open timeout quietly cleared it rather than resolving immediately when
+  you clicked Allow.
+
 ### 1.0.45
 
 - **Fixed a black area rendering behind security approval dialogs**
