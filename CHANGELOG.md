@@ -13,6 +13,20 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.0.38
+
+- **Link protection: a blocked phishing site no longer spams notifications.**
+  When link protection blocks a dangerous host in `block` mode, a browser opens
+  many connections to it — you now get one notification per host, not one per
+  connection attempt.
+- **`block` mode now shows an Allow dialog too** (previously only a
+  notification): when a site is hard-blocked you get a prompt to allow it (which
+  adds it to the allow-list) or keep blocking.
+- **Dangerous approval dialogs now default to the safe choice.** For a blocked
+  dangerous site the highlighted / Enter-key button is now "Keep blocking", and
+  "Allow" is styled as a destructive action. Same for the malware prompt:
+  "Move to Quarantine" is the default, "Allow" is destructive.
+
 ### 1.0.37
 
 - **The app is now fully translated into all 10 supported languages.** The Help
