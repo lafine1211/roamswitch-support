@@ -363,6 +363,15 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 
 ## RoamSwitch for Mac
 
+## 1.8.1
+
+- Link Guard "Warn only" mode refinements. The "Allow / Block" choice for a
+  held connection now also appears as a foreground panel, not just a
+  notification (a "banner"-style notification only shows its action buttons on
+  hover). The panel's default action is the safe one — Block.
+- Fixed: in "Warn only" mode a site you had previously blocked by hand could be
+  dropped immediately instead of prompting (warn mode never hard-blocks).
+
 ## 1.8.0
 
 - **Link Guard is now enforced by a content-filter system extension** (Pro). It
