@@ -13,6 +13,32 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.0.40
+
+- **Security health check now reflects what is actually running.** Several
+  items were graded on capability alone:
+  - **fanotify pre-execution blocking** now checks that the RoamSwitch guard is
+    actually marked and running, not just that the kernel supports it — it went
+    green even while the guard was down after a failed init.
+  - **Exposed Ports** no longer assumes the firewall is up (one code path
+    hard-coded that); it reads the daemon's live profile.
+  - **SSH audit** no longer misreads "inactive" as "active"; with no SSH server
+    running it now passes as "not applicable".
+- **Trust-aware wording.** On a trusted (home) network RoamSwitch deliberately
+  does not pin the gateway MAC (a permanent ARP entry would break the LAN on a
+  router reboot) and, with the default DNS scope, keeps DNS Threat Guard on
+  standby. These now show green with an explanation instead of a red
+  "unprotected".
+- **DNS Threat Guard now works on wired / multi-NIC machines.** It was hard-wired
+  to an interface named `wlan0`; it now applies to every physical interface that
+  carries a default route (Ethernet + Wi-Fi both, ignoring `tailscale0`,
+  `docker0`, VPN and bridge interfaces). The "always-on" scope is now actually
+  enforced on every network switch.
+- **Fewer false positives from fileless-execution detection.** A binary updated
+  in place while running (Chrome, Electron apps, Flatpak/Snap) is no longer
+  flagged as an anti-forensics "deleted binary" — only genuinely suspicious
+  locations (`/tmp`, `/dev/shm`, `/run`, hidden paths) are.
+
 ### 1.0.39
 
 - **Bug fix: the on-access malware guard could stay off until the next daemon
