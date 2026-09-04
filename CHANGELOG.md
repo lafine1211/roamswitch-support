@@ -520,6 +520,15 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 
 ## RoamSwitch for Mac
 
+## 1.8.3
+
+- **Emergency confirmation dialogs now always come to the front.** The four
+  windows that open by themselves in response to a threat — the BadUSB keyboard
+  approval, the ransomware and ARP-spoofing emergency dialogs, and Link Guard's
+  "connection on hold" prompt — now present as a top-most overlay that stays
+  above other apps' windows and full-screen apps, on whichever Space you're on,
+  even when RoamSwitch is a background menu-bar app.
+
 ## 1.8.2
 
 - **Malware scan no longer quarantines the harmless EICAR test file.** A file
