@@ -13,6 +13,15 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.0.49
+
+- **Added a "Block now" button to the ARP-spoofing warning on
+  balanced/trusted networks.** Previously this was a desktop toast only —
+  blocking required opening RoamSwitch and manually triggering the
+  emergency Air-Gap. The toast is now paired with a modal confirmation
+  dialog offering a one-click "Block now" / "Later" choice (lockdown still
+  auto-blocks without confirmation, as before).
+
 ### 1.0.48
 
 - **Fixed Air-Gap recovery never sticking during an ongoing ARP-spoofing
