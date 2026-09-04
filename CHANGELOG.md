@@ -13,6 +13,23 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.0.41
+
+- **Per-item "Harden" buttons in the Security Diagnostic tab.** In addition to
+  the single "Apply Kernel Hardening" button, each failed item that has an
+  automated fix now has its own one-click button: kernel sysctl / Yama / core
+  dumps, `/tmp` & `/dev/shm` noexec, USB zero-trust, gateway ARP pinning, DNS
+  Threat Guard, and restarting the daemon if the fanotify guard is down.
+- **Fixed a recommendation that pointed to a screen that doesn't exist.** The
+  Yama and noexec items advised opening a "System Defense" section; they now
+  point to the actual button in the Security Diagnostic tab.
+- **`/tmp` noexec hardening is now trust-aware.** RoamSwitch deliberately leaves
+  `/tmp` executable on a trusted network (a noexec `/tmp` breaks package builds
+  and some installers) and applies noexec automatically when you connect to an
+  untrusted network. This state now shows green with an explanation instead of a
+  red "needs hardening". The check also now requires both `/tmp` and `/dev/shm`
+  to be noexec, not just `/dev/shm`.
+
 ### 1.0.40
 
 - **Security health check now reflects what is actually running.** Several
