@@ -13,6 +13,16 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.0.37
+
+- **The app is now fully translated into all 10 supported languages.** The Help
+  tab (product overview, the 10-step getting-started guide, CLI command
+  reference, the three protection-level cards) and the About tab (privacy
+  policy, EULA, disclaimer) were previously Japanese-only or covered only 6
+  languages; Traditional Chinese, Korean, Italian and European Portuguese are
+  now complete. Traditional Chinese readers get a proper Traditional
+  translation rather than a Simplified fallback.
+
 ### 1.0.36
 
 - **Link guard "warn" mode now fails *closed*, not open**. When link protection
