@@ -507,6 +507,21 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 
 ## RoamSwitch for Mac
 
+## 1.8.2
+
+- **Malware scan no longer quarantines the harmless EICAR test file.** A file
+  that merely contains the industry-standard EICAR test string (a security
+  how-to, a signature sample, this site itself) now only raises an
+  informational "🧪 EICAR test signature detected (harmless)" notification — it
+  is never quarantined or blocked. Same behaviour for the download auto-scan,
+  the scheduled scan, and a manual scan. A genuine malware sample is still
+  moved to the Quarantine Vault (reversible). Matches the Linux edition 1.0.34.
+- **Per-item fix buttons in the Security Diagnostic.** Each failed (🔴) item now
+  has a one-click button: RoamSwitch's own guards (DNS Threat Guard, Web/Mail
+  protection, USB guard) get a "🔧 Enable" that turns them on in place; OS-level
+  items (FileVault, Gatekeeper, …) get "Open Settings" that jumps to the right
+  System Settings pane. The check re-runs automatically afterwards.
+
 ## 1.8.1
 
 - Link Guard "Warn only" mode refinements. The "Allow / Block" choice for a
