@@ -13,6 +13,29 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.0.48
+
+- **Fixed Air-Gap recovery never sticking during an ongoing ARP-spoofing
+  attack.** The lockdown+spoofing-detected branch re-engaged Emergency
+  Air-Gap unconditionally on every 3-second cycle for as long as both
+  conditions held. Since an active attacker doesn't stop spoofing on
+  request, clicking "release" on the emergency dialog was undone within
+  seconds — the security level never actually returned to normal. A release
+  now sticks for the remainder of that spoofing episode; a genuinely new,
+  later attack still engages Air-Gap fresh.
+- The emergency Air-Gap dialog no longer forces the main window to pop up
+  alongside it — only the dialog itself is raised now.
+
+### 1.0.47
+
+- **Fixed `set_security_level` silently overriding — and fighting — an
+  active Air-Gap.** Any profile-switch call arriving while Air-Gap was
+  engaged replaced its drop-policy firewall table with a normal profile;
+  the security-check loop then saw the drop rules missing and kept
+  re-asserting Air-Gap every cycle, flapping the network open and closed
+  instead of recovering. `set_security_level` now refuses while Air-Gap is
+  active — only the dedicated release action can lift it.
+
 ### 1.0.46
 
 - **Fixed "Allow" on a malware-detection dialog not actually clearing the
