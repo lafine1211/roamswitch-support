@@ -13,6 +13,26 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.0.36
+
+- **Link guard "warn" mode now fails *closed*, not open**. When link protection
+  is set to *warn* and you open a flagged site, the connection is held while you
+  decide. Previously, if you didn't answer within the hold window, the
+  connection was let through (fail-open). Now it is **blocked** — not answering
+  "is this dangerous site safe?" shouldn't count as "yes". The Allow / Block
+  prompt stays up; if you allow it afterwards, your next request goes through.
+  (`warn` is not the default mode; it still never hard-blocks on its own.)
+- Link guard: a timed-out verdict is no longer remembered, so your next attempt
+  to reach the host prompts you again rather than staying silently blocked.
+- **More of the app is now translated into all 10 languages**: the Away
+  Protection Level tab, the VPN Tunnel status readout, the Canary Guard tab, the
+  security-log audit report you can copy, and the Air-Gap dialogs were
+  previously Japanese-only or Japanese/English-only.
+- Fixed: a "ransomware process frozen" notification (freeze only, no Air-Gap)
+  could pop the full Air-Gap recovery dialog. The app now decides which dialog
+  to show from a language-independent tag instead of matching Japanese text in
+  the notification title.
+
 ### 1.0.35
 
 - **Link guard: "warn" mode is now usable**. When link protection is set to
