@@ -13,6 +13,19 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.0.45
+
+- **Fixed a black area rendering behind security approval dialogs**
+  (malware quarantine, USB device authorize, link-guard warn/block, blocked
+  port). The app's dark theme was applied screen-wide to every window it
+  creates, including plain system-style confirmation dialogs that have none
+  of the app's own styling — leaving them with a near-black backdrop behind
+  unstyled text and buttons. These dialogs now render with the normal GTK
+  theme instead.
+- Finished localizing several dialogs (log AI-assist copy, CSV export, VPN
+  errors, Air-Gap header) that were still hardcoded to Japanese, to all 10
+  supported languages — in both the GUI and `roamswitch` CLI output.
+
 ### 1.0.44
 
 - **Fixed ARP-spoofing detection that could structurally never trigger.**
