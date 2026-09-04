@@ -13,6 +13,36 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.0.34
+
+- **Malware scan no longer quarantines files by surprise**:
+  - **The EICAR test string is now notify-only.** A file that merely contains
+    the industry-standard EICAR test string (a security how-to, a signature
+    sample, this project's own site) is surfaced with an informational
+    notification and is **never quarantined or blocked**. Previously the
+    system-wide on-access guard moved such a file to the Quarantine Vault and
+    denied every open of it — restoring it from git just fed the loop.
+  - **A real signature match asks first.** Instead of silently quarantining,
+    the guard raises a modal prompt: *Quarantine* (move to the vault),
+    *Allow* (add the file to the scan-exclusion list), or *Later*. No answer
+    within 3 minutes → the file is left in place (fail-open) with a notice.
+    An actual `execve` of a flagged file is still denied at the kernel when
+    "pre-execution blocking" is enabled.
+  - **Scan-exclusion paths.** A new list in the Quarantine tab (and the
+    `scan_exclusions` config key) — absolute paths, applied to everything under
+    them — are skipped by both the built-in YARA scanner and ClamAV. Choosing
+    *Allow* on a prompt, and restoring a file from the vault, both add to it.
+  - The **"System-wide fanotify"** and **"Pre-execution blocking"** toggles in
+    the GUI now actually take effect (they were previously inert).
+- **Bug fix — a heavy build could make the machine unresponsive / drop the
+  network**: the guard was reading its configuration on the fanotify
+  permission-event loop, which must never touch the filesystem; under load this
+  stalled every process opening a file. Config is now refreshed on a dedicated
+  background thread.
+- Download-guard and ransomware-freeze notifications are now fully localized
+  (10 languages; previously 6 with an English fallback).
+- Whitepaper updated to v1.5 (§5.2, §5.4, §5.5, SP-4).
+
 ### 1.0.33
 
 - **Optimize window dimensions for 1280x720 displays & adjust VPN/DNS dropdown widths**:
