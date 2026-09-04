@@ -371,8 +371,11 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
   (DoH/DoT); it also parses the TLS ClientHello (SNI). It needs a one-time
   approval in System Settings (no Apple review required). The previous
   `/etc/hosts` method stays as a fallback until the extension is approved.
-  In "Warn only" mode a suspicious connection now raises a notification with an
-  "Always block" button.
+- **"Warn only" mode is now a real warning.** On a suspicious connection the
+  extension pauses that connection and raises a notification with "Allow" /
+  "Block" buttons; your choice resumes or drops the held connection (no answer
+  within 25 s lets it through). The decision is remembered per site, so the
+  page's other requests and later visits apply instantly.
 - **The VPN tunnel backend is now selectable between WireGuard and Tailscale**
   (Pro, off by default). Under "Ports & Device Monitoring" → "VPN Tunnel" →
   "Backend". With Tailscale you pick an **exit node** from your existing tailnet
