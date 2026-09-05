@@ -13,6 +13,15 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.0.58
+
+- **Fixed Physical Radio Restore Button on Main Window**:
+  Resolved a UI race condition where clicking the "📡 Restore Radio (Enable Wi-Fi & Bluetooth)" button on the Overview dashboard immediately reverted the button back to the "Restore" state before background unblocking finished, causing restoration to fail and potentially re-killing the radio on a subsequent click.
+- **Enhanced Hardware Radio & Network Reconnection Pipeline**:
+  Ensured both the root daemon (`roamswitch-daemon`) and the user application execute full hardware unblocking via rfkill, re-enable NetworkManager radios (`nmcli radio all on` / `wifi on`), power up Bluetooth controllers (`bluetoothctl power on`), and trigger automatic reconnection for Wi-Fi interfaces (`nmcli device connect`). Integrated automatic cleanup of residual Air-gap lock files upon restore.
+- **Improved Visual Feedback during Radio Toggles**:
+  Temporarily disables the button upon clicking and displays a localized in-progress indicator ("⏳ Restoring Radios..." / "⏳ Severing Radios...") across all 10 languages. Thread-safely refreshes dashboard cards and security audit scores upon completion.
+
 ### 1.0.57
 
 - **Unified Physical Radio (Wi-Fi & Bluetooth) Terminology and One-Click Restoration**:
