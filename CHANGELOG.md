@@ -13,6 +13,27 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.0.59
+
+- **Fixed the Yama LSM diagnostic item never turning green on a device whose
+  kernel doesn't have Yama LSM active** (reported live on a Raspberry Pi) —
+  neither the per-item nor the batch kernel-hardening button ever fixed it,
+  since it was silently writing to a sysctl path that doesn't exist on such
+  a kernel and reporting success anyway. The health check now tells you
+  honestly that this device's kernel wasn't booted with Yama LSM active and
+  can't be fixed automatically (with the Raspberry Pi OS workaround: add
+  `yama` to the `lsm=` list in `/boot/cmdline.txt` and reboot), instead of
+  repeating a "click harden" recommendation that could never work, and no
+  longer shows a harden button for this specific state.
+- **DNS Threat Guard now reverts to your network's actual DNS servers**
+  instead of a bare `resolvectl revert`, which didn't always restore the
+  pre-override servers correctly — it now resolves the real DHCP/
+  NetworkManager-assigned servers first. Switching the DNS protection scope
+  in the DNS tab also now applies immediately instead of waiting for the
+  next cycle.
+- Reduced the default window size and several column widths so the app fits
+  comfortably on smaller displays without clipping.
+
 ### 1.0.58
 
 - **Fixed Physical Radio Restore Button on Main Window**:
