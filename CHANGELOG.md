@@ -13,6 +13,17 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.0.61
+
+- **Strict Automated Security Updates Verification**:
+  Enforced a strict qualification standard for automatic security updates. Merely refreshing package lists (`apt-daily.timer`) or staging package downloads is no longer accepted as passed. Verified unattended update installations require the `unattended-upgrade` binary, armed timer (`apt-daily-upgrade.timer` or service), and active configuration (`APT::Periodic::Unattended-Upgrade "1"` via `apt-config dump`), or `dnf-automatic` with `apply_updates = yes`.
+- **Improved Security Diagnostic Accuracy on Raspberry Pi and SBC Architectures**:
+  - **UEFI Secure Boot**: Automatically detects Raspberry Pi and non-UEFI hardware architectures, marking the audit item as "Not Applicable (Raspberry Pi Architecture)" with full pass credit rather than unfairly penalizing unsupported firmware.
+  - **/tmp & /dev/shm noexec Hardening**: Accommodates environments like Raspberry Pi OS where `/tmp` is not on a dedicated tmpfs mount, validating `/dev/shm` noexec mount combined with real-time fileless process anomaly detection.
+  - **Gateway ARP Permanent Locking**: Correctly recognizes dynamic ARP resolution as expected on trusted networks, while verifying permanent MAC locks via `/var/lib/roamswitch/infra_neigh_lock.json` and kernel neighbor tables.
+  - **SSH Server Audit**: Evaluates effective configuration via `sshd -T` and recursively inspects `/etc/ssh/sshd_config.d/*.conf` drop-in files to eliminate false negatives on modern distributions.
+  - **DNS Threat Guard & Wi-Fi Security**: Added resilient fallbacks for `/etc/resolv.conf` and `wpa_cli status` on systems lacking `systemd-resolved` or `NetworkManager`.
+
 ### 1.0.60
 
 - **Dropdown / ComboBox Selection for Languages and DNS Threat Guard**:

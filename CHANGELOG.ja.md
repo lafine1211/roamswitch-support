@@ -12,6 +12,17 @@ Linux 版（別系列・1.0.x）でバージョン番号は独立しています
 Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）。
 詳しくは <https://lafine.net/linux>。
 
+### 1.0.61
+
+- **自動セキュリティアップデートの厳格な検証**:
+  単なるパッケージリストの更新（`apt-daily.timer`）やダウンロードのみの待機状態を合格とみなさず、無人自動更新（`unattended-upgrade` 実行バイナリ、`apt-daily-upgrade.timer`、および `APT::Periodic::Unattended-Upgrade "1"` 設定）や `dnf-automatic`（`apply_updates = yes`）により、重大なセキュリティパッチが実際に自動適用・インストールされる構成であることを厳格に検証する判定基準へ強化しました。
+- **Raspberry Pi 等のシングルボードコンピュータにおけるセキュリティ診断精度の向上**:
+  - **UEFI Secure Boot**: Raspberry Pi などの UEFI を持たないアーキテクチャを自動検出し、減点対象とせず「非該当 (Raspberry Pi アーキテクチャ)」として正確に判定するように改善しました。
+  - **/tmp & /dev/shm noexec 防衛**: Raspberry Pi OS 等の `/tmp` が独立パーティション（tmpfs）化されていない環境において、`/dev/shm` の noexec 設定とプロセス空間メモリ検査を組み合わせた実効的な多層防御状態を正しく評価するように改善しました。
+  - **ゲートウェイARP固定**: 信頼ネットワーク接続時は動的ARPが正常運用であることを適切に評価し、中間者攻撃（MITM）防止の静的固定状態を正確に判定・表示するように最適化しました。
+  - **SSH サーバー設定監査**: `/etc/ssh/sshd_config.d/*.conf` の分割設定ファイルを網羅的に解析し、`sshd -T` による実効ランタイム設定を評価することで、最新の Linux / Raspberry Pi OS 環境での誤判定を解消しました。
+  - **DNS 脅威保護 & Wi-Fi 暗号化**: `systemd-resolved` や `NetworkManager` が導入されていない環境（`resolvconf` や `wpa_supplicant` 単体環境）でも、DNS 設定および Wi-Fi 暗号化強度（WPA2/WPA3）が正確に検出されるようフォールバック処理を拡充しました。
+
 ### 1.0.60
 
 - **言語・DNS設定のプルダウン（ドロップダウン）化**:
