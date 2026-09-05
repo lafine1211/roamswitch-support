@@ -13,6 +13,17 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.0.60
+
+- **Dropdown / ComboBox Selection for Languages and DNS Threat Guard**:
+  Consolidated sprawling button grids for language selection (11 buttons) and DNS threat protection (provider & scope buttons) into sleek, compact dropdown menus (`ComboBoxText`). Prevents misclicks and creates a much cleaner, responsive settings interface.
+- **Enlarged Window Dimensions and Text Flow (1100px)**:
+  Adjusted the base window width to 1100px (1100x640) with optimized label wrapping limits (65 characters), eliminating crowded paragraphs and horizontal line crunching across all supported languages on modern displays.
+- **Streamlined Updates Flow and Locale-Insensitive Parsing**:
+  Unified the two-step "Check for Updates" and "Upgrade" actions into a single sidebar tab ("🔄 Upgrade"). The tab now passively verifies update availability upon opening and presents a prominent "🚀 Upgrade Now" button. Fixed an issue where `apt-cache policy` failed to parse candidate versions under non-English system locales.
+- **Improved USB Bus Zero-Trust Audit Accuracy on Raspberry Pi**:
+  Enhanced the diagnostic audit evaluation logic so that devices with composite controllers or single-bus hubs (such as Raspberry Pi 4/5) are accurately recognized as passed (green) when USB bus zero-trust containment is active.
+
 ### 1.0.59
 
 - **Fixed the Yama LSM diagnostic item never turning green on a device whose
