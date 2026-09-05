@@ -13,6 +13,24 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.0.57
+
+- **Unified Physical Radio (Wi-Fi & Bluetooth) Terminology and One-Click Restoration**:
+  Standardized terminology across the UI and documentation to "Physical Radio (Wi-Fi & Bluetooth) Kill / Restore". Added dedicated one-click "Restore Radios (Wi-Fi & Bluetooth)" controls across the Dashboard, Emergency Air-Gap Dialog, Networks tab, and System Tray menu for instant recovery from hardware radio kill. Added clear desktop notifications when toggling hardware radios on and off.
+- **Exhaustive 10-Language Localization Verification**:
+  Completed a comprehensive localization audit across all 10 supported languages (ja, en, zh-Hans, zh-Hant, ko, de, fr, es, it, pt), ensuring full translation coverage for incident details (spoofed IP, attacker MAC, legitimate router MAC, target file, suspicious process) and all tray/dialog/window elements.
+
+### 1.0.56
+
+- **Expanded Situational Context, Decision Guidance, and Quick Actions during Air-Gap**:
+  The emergency alert dialog and Networks tab now display concrete incident details, including spoofed IP/MAC addresses for ARP spoofing or altered path/process name/PID for canary file integrity violations. Packet-level isolation (nftables) and data leak prevention guarantees are explicitly communicated, alongside contextual decision guidance (risks of Man-in-the-Middle on public Wi-Fi vs legitimate router changes on home/office networks). Added four quick-action options: "Disconnect Wi-Fi", "View Detailed Logs", "Close (Keep Blocked)", and "Release Air-Gap".
+- **Enhanced Connectivity Recovery After Releasing Air-Gap**:
+  Automatically triggers NetworkManager connectivity checks and flushes local DNS caches upon Air-Gap release, instantly clearing the question mark ("?") icon on desktop taskbars. Instantly dismisses the emergency alert modal upon releasing Air-Gap.
+- **System Tray Menu (ksni / DBusMenu) Stability Fix**:
+  Vendored and patched the `ksni` crate to eliminate potential out-of-bounds `id2index` panic crashes during dynamic menu rebuilds.
+- **Localization**:
+  All new dialogs and actions fully localized across 10 languages (ja, en, zh-Hans, zh-Hant, ko, de, fr, es, it, pt).
+
 ### 1.0.51
 
 - **Fixed the main window freezing whenever the Networks tab was open during
