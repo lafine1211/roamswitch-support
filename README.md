@@ -125,6 +125,17 @@ security audit, and a read‑only MCP server.
   outbound connections from RoamSwitch's binaries are the four documented in
   whitepaper §7. Latest run: [**PASS, 2026-08-29**](audit/RESULTS-2026-08-29.md).
   Reproduce with `./audit/rs-zerotel-audit.sh all`.
+- **[`test/docker/`](test/docker/)** — reproducible Docker test suite verifying all Linux
+  defense mechanisms & penetration scenarios (Air-Gap enforcement, self-healing against
+  firewall clobbering, ransomware canary tampering, `/tmp` noexec, Yama LSM, homograph detection,
+  and credential leak detection — 17 items total). Run safely in an isolated container without
+  affecting the host:
+
+  ```sh
+  cd test/docker
+  docker build -t roamswitch-test .
+  docker run --rm --privileged roamswitch-test
+  ```
 - Vulnerability reports: <https://lafine.net/.well-known/security.txt>
 
 ## Support

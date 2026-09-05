@@ -120,6 +120,13 @@ MCP サーバーを同梱します。
   トラフィックをキャプチャしてプロセス単位で帰属し、RoamSwitch のバイナリからの外向き接続が
   設計書 §7 の4経路だけであることを確かめます。直近の実測：[**PASS・2026-08-29**](audit/RESULTS-2026-08-29.ja.md)。
   `./audit/rs-zerotel-audit.sh all` で再現できます。
+- **[`test/docker/`](test/docker/)** — Linux 版ホワイトペーパー（付録 C.2）の防衛機構・侵入テスト項目（Air-Gap 遮断、防火壁消去時の自己修復、ランサムウェア検知、/tmp noexec、Yama LSM、ホモグラフ検知など全 17 項目）を、**ホストを壊さず誰でも 100% 手元で安全に再現検証できる Docker スイート**：
+
+  ```sh
+  cd test/docker
+  docker build -t roamswitch-test .
+  docker run --rm --privileged roamswitch-test
+  ```
 - 脆弱性の報告: <https://lafine.net/.well-known/security.txt>
 
 ## サポート
