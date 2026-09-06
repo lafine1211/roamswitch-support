@@ -28,6 +28,21 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 - **Extended CLI Server Management**:
   - Added `roamswitch status --server`, `roamswitch server [config|setup|test-notify|restart]`, `roamswitch fim [verify|update]`, and `roamswitch emergency-restore` commands.
 
+### 1.0.66
+
+- **Multi-Distribution Package Manager Support (Fedora / openSUSE / Arch Linux)**:
+  - Extended package manager detection to natively support Fedora/RHEL (`dnf`), openSUSE (`zypper`), and Arch Linux (`pacman` / AUR) alongside Debian/Ubuntu (`apt`).
+  - Automatically switches upgrade commands and CLI fallback instructions based on the active host distribution.
+- **Refined 10-Language UI & Update Verification Timestamps**:
+  - Generalized package manager references across all 10 supported languages (`apt / dnf / zypper, etc.`).
+  - Added localized timestamp indicators upon successful update checks (e.g., `✅ You are on the latest version. (checked 16:30)`).
+
+### 1.0.65
+
+- **Manual Update Check Button ("🔍 Check for updates")**:
+  - Added a manual check button and animated spinner to the "Automatic Update Status" card to directly inspect remote repository indices (`lafine.net/apt` Packages) on demand.
+  - Dynamically reveals the "⬆️ Upgrade now" button only when a newer package version is confirmed, otherwise showing an immediate "Up to date" confirmation with time of check.
+
 ### 1.0.64
 
 - **Consolidated Updates View & Smart Upgrade Button**:
