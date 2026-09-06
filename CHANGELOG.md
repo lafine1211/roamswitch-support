@@ -13,12 +13,17 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.0.64
+
+- **Consolidated Updates View & Smart Upgrade Button**:
+  Unified the separate application package upgrade and daily threat-feed status panels into a cohesive "Automatic Update Status" card. The manual "Upgrade now" button is now hidden when the application is already on the latest version (displaying a clean "Up to date" confirmation) and only prominently surfaces when an actual package update is available in the repository. Clarified the division between immediate threat definition updates and OS package upgrades.
+
 ### 1.0.63
 
-- **Manual Immediate Update Button & Real-time Progress Spinner for Threat Feeds**:
-  Added a dedicated "🔄 Update Definitions Now" button inside the "Automatic update status" card in the Updates tab. Users can now immediately fetch and verify the latest manifest, scam-site feed, and ClamAV definitions on demand. The active operation displays an animated GTK spinner and status label, instantly updating the displayed feed timestamp upon completion.
+- **Manual Immediate Update Button & Progress Spinner for Threat Feeds**:
+  Added a dedicated "🔄 Update Definitions Now" button with animated GTK spinner and status label to immediately fetch and verify manifest, scam-site feed, and ClamAV definitions.
 - **Automatic Application Restart After Package Upgrade**:
-  Following a successful package upgrade (`apt` / `dnf` / `zypper`) from the "Upgrade now" button, RoamSwitch now automatically restarts itself smoothly and brings the main window back up, eliminating the need for manual restarts. Also added an active spinner indicator while checking and executing upgrades.
+  Following a successful package upgrade (`apt` / `dnf` / `zypper`), RoamSwitch now automatically restarts itself smoothly to bring the main window back up without manual intervention.
 
 ### 1.0.50 - 1.0.62
 
