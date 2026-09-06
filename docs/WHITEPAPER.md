@@ -2,8 +2,9 @@
 
 > This document explains what privileges RoamSwitch runs with and what it does at that boundary. It contains no marketing language; everything stated here can be verified against the shipping app binary and its actual behavior.
 
-**Version** v1.3 · **Covers** RoamSwitch 1.8.0 · **Requires** macOS 13.0+ / Apple Silicon · **Published** 2026-09-03 · **Team ID** GV76B6G4YU
+**Version** v1.4 · **Covers** RoamSwitch 1.8.4 · **Requires** macOS 13.0+ / Apple Silicon · **Published** 2026-09-06 · **Team ID** GV76B6G4YU
 
+*v1.4: reflects security enhancements including ephemeral cookie separation for port audits, pre-execution binary permission verification, WireGuard argument sanitization, and dynamic XPC audit_token code signature validation.*
 *v1.3: adds a **NEFilterDataProvider system extension** as the link-guard enforcement point (§3 / §5 / §7) — it inspects the actual outbound TCP flow after name resolution, so it covers browsers doing their own DoH/DoT and never rewrites `/etc/hosts`. Makes the VPN backend **selectable between WireGuard and Tailscale** (§4 / §5 / §7). Helper 1.8.2.*
 *v1.2: adds the VPN tunnel + kill-switch (§4 / §5 / §7, 1.7.6), the preventive gateway ARP/NDP lock (§5, 1.7.5), and the USB storage approval prompt (§11, 1.7.4). Helper 1.6.0.*
 *v1.1: adds Link Guard (§5, `/etc/hosts` blocking of phishing connections) and its threat feed (§7 / §11, a receive-only daily fetch with a feed-dedicated signing key).*

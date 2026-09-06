@@ -13,6 +13,17 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.0.62
+
+- **Strict Daemon IPC Socket Authentication (SO_PEERCRED)**:
+  Implemented kernel-level peer credential inspection (`SO_PEERCRED`) on the Unix domain socket for `roamswitch-daemon`. All incoming connections are strictly verified to originate from either root (UID 0) or the currently active desktop user UID, blocking unauthorized privilege escalation or command injection from other local users or restricted processes.
+- **Quarantine Vault Hardening Against Privilege Escalation and Arbitrary Deletions**:
+  Strengthened canonical path resolution and strict prefix verification across threat isolation and vault restoration routines. Mitigated potential symlink traversal attacks, ensuring that malicious symbolic links cannot trigger arbitrary deletion or modification of critical system files.
+- **Enhanced WireGuard Configuration & Command Hook Sanitization**:
+  Enforced strict character validation on interface and configuration identifiers during VPN tunnel connection and teardown, eliminating risks of unintended argument injection or shell hook triggers.
+- **Reproducible Security Penetration Test Docker Suite & Whitepaper Update**:
+  Updated the security whitepaper (Appendix C.2) with step-by-step reproduction instructions and released an automated Docker test suite in the public support repository.
+
 ### 1.0.61
 
 - **Strict Automated Security Updates Verification**:
@@ -124,6 +135,17 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 ---
 
 ## RoamSwitch for Mac
+
+## 1.8.4
+
+- **Ephemeral Cookie Separation in Port Security Audits**:
+  Isolated HTTP probing routines to use ephemeral, sandboxed cookie storage during local port audits. Prevents credential leakage and cross-service session contamination between audit probes and user web sessions.
+- **Dynamic XPC Code Signature Verification (audit_token)**:
+  Enforced strict runtime validation of Apple Developer ID code signatures via `audit_token` on all XPC connections to `RoamSwitchHelper`, preventing unauthorized or injected processes from dispatching privileged tasks.
+- **Pre-execution Permission Verification for External Binaries**:
+  Added comprehensive file permission and ownership checks prior to spawning external helper binaries to guard against tampering and unauthorized binary execution.
+- **WireGuard Configuration Sanitization**:
+  Strengthened interface and config name sanitization in WireGuard tunnel management to block argument injection and command hook execution.
 
 ## 1.8.3
 
