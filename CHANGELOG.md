@@ -13,6 +13,41 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.1.1 - 1.3.2
+
+- **Server Edition configuration & documentation overhaul**: every setting the
+  operations manual documents is now real and functional — a Docker-bypass
+  protection toggle, an SSH-preservation toggle, an `isolate`/`freeze`/`alert_only`
+  containment mode, a configurable eBPF socket path, and a new optional
+  `guard.yaml` policy file for per-severity actions (with automatic escalation
+  after a repeated incident and a safety timer that auto-restores an Air-Gap
+  isolation if never acknowledged).
+- **Event-driven File Integrity Monitoring**: tampering is now detected the
+  instant a monitored file's write finishes, instead of waiting for the next
+  periodic scan. Fedora/RHEL/openSUSE now get an automatic FIM baseline
+  refresh after every package transaction, matching the existing Debian/Ubuntu hook.
+- **Egress / C2 containment for servers**: a local malicious-IP blocklist and
+  an optional DNS sinkhole (off by default, to avoid breaking servers that
+  rely on internal DNS), plus ransomware canary decoys and permanent kernel
+  hardening now running on Server Edition as well.
+- **Tetragon sensor support**: the eBPF Runtime Guard can now use Cilium's
+  Tetragon as an alternative to Falco (its native gRPC API, over a local UNIX
+  socket only — no TLS, no new listening port) on both editions.
+- **Safer autonomous containment**: a shared protected-process safety list
+  (init, container runtimes, package managers, browsers, ...) now guards every
+  place RoamSwitch can freeze or terminate a process, and per-process network
+  isolation was corrected to target the process's real UID or container
+  instead of a rule that could silently match nothing.
+- **Client: safer Air-Gap recovery & adaptive detection**: the "release"
+  action now terminates the offending process (when known) before lifting an
+  Air-Gap isolation, instead of only lifting the network block. eBPF detection
+  sensitivity now automatically tightens on an untrusted network and relaxes
+  back on a trusted one.
+- **Diagnostics and notifications cleanup**: shortened the "CVE-2026-53362"
+  reference in the security health check to just "Frag Gap" for readability,
+  and stopped showing a "protection profile switched" notification the moment
+  the daemon settles into an already-known network right after startup.
+
 ### 1.1.0
 
 - **Official Release of RoamSwitch Server Edition**:
@@ -28,32 +63,17 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 - **Extended CLI Server Management**:
   - Added `roamswitch status --server`, `roamswitch server [config|setup|test-notify|restart]`, `roamswitch fim [verify|update]`, and `roamswitch emergency-restore` commands.
 
-### 1.0.66
+### 1.0.63 - 1.0.66
 
-- **Multi-Distribution Package Manager Support (Fedora / openSUSE / Arch Linux)**:
-  - Extended package manager detection to natively support Fedora/RHEL (`dnf`), openSUSE (`zypper`), and Arch Linux (`pacman` / AUR) alongside Debian/Ubuntu (`apt`).
-  - Automatically switches upgrade commands and CLI fallback instructions based on the active host distribution.
-- **Refined 10-Language UI & Update Verification Timestamps**:
-  - Generalized package manager references across all 10 supported languages (`apt / dnf / zypper, etc.`).
-  - Added localized timestamp indicators upon successful update checks (e.g., `✅ You are on the latest version. (checked 16:30)`).
-
-### 1.0.65
-
-- **Manual Update Check Button ("🔍 Check for updates")**:
-  - Added a manual check button and animated spinner to the "Automatic Update Status" card to directly inspect remote repository indices (`lafine.net/apt` Packages) on demand.
-  - Dynamically reveals the "⬆️ Upgrade now" button only when a newer package version is confirmed, otherwise showing an immediate "Up to date" confirmation with time of check.
-
-### 1.0.64
-
-- **Consolidated Updates View & Smart Upgrade Button**:
-  Unified the separate application package upgrade and daily threat-feed status panels into a cohesive "Automatic Update Status" card. The manual "Upgrade now" button is now hidden when the application is already on the latest version (displaying a clean "Up to date" confirmation) and only prominently surfaces when an actual package update is available in the repository. Clarified the division between immediate threat definition updates and OS package upgrades.
-
-### 1.0.63
-
-- **Manual Immediate Update Button & Progress Spinner for Threat Feeds**:
-  Added a dedicated "🔄 Update Definitions Now" button with animated GTK spinner and status label to immediately fetch and verify manifest, scam-site feed, and ClamAV definitions.
-- **Automatic Application Restart After Package Upgrade**:
-  Following a successful package upgrade (`apt` / `dnf` / `zypper`), RoamSwitch now automatically restarts itself smoothly to bring the main window back up without manual intervention.
+- **Streamlined update UX**: added a manual "🔍 Check for updates" button with
+  a progress spinner, consolidated the app-upgrade and threat-feed-update
+  status into a single "Automatic Update Status" card that only surfaces an
+  "⬆️ Upgrade now" prompt when a newer version is actually available, and the
+  app now restarts itself automatically after a package upgrade.
+- **Native multi-distribution package manager support**: Fedora/RHEL (`dnf`),
+  openSUSE (`zypper`), and Arch Linux (`pacman` / AUR) upgrade instructions
+  now appear natively alongside Debian/Ubuntu (`apt`), fully localized across
+  all 10 languages with update-check timestamps.
 
 ### 1.0.50 - 1.0.62
 
