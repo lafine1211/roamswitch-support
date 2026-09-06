@@ -99,6 +99,12 @@ Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）
 
 ## RoamSwitch for Mac
 
+### 1.8.5
+
+- **launchd PathState によるエアギャップ・フェイルセーフの完全自律化（謝辞: Super Funicular 氏）**:
+  特権ヘルパー `RoamSwitchHelper` の LaunchDaemon plist に `KeepAlive.PathState`（監視パス: `/Library/Application Support/RoamSwitch/pf_airgap_since`）を設定しました。エアギャップ（ロックダウン）作動中に特権ヘルパーがクラッシュ等で終了した場合でも、メニューバーアプリの XPC 呼び出しやユーザー操作を待つことなく launchd が即座に自律再起動させ、アプリが停止していても10分のパケットフィルター全遮断タイムアウトが確実に自律解除されるよう堅牢化しました。
+  *(Dev.to の技術ディスカッションにおける [Super Funicular 氏](https://dev.to/superfunicular)（[該当記事](https://dev.to/superfunicular/turn-an-old-android-phone-into-a-screen-off-security-camera-no-cloud-lan-only-5cll)）の洞察と提起に深く感謝いたします。)*
+
 ### 1.8.4
 
 - **ローカルポート監査時のCookie分離**:

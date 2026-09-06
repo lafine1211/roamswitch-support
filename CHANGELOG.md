@@ -99,6 +99,12 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 
 ## RoamSwitch for Mac
 
+### 1.8.5
+
+- **Autonomous Air-Gap Failsafe via launchd PathState (Thanks to Super Funicular)**:
+  Configured `KeepAlive.PathState` in `RoamSwitchHelper`'s LaunchDaemon plist targeting `/Library/Application Support/RoamSwitch/pf_airgap_since`. If the privileged helper process terminates while an air-gap is active, launchd automatically resurrects it without waiting for an incoming XPC call or user action. This ensures the 10-minute packet filter isolation timeout executes autonomously even if the menu bar app is dead.
+  *(Special thanks to [Super Funicular](https://dev.to/superfunicular) for raising the edge-case inquiry during our discussion on [Dev.to](https://dev.to/superfunicular/turn-an-old-android-phone-into-a-screen-off-security-camera-no-cloud-lan-only-5cll).)*
+
 ### 1.8.4
 
 - **Ephemeral Cookie Separation in Port Security Audits**:
