@@ -88,3 +88,11 @@ Linux エディションには、`nftables` Air-Gap、ランサムウェアの�
 
 - **[RESULTS-LINUX-2026-09-02.ja.md](RESULTS-LINUX-2026-09-02.ja.md)**（[English](RESULTS-LINUX-2026-09-02.md)）— 14 / 15 PASS、発見された不具合はすべて修正・再検証済み
 - 設計書 §9 ＋ 付録 C: <https://lafine.net/linux/whitepaper>
+
+**Server Edition** には別途、インバウンド既定拒否、`guard.yaml` の重大度別封じ込め、
+セーフティタイマー、Egress/C2 遮断リストを対象としたレポートがあります。公式 APT
+パッケージだけで再現でき、ソースアクセスは不要です:
+
+- **[RESULTS-PENTEST-SERVER-2026-09-07.ja.md](RESULTS-PENTEST-SERVER-2026-09-07.ja.md)**（[English](RESULTS-PENTEST-SERVER-2026-09-07.md)）— 18 / 18 PASS
+- 再現方法: [`test/docker/server/`](../test/docker/server/)
+- 設計書 §6: <https://lafine.net/linux-server-whitepaper.html>

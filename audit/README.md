@@ -94,3 +94,11 @@ Vault and BadUSB, plus a package-only "zero data sent off the machine" check:
 
 - **[RESULTS-LINUX-2026-09-02.md](RESULTS-LINUX-2026-09-02.md)** ([日本語](RESULTS-LINUX-2026-09-02.ja.md)) — 14 / 15 PASS; all findings fixed and re-verified
 - Whitepaper §9 + Appendix C: <https://lafine.net/linux/whitepaper>
+
+The **Server Edition** has its own separate report, covering inbound Default-Deny,
+`guard.yaml` severity-based containment, the safety timer, and the egress/C2 blocklist —
+reproducible with the official APT package, no source access needed:
+
+- **[RESULTS-PENTEST-SERVER-2026-09-07.md](RESULTS-PENTEST-SERVER-2026-09-07.md)** ([日本語](RESULTS-PENTEST-SERVER-2026-09-07.ja.md)) — 18 / 18 PASS
+- Reproduce it: [`test/docker/server/`](../test/docker/server/)
+- Whitepaper §6: <https://lafine.net/linux-server-whitepaper.html>

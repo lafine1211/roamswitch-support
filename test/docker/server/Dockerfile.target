@@ -1,0 +1,36 @@
+# Disposable target container for RoamSwitch Server Edition penetration testing.
+# Installs the real, official roamswitch-server package from the public APT
+# repository — this is exactly what a real deployment installs, not a
+# locally-built artifact.
+
+FROM ubuntu:24.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    nftables iproute2 conntrack procps curl sudo openssh-server \
+    python3 net-tools socat ca-certificates gnupg \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN curl -fsSL https://lafine.net/apt/roamswitch-archive-keyring.asc \
+      | gpg --dearmor -o /usr/share/keyrings/roamswitch-archive-keyring.gpg \
+    && echo "deb [arch=amd64,arm64 signed-by=/usr/share/keyrings/roamswitch-archive-keyring.gpg] https://lafine.net/apt stable main" \
+      | tee /etc/apt/sources.list.d/roamswitch.list \
+    && apt-get update \
+    && apt-get install -y roamswitch-server \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN mkdir -p /run/sshd && echo 'root:roamswitch_pentest' | chpasswd
+
+# Server configuration — see server.conf.example / guard.yaml.example shipped
+# with the package for the full, documented set of keys.
+COPY server.conf /etc/roamswitch/server.conf
+COPY guard.yaml /etc/roamswitch/guard.yaml
+RUN chmod 600 /etc/roamswitch/server.conf /etc/roamswitch/guard.yaml \
+    && mkdir -p /var/lib/roamswitch/threatfeed
+
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+EXPOSE 22 80 443 3306 8080
+ENTRYPOINT ["/entrypoint.sh"]

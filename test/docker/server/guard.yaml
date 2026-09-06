@@ -1,0 +1,38 @@
+# RoamSwitch Server Edition — pentest fixture for guard.yaml (short timer so
+# the safety-timer test doesn't need to sleep for the real default of 300s).
+version: "1.0"
+mode: "server"
+
+sensor:
+  type: "falco"
+  transport: "unix_socket"
+  socket_path: "/run/roamswitch/events.sock"
+  reconnect_interval_ms: 1000
+
+policies:
+  on_warning:
+    action: "log_and_notify"
+
+  on_error:
+    action: "isolate_process"
+    kill_process: false
+
+  on_critical:
+    server_action: "isolate_process"
+    kill_process: true
+    fallback_to_host_isolation_after_retries: 2
+
+  on_emergency:
+    action: "isolate_host_all"
+    kill_process: false
+
+server_safeguards:
+  allow_established_connections: true
+  maintenance_ssh_ports:
+    - 22
+  whitelist_cidrs: []
+  whitelist_dns_servers: []
+  safety_timer_secs: 5
+
+adaptive_security:
+  enabled: true
