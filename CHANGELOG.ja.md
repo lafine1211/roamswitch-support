@@ -12,6 +12,21 @@ Linux 版（別系列・1.0.x）でバージョン番号は独立しています
 Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）。
 詳しくは <https://lafine.net/linux>。
 
+### 1.1.0
+
+- **RoamSwitch Server Edition（サーバー・クラウド版）の正式導入**:
+  - Falco eBPF ランタイム脅威検知と自動隔離（UNIXドメインソケット `/var/run/roamswitch/events.sock` 連携）。
+  - 重要パス改ざん検知（FIM: Critical Path File Integrity Monitoring, SHA-256）と自動リストア。
+  - サーバー専用25項目セキュリティ・ヘルスチェック（カーネルパラメータ、Docker特権コンテナ/ソケット露出、eBPF LSM、SYN cookies、空パスワードアカウント等）。
+  - Webhook（Slack / Discord / Teams / Generic）および PagerDuty によるリアルタイム障害・脅威通知。
+- **MCP サーバー（`roamswitch-mcp`）の Server Edition 対応**:
+  - `get_security_report` ツールに `isServer: true` 引数を追加。Claude や AI エージェントから 25 項目のサーバーセキュリティ診断結果を直接取得可能に。
+- **SDK（`roamswitchkit` / Python `roamswitch`）のサーバー診断メソッド追加**:
+  - Rust SDK: `client.server_security_report().await?` を追加。
+  - Python SDK: `client.server_security_report()` および `client.security_report(is_server=True)` を追加。
+- **CLI サーバー管理機能の拡充**:
+  - `roamswitch status --server`、`roamswitch server [config|setup|test-notify|restart]`、`roamswitch fim [verify|update]`、`roamswitch emergency-restore` コマンドを追加。
+
 ### 1.0.64
 
 - **自動更新カードとアップグレード画面の統合・整理**:

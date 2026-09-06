@@ -13,6 +13,21 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.1.0
+
+- **Official Release of RoamSwitch Server Edition**:
+  - Falco eBPF runtime threat detection and automatic container/process isolation via UNIX domain socket (`/var/run/roamswitch/events.sock`).
+  - Critical Path File Integrity Monitoring (FIM with SHA-256 baseline) and automatic recovery.
+  - 25-item server security health check (kernel parameters, Docker privileged containers/exposed socket, eBPF LSM, SYN cookies, empty password accounts, etc.).
+  - Webhook (Slack, Discord, Microsoft Teams, Generic) and PagerDuty alert integrations.
+- **MCP Server (`roamswitch-mcp`) Server Edition Support**:
+  - Added optional `isServer: true` argument to `get_security_report` tool, enabling Claude and AI agents to query the 25-item server security posture.
+- **SDK (`roamswitchkit` / Python `roamswitch`) Server Health Methods**:
+  - Rust SDK: Added `client.server_security_report().await?`.
+  - Python SDK: Added `client.server_security_report()` and `is_server` option in `client.security_report(is_server=True)`.
+- **Extended CLI Server Management**:
+  - Added `roamswitch status --server`, `roamswitch server [config|setup|test-notify|restart]`, `roamswitch fim [verify|update]`, and `roamswitch emergency-restore` commands.
+
 ### 1.0.64
 
 - **Consolidated Updates View & Smart Upgrade Button**:

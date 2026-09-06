@@ -1,11 +1,13 @@
-# RoamSwitch for Linux — CLI / headless operations guide
+# RoamSwitch for Linux — CLI / Headless Operations Guide
 
 **English** | [日本語](LINUX_CLI.ja.md)
 
-How to run RoamSwitch for Linux without the GUI — on a server, over SSH, from
-cron, or from a monitoring script. This covers the current **client edition**.
-For the server edition (coming soon), see
-<https://lafine.net/linux#editions>.
+How to operate RoamSwitch for Linux without the GUI — on a server, over SSH, from cron, or from monitoring scripts.
+
+> [!TIP]
+> **Choosing the Edition**:
+> - **Client Edition (`roamswitch`)**: Designed for laptops, mobile workstations, and developer devices. Autonomously switches nftables firewall profiles based on the connected network's trust level. This guide focuses primarily on headless/CLI management of the Client Edition.
+> - **Server Edition (`roamswitch-server`)**: Designed for cloud VPS instances (AWS, GCP, DigitalOcean, Linode, etc.) and on-premises servers exposed directly to the Internet. Features inbound default-drop filtering, SSH lockout prevention, Critical-Path File Integrity Monitoring (FIM), eBPF / Falco runtime integration, and instant notifications (Telegram / LINE / Webhooks). For full installation and management instructions, see the **[RoamSwitch Server Edition Operations Manual](SERVER_MANUAL.md)** (Web: <https://lafine.net/linux/server-manual.en>) and the [Server Security Whitepaper](https://lafine.net/linux/server-whitepaper.en).
 
 ---
 
@@ -13,193 +15,180 @@ For the server edition (coming soon), see
 
 | Component | Runs as | Role |
 |---|---|---|
-| `roamswitch-daemon` | root (systemd `Type=notify`) | Every privileged action: nftables control, network detection, ransomware/malware monitoring, fanotify, ARP/NDP pinning, DNS application. Opens no TCP/UDP socket. |
-| `roamswitch` (CLI) | the login user | A thin front-end that reads the daemon's state. Uses only the Unix-domain-socket IPC at `/run/roamswitch/roamswitch.sock`. |
-| `roamswitch-mcp` | spawned by an AI client | A read-only MCP server (stdio / JSON-RPC) for programmatic status. See [MCP setup](https://lafine.net/mcp-setup.html). |
-| `roamswitch-app` | the login user | The GTK GUI. Not needed headless. |
+| `roamswitch-daemon` (Client) | root (systemd `Type=notify`) | All client privileged operations: nftables control, network detection, ransomware/malware monitoring, fanotify, ARP/NDP pinning, DNS enforcement. Opens no TCP/UDP listening socket. |
+| `roamswitch-server-daemon` (Server) | root (systemd `Type=notify`) | All server privileged operations: inbound default drop, SSH & admin bastion preservation, FIM (150+ critical binary hashes), Falco eBPF UNIX socket listener with autonomous `SIGSTOP` freezing, alert dispatching. |
+| `roamswitch` (CLI) | login user (some actions require sudo) | Thin client reading daemon state. Uses `/run/roamswitch/roamswitch.sock` IPC on Client Edition, or provides `--server`, `server`, `fim`, and `emergency-restore` subcommands on Server Edition. |
+| `roamswitch-mcp` | spawned by AI clients | Read-only MCP server (stdio / JSON-RPC) for programmatic status retrieval by AI agents. See [MCP setup](https://lafine.net/mcp-setup.html). |
+| `roamswitch-app` | login user | GTK GUI (Client Edition only). Not needed in headless environments. |
 
-**A headless deployment runs on `roamswitch-daemon` + `roamswitch` (plus
-`roamswitch-mcp` if you want it).** All of the daemon's autonomous defense works
-without `roamswitch-app`; actions that would raise an approval dialog either
-fail open after 3 minutes or can be disabled in config.
+**A headless deployment runs on the daemon + `roamswitch` CLI (plus `roamswitch-mcp` if desired).** All autonomous defense mechanisms work without any GUI.
+
+> [!NOTE]
+> Client Edition (`roamswitch`) and Server Edition (`roamswitch-server`) are mutually exclusive packages (`Conflicts`). Deploy `roamswitch-server` on server environments.
 
 ---
 
-## 2. The daemon (systemd service)
+## 2. Daemon (systemd services)
 
+### Client Edition
 ```sh
-sudo systemctl status  roamswitch.service
-sudo systemctl enable  roamswitch.service      # start at boot (enabled on install)
-sudo systemctl restart roamswitch.service
-journalctl -u roamswitch.service -f
+sudo systemctl status  roamswitch.service      # Status
+sudo systemctl enable  roamswitch.service      # Auto-start on boot (enabled on install)
+sudo systemctl restart roamswitch.service      # Restart
+journalctl -u roamswitch.service -f            # Follow logs
 journalctl -u roamswitch.service --since "1h ago"
 ```
 
-What the daemon does on its own, at startup and every cycle (3 s):
-
-- Identifies the connected gateway MAC and switches the nftables profile
-  (`open` / `balanced` / `lockdown`) against `trusted_networks`
+What the client daemon does autonomously on startup and every cycle (3 s):
+- Identifies the connected gateway MAC and applies nftables profiles (`open` / `balanced` / `lockdown`) against `trusted_networks`
 - Behavioural ransomware detection (fanotify + Shannon entropy + canaries)
 - On-access malware scanning (fanotify, optionally ClamAV)
-- ARP spoof monitoring; preventive gateway ARP/NDP pinning on untrusted networks
+- ARP spoof monitoring and preventive gateway ARP/NDP pinning on untrusted networks
 - Kernel hardening (sysctl / Yama / core dumps / `/tmp` noexec) per profile
-- Applies / reverts threat-protection DNS (`dns_enabled` + `dns_scope`)
-- Link guard (NFQUEUE) — warns about or blocks phishing connections
-- Writes runtime state to `/run/roamswitch/state.json` every cycle
+- Threat-protection DNS enforcement (`dns_enabled` + `dns_scope`)
+- Link guard (NFQUEUE) for phishing interception
+- Runtime state output to `/run/roamswitch/state.json`
+
+### Server Edition
+```sh
+sudo systemctl status  roamswitch-server.service      # Status
+sudo systemctl restart roamswitch-server.service      # Restart
+sudo systemctl reload  roamswitch-server.service      # Reload configuration
+journalctl -u roamswitch-server.service -f            # Follow logs
+```
 
 ---
 
-## 3. CLI command reference
+## 3. CLI Command Reference
 
-`roamswitch <command> [options]`. No argument is the same as `status`. Output
-language follows the OS locale (`LC_ALL` / `LC_MESSAGES` / `LANG`; `ja*` →
-Japanese, anything else → English).
+`roamswitch <command> [options]`. Running without arguments defaults to `status`. Output language follows the OS locale (`LC_ALL` / `LC_MESSAGES` / `LANG`; `ja*` selects Japanese, other locales default to English).
 
-| Command | Description |
-|---|---|
-| `status` (alias `report`) | The 20-item security health assessment, a 0–100 score, a grade, and per-item advice |
-| `ports [-a\|--all]` | TCP/UDP ports listening on 0.0.0.0, unauthenticated DBs, dev servers. `-a` also includes loopback-only ports |
-| `guards` | Enabled/disabled state of each automatic guard (port anomaly, ARP, USB storage, download, DNS threat, canary, dev-server isolator, Bluetooth) |
-| `wifi` | Current Wi-Fi encryption strength (Open / WEP / WPA / wired) and SSID |
-| `sharing [status\|on\|off]` | Automatic stop/restore of SSH / Samba / RDP on untrusted networks. `on` writes `sharing_service_control_enabled` in `config.json` and asks the daemon to apply it now |
-| `audit-url <URL>` | Score a URL's phishing / danger risk from the local feed + offline heuristics (never fetches the target) |
-| `audit-secrets <text\|path>` | Detect API keys, private keys and tokens in text or a file (never transmits the content) |
-| `audit-logs [hours]` | Aggregate and classify the last N hours (default 24) of journald / auth logs |
-| `canary` | Ransomware canary (decoy file) deployment and integrity state |
-| `quarantine [list]` | Contents of the malware Quarantine Vault (sample, original path, threat name, date) |
-| `knowledge [query]` (alias `faq`) | Search the bundled offline knowledge base |
-| `airgap [enable\|disable]` | Trigger / lift emergency Air-Gap isolation (hidden from `--help`). `enable` drops all external traffic; `disable` restores it |
-| `help` (`--help` / `-h`) | Help |
+| Command | Permissions | Description |
+|---|---|---|
+| `status [--server]` (alias `report` / `server-status`) | User | Security health assessment (20 checks on client, 25 checks with `--server`), 0–100 score, grade, and per-item recommendations |
+| `server [config\|setup\|test-notify\|restart]` | User/root | Server Edition configuration management, interactive setup wizard, and test notifications |
+| `fim [verify\|update]` | User/root | Critical-Path File Integrity Monitoring verification (`verify`) and baseline hash database update (`update`) |
+| `emergency-restore` | root | Lift all emergency eBPF / firewall isolations and restore network baseline |
+| `ports [-a\|--all]` | User | Listening ports on 0.0.0.0, unauthenticated DBs, and dev servers. `-a` includes loopback-only ports |
+| `guards` | User | Status of automatic defense guards (port anomaly, ARP, USB storage, download, DNS threat, canary, dev-server isolator, Bluetooth) |
+| `wifi` | User | Wi-Fi encryption strength (Open / WEP / WPA / wired) and SSID |
+| `sharing [status\|on\|off]` | User | Auto-stop / restore of SSH / Samba / RDP on untrusted networks (`on` disconnects active SSH when untrusted) |
+| `audit-url <URL>` | User | Inspect URL phishing and threat risk via local feed + heuristics (never fetches target) |
+| `audit-secrets <text\|path>` | User | Detect API keys, private keys, and tokens in text or files (never transmits data) |
+| `audit-logs [hours]` | User | Aggregate and classify system journald / auth logs from the last N hours (default 24) |
+| `canary` | User | Ransomware canary decoy file status and integrity |
+| `quarantine [list]` | User | Contents of malware quarantine vault (sample, original path, threat name, date) |
+| `knowledge [query]` (alias `faq`) | User | Search the offline knowledge base |
+| `airgap [enable\|disable]` | User/root | Trigger or lift emergency Air-Gap isolation (`enable` drops all external traffic) |
+| `help` (`--help` / `-h`) | User | Show help (`roamswitch <command> --help` for subcommand help) |
 
 ### Examples
 
 ```sh
-roamswitch status
-roamswitch ports -a
-roamswitch guards
+roamswitch status                      # Client health check (20 items)
+roamswitch status --server             # Server health check (25 items)
+roamswitch ports -a                    # All listening ports
+roamswitch guards                      # Guard status
 roamswitch audit-url https://examp1e-login.com
 roamswitch audit-secrets ./deploy.env
-roamswitch audit-logs 72
-roamswitch sharing on
-roamswitch airgap enable
-roamswitch airgap disable
+roamswitch audit-logs 72               # Analyze last 72 hours of logs
+roamswitch sharing on                  # Automatically stop SSH/Samba/RDP on untrusted networks
+roamswitch fim verify                  # FIM file integrity verification
+sudo roamswitch fim update             # Update FIM baseline hashes
+sudo roamswitch emergency-restore      # Lift all emergency isolations
+roamswitch airgap enable               # Trigger Air-Gap isolation
+roamswitch airgap disable              # Restore traffic
 ```
 
-### Caveats (current limitations)
+### Caveats & Limitations
 
-- Some versions do not implement per-subcommand `--help` (`roamswitch status
-  --help` runs the scan). Fixed in 1.0.43+.
-- The CLI has **no `--json` output**. For machine-readable status use MCP (§6) or
-  `/run/roamswitch/state.json` (§5).
-- There is **no CLI command to switch the profile directly** (the daemon decides
-  autonomously). To force it, set `manual_override` in `config.json` or call the
-  `set_security_level` IPC directly (§5).
-- `status` returns **exit code 0** regardless of the result. For monitoring,
-  parse the score line (example in §7).
+- Subcommand-specific help is supported via `roamswitch <command> --help`.
+- Machine-readable status should be queried via MCP (§6) or `/run/roamswitch/state.json` (§5).
+- In the Client Edition, there is no direct command to force a firewall profile; the daemon manages this autonomously based on network trust. To force a level, configure `manual_override` in `config.json` or call the `set_security_level` IPC directly (§5).
+- `status` returns exit code 0 regardless of score. For automated monitoring, parse the score line (see §7).
 
 ---
 
-## 4. Configuration file
+## 4. Configuration Files
 
-`~/.config/roamswitch/config.json` (JSON). **The daemon runs as root and scans
-`/home/*/.config/roamswitch/config.json`, using the first one it finds** (on a
-root-only headless server that is `/root/.config/roamswitch/config.json`). After
-editing, either run a command that notifies the daemon (`roamswitch sharing …`)
-or `sudo systemctl restart roamswitch.service`.
+### Client Edition (`~/.config/roamswitch/config.json`)
 
-### Key fields
+The daemon runs as root and scans `/home/*/.config/roamswitch/config.json`, using the first valid file it finds (or `/root/.config/roamswitch/config.json` in root-only environments).
 
-| Key | Type / default | Meaning |
+| Key | Type / Default | Description |
 |---|---|---|
-| `language` | string / OS locale | Notification & CLI language (`ja` / `en` / `ko` / `zh-Hans` / `zh-Hant` / `de` / `fr` / `es` / `it` / `pt-PT`) |
-| `trusted_networks` | `[{name, mac, level}]` | Trusted networks. `mac` is the gateway MAC; `level` is `open` / `balanced` / `lockdown` |
-| `away_protection_level` | string / `lockdown` | Profile on an unregistered network |
-| `manual_override` | string / null | Force `open` / `balanced` / `lockdown`; null = automatic |
-| `dns_enabled` | bool / `true` | Threat-protection DNS |
+| `language` | string / OS locale | UI & CLI language (`ja` / `en` / `ko` / `zh-Hans` / `zh-Hant` / `de` / `fr` / `es` / `it` / `pt-PT`) |
+| `trusted_networks` | `[{name, mac, level}]` | Trusted networks; `mac` is gateway MAC, `level` is `open` / `balanced` / `lockdown` |
+| `away_protection_level` | string / `lockdown` | Default profile on unknown networks |
+| `manual_override` | string / null | Force `open` / `balanced` / `lockdown` (null for automatic) |
+| `dns_enabled` | bool / `true` | Threat-protection DNS enforcement |
 | `dns_provider` | string / `quad9` | `quad9` / `cloudflare` / `adguard` / `cleanBrowsing` |
 | `dns_scope` | string / `untrusted_only` | `untrusted_only` / `always_on` |
 | `arp_spoof_guard_enabled` | bool / `true` | ARP spoof monitoring |
-| `gateway_arp_lock_enabled` | bool / `true` | Preventive gateway ARP/NDP pinning on untrusted networks |
-| `port_anomaly_guard_enabled` | bool / `true` | Auto-block new unknown listening ports |
+| `gateway_arp_lock_enabled` | bool / `true` | Preventive gateway ARP/NDP lock on untrusted networks |
+| `port_anomaly_guard_enabled` | bool / `true` | Auto-block new listening ports |
 | `system_wide_fanotify_enabled` | bool / `true` | System-wide fanotify malware guard |
-| `pre_exec_blocking_enabled` | bool / `true` | Pre-execution blocking (FAN_DENY) |
-| `entropy_freeze_enabled` | bool / `true` | Ransomware fast-freeze (SIGSTOP) |
-| `mount_hardening_enabled` | bool / `true` | `noexec` on `/tmp` and `/dev/shm` (applied on non-`open` profiles) |
-| `yama_memory_protect_enabled` | bool / `true` | Yama ptrace restriction |
+| `pre_exec_blocking_enabled` | bool / `true` | Pre-execution blocking (`FAN_DENY`) |
+| `entropy_freeze_enabled` | bool / `true` | Ransomware fast-freeze (`SIGSTOP`) |
+| `mount_hardening_enabled` | bool / `true` | `noexec` on `/tmp` and `/dev/shm` (applied on non-open profiles) |
+| `yama_memory_protect_enabled` | bool / `true` | Yama ptrace restrictions |
 | `usb_storage_guard_enabled` / `usb_keyboard_guard_enabled` | bool / `false` | USB storage / BadUSB keyboard guard (off by default) |
 | `usb_zero_trust_enabled` | bool / `false` | USB bus authorized_default=0 |
-| `bluetooth_guard_enabled` | bool / `false` | Stop the Bluetooth radio on untrusted networks (off by default) |
-| `sharing_service_control_enabled` | bool / `true` | Auto stop/restore of SSH / Samba / RDP |
-| `scan_exclusions` | `[string]` | Absolute paths excluded from both the YARA and ClamAV scanners (applied recursively) |
+| `bluetooth_guard_enabled` | bool / `false` | Disable Bluetooth radio on untrusted networks |
+| `sharing_service_control_enabled` | bool / `true` | Auto-stop/restore SSH / Samba / RDP |
+| `scan_exclusions` | `[string]` | Absolute paths excluded from scanning |
 | `link_guard` | object | `{enabled, mode: "off"\|"warn"\|"block", allowlist, blocklist_extra, use_threat_dns}` |
-| `vpn_on_untrusted_enabled` | bool / `false` | Bring the VPN tunnel up automatically on untrusted networks |
+| `vpn_on_untrusted_enabled` | bool / `false` | Auto-start VPN tunnel on untrusted networks |
 | `vpn_backend` | string / `wireguard` | `wireguard` / `tailscale` |
 
-### Example (conservative settings for a headless server)
+> ⚠️ With `sharing_service_control_enabled: true`, connecting to an untrusted network **disconnects active SSH sessions**. Leave it disabled on headless servers.
 
-```jsonc
-{
-  "language": "en",
-  "manual_override": "balanced",           // always balanced (pins the autonomous switch)
-  "dns_enabled": true,
-  "dns_scope": "always_on",
-  "sharing_service_control_enabled": false, // don't cut SSH
-  "system_wide_fanotify_enabled": true,
-  "entropy_freeze_enabled": true,
-  "mount_hardening_enabled": true,
-  "link_guard": { "enabled": true, "mode": "block" },
-  "scan_exclusions": ["/var/lib/myapp/cache", "/srv/backups"]
-}
-```
+### Server Edition (`/etc/roamswitch/server.conf`)
 
-> ⚠️ With `sharing_service_control_enabled: true`, connecting to an untrusted
-> network **disconnects any active SSH session**. Leave it off for remote
-> operation.
+Server Edition uses an INI-format configuration file with strict permissions (`0600`, root-only). Refer to **[SERVER_MANUAL.md](SERVER_MANUAL.md)** for complete parameter descriptions.
 
 ---
 
-## 5. Logs and runtime-state files
+## 5. Logs & Runtime State Files
 
-| Path | Contents |
-|---|---|
-| `journalctl -u roamswitch.service` | All daemon logs (profile switches, detections, errors) |
-| `/run/roamswitch/state.json` | Updated every cycle: `{active_level, network_trusted, fanotify_ready}` |
-| `/run/roamswitch/alerts.json` | Recent notification queue (the GUI reads it; headless you can watch it for detections) |
-| `/run/roamswitch/approvals.json` | Pending-approval queue (malware confirmation, BadUSB, link_block, …) |
-| `/run/roamswitch/fanotify.ready` | Present when the fanotify guard is actually running (contents: `content` / `notify`) |
-| `~/.local/share/roamswitch/quarantine/` | Quarantine Vault (`0700`, samples `0400`) + `.metadata.json` |
+| Path | Target | Description |
+|---|---|---|
+| `journalctl -u roamswitch.service` | Client | Client daemon logs (profile switches, detections, errors) |
+| `journalctl -u roamswitch-server.service` | Server | Server daemon logs (FIM events, Falco detections, isolations) |
+| `/run/roamswitch/roamswitch.sock` | Client | Client daemon IPC Unix domain socket |
+| `/run/roamswitch/events.sock` | Server | Falco / Tetragon eBPF integration socket (root:root, mode 0660; Falco runs as root by default, enabling zero-config direct socket writes) |
+| `/run/roamswitch/state.json` | Client | Cycle state: `{active_level, network_trusted, fanotify_ready}` |
+| `/run/roamswitch/alerts.json` | Client | Recent alert queue |
+| `/run/roamswitch/approvals.json` | Client | Pending approval queue |
+| `/run/roamswitch/fanotify.ready` | Client | Flag file indicating fanotify guard is running |
+| `/var/lib/roamswitch/fim_baseline.db` | Server | FIM SHA-256 baseline hash database |
+| `~/.local/share/roamswitch/quarantine/` | Both | Quarantine Vault (`0700`, samples `0400`) + `.metadata.json` |
 
-### Calling the IPC directly (advanced)
+### Calling IPC Directly (Advanced)
 
-The daemon accepts newline-delimited JSON on `/run/roamswitch/roamswitch.sock`
-(a Unix stream). Examples of actions the CLI does not expose:
+The daemon accepts newline-delimited JSON on `/run/roamswitch/roamswitch.sock`:
 
 ```sh
-# Force a profile
+# Force a security level (Client Edition)
 printf '{"id":1,"method":"set_security_level","params":{"level":"lockdown"}}\n' \
   | sudo socat - UNIX-CONNECT:/run/roamswitch/roamswitch.sock
 
-# Reconcile the gateway ARP/NDP lock now
+# Reconcile gateway ARP lock immediately
 printf '{"id":1,"method":"reconcile_gateway_lock","params":null}\n' \
   | sudo socat - UNIX-CONNECT:/run/roamswitch/roamswitch.sock
 ```
 
 ---
 
-## 6. Programmatic status (MCP)
+## 6. Programmatic Status (MCP)
 
-`roamswitch-mcp` exposes read-only tools over JSON-RPC on stdio
-(`get_security_report` / `get_exposed_ports` / `get_guard_status` /
-`get_quarantine_status` / `get_canary_status` / `audit_url_safety` /
-`audit_secrets` / `audit_security_logs` / `get_app_help`). It uses no network —
-it talks to the daemon's Unix socket or calls `roamswitch-core` directly. See
-[MCP setup](https://lafine.net/mcp-setup.html).
+`roamswitch-mcp` exposes read-only tools over JSON-RPC on stdio (`get_security_report` / `get_exposed_ports` / `get_guard_status` / `get_quarantine_status` / `get_canary_status` / `audit_url_safety` / `audit_secrets` / `audit_security_logs` / `get_app_help`). It uses no external network communication, connecting locally to the daemon socket or calling `roamswitch-core`. See [MCP Setup](https://lafine.net/mcp-setup.html).
 
 ---
 
-## 7. Automation recipes
+## 7. Automation Recipes
 
-### Daily health check via cron → mail if the score drops below a threshold
+### Daily cron health check → Email if score drops below threshold
 
 ```sh
 #!/usr/bin/env bash
@@ -211,7 +200,7 @@ if [ -n "$score" ] && [ "$score" -lt 80 ]; then
 fi
 ```
 
-### Watch for detection events (poll alerts.json)
+### Monitor alerts queue (poll alerts.json)
 
 ```sh
 #!/usr/bin/env bash
@@ -226,7 +215,7 @@ while :; do
 done
 ```
 
-### Verify the guard hasn't fallen over (state.json)
+### Verify fanotify guard health (state.json)
 
 ```sh
 jq -e '.fanotify_ready == true' /run/roamswitch/state.json >/dev/null \
@@ -237,19 +226,22 @@ jq -e '.fanotify_ready == true' /run/roamswitch/state.json >/dev/null \
 
 ## 8. Troubleshooting
 
-| Symptom | Fix |
+| Symptom | Resolution |
 |---|---|
-| `roamswitch` exits with "check that roamswitch-mcp is installed" | The daemon isn't running → `sudo systemctl start roamswitch.service`. Check the socket `/run/roamswitch/roamswitch.sock` exists |
-| `roamswitch status` shows the fanotify item 🔴 "guard stopped" | A transient `fs.fanotify.max_user_groups` (default 128) exhaustion. `sudo systemctl restart roamswitch.service`; confirm with `journalctl -u roamswitch \| grep "fanotify marks established"` |
-| Profile stays `balanced`, never `open` | Check that the gateway MAC is registered in `trusted_networks` with `level: open` (if it's `balanced`, that is by design) |
-| SSH drops suddenly | `sharing_service_control_enabled: true` plus an untrusted-network verdict. Run `roamswitch sharing off` for remote operation |
-| Config change has no effect | The daemon reads the **first** `/home/*/.config/…` it finds. With multiple users, confirm it's the file you meant. Apply with `systemctl restart roamswitch.service` |
+| `roamswitch` exits with "check that roamswitch-mcp is installed" | Daemon is not running → `sudo systemctl start roamswitch.service` (or `roamswitch-server.service`). Verify socket exists |
+| `roamswitch status` shows fanotify 🔴 "guard stopped" | Transient `fs.fanotify.max_user_groups` exhaustion. Restart with `sudo systemctl restart roamswitch.service` and verify in journal |
+| Profile stays in `balanced`, never reaches `open` | Verify gateway MAC is registered in `trusted_networks` with `level: open` |
+| SSH disconnects unexpectedly | Client edition has `sharing_service_control_enabled: true` on an untrusted network. Disable via `roamswitch sharing off` |
+| Config changes do not take effect | Client daemon reads the first `/home/*/.config/…` found; restart with `sudo systemctl restart roamswitch.service`. Server edition: edit `/etc/roamswitch/server.conf` and run `sudo systemctl reload roamswitch-server` |
+| Server communications accidentally blocked | Access cloud console (VNC / Serial) and run `sudo roamswitch emergency-restore` |
 
 ---
 
 ## 9. References
 
-- Product page: <https://lafine.net/linux>
-- Security whitepaper: <https://lafine.net/linux/whitepaper.en>
-- MCP setup: <https://lafine.net/mcp-setup.html>
+- Product Page: <https://lafine.net/linux>
+- Client Security Whitepaper: <https://lafine.net/linux/whitepaper.en>
+- Server Security Whitepaper: <https://lafine.net/linux/server-whitepaper.en>
+- Server Operations Manual: [SERVER_MANUAL.md](SERVER_MANUAL.md) (Web: <https://lafine.net/linux/server-manual.en>)
+- MCP Setup: <https://lafine.net/mcp-setup.html>
 - FAQ: [FAQ.md](FAQ.md) · Privacy: [PRIVACY.md](PRIVACY.md)
