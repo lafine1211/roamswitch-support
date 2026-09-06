@@ -119,6 +119,32 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 
 ## RoamSwitch for Mac
 
+## 1.8.6
+
+- **Air-gap failsafe redesigned to be safe**: The `KeepAlive.PathState`
+  mechanism added in 1.8.5 to keep the privileged helper's air-gap failsafe
+  alive occasionally caused the app to restart itself after a normal Quit,
+  so it has been reverted. In its place, a fully independent watchdog daemon
+  that never touches the interactive helper's own launch configuration now
+  wakes on its own every 3 minutes, checks whether the air-gap's 10-minute
+  deadline has passed, and — if so — restores the network and exits, with no
+  way to interfere with a normal app quit. The underlying timestamp check
+  was also hardened to stay correct across NTP corrections, manual clock
+  changes, and right after a reboot, by pairing a monotonic uptime counter
+  with the wall clock.
+- **Automatic Air-Gap isolation tied to Apple XProtect detections**: Without
+  requiring the EndpointSecurity entitlement, RoamSwitch now triggers an
+  emergency network air-gap the moment Apple's own XProtect engine logs an
+  actual malware detection/remediation (Pro, on by default). A simulation
+  menu item was also added to verify the behavior safely.
+- **Manual secret/API-key leak audit tool**: Paste any text to instantly
+  audit it for leaked API keys and tokens, with line numbers, masked values,
+  and per-type remediation advice.
+- **Link Guard "warn" mode now fails closed**: An unanswered warn prompt
+  used to let the connection through (fail-open); it now matches the Linux
+  client and blocks it instead (fail-closed, not cached, so the next attempt
+  re-prompts). The hold window was also shortened from 25s to 8s.
+
 ## 1.8.5
 
 - **Autonomous Air-Gap Failsafe via launchd PathState (Thanks to Super Funicular)**:
