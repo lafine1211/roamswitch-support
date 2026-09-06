@@ -20,91 +20,12 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 - **Automatic Application Restart After Package Upgrade**:
   Following a successful package upgrade (`apt` / `dnf` / `zypper`) from the "Upgrade now" button, RoamSwitch now automatically restarts itself smoothly and brings the main window back up, eliminating the need for manual restarts. Also added an active spinner indicator while checking and executing upgrades.
 
-### 1.0.62
+### 1.0.50 - 1.0.62
 
-- **Strict Daemon IPC Socket Authentication (SO_PEERCRED)**:
-  Implemented kernel-level peer credential inspection (`SO_PEERCRED`) on the Unix domain socket for `roamswitch-daemon`. All incoming connections are strictly verified to originate from either root (UID 0) or the currently active desktop user UID, blocking unauthorized privilege escalation or command injection from other local users or restricted processes.
-- **Quarantine Vault Hardening Against Privilege Escalation and Arbitrary Deletions**:
-  Strengthened canonical path resolution and strict prefix verification across threat isolation and vault restoration routines. Mitigated potential symlink traversal attacks, ensuring that malicious symbolic links cannot trigger arbitrary deletion or modification of critical system files.
-- **Enhanced WireGuard Configuration & Command Hook Sanitization**:
-  Enforced strict character validation on interface and configuration identifiers during VPN tunnel connection and teardown, eliminating risks of unintended argument injection or shell hook triggers.
-- **Reproducible Security Penetration Test Docker Suite & Whitepaper Update**:
-  Updated the security whitepaper (Appendix C.2) with step-by-step reproduction instructions and released an automated Docker test suite in the public support repository.
-
-### 1.0.61
-
-- **Strict Automated Security Updates Verification**:
-  Enforced a strict qualification standard for automatic security updates. Merely refreshing package lists (`apt-daily.timer`) or staging package downloads is no longer accepted as passed. Verified unattended update installations require the `unattended-upgrade` binary, armed timer (`apt-daily-upgrade.timer` or service), and active configuration (`APT::Periodic::Unattended-Upgrade "1"` via `apt-config dump`), or `dnf-automatic` with `apply_updates = yes`.
-- **Improved Security Diagnostic Accuracy on Raspberry Pi and SBC Architectures**:
-  - **UEFI Secure Boot**: Automatically detects Raspberry Pi and non-UEFI hardware architectures, marking the audit item as "Not Applicable (Raspberry Pi Architecture)" with full pass credit rather than unfairly penalizing unsupported firmware.
-  - **/tmp & /dev/shm noexec Hardening**: Accommodates environments like Raspberry Pi OS where `/tmp` is not on a dedicated tmpfs mount, validating `/dev/shm` noexec mount combined with real-time fileless process anomaly detection.
-  - **Gateway ARP Permanent Locking**: Correctly recognizes dynamic ARP resolution as expected on trusted networks, while verifying permanent MAC locks via `/var/lib/roamswitch/infra_neigh_lock.json` and kernel neighbor tables.
-  - **SSH Server Audit**: Evaluates effective configuration via `sshd -T` and recursively inspects `/etc/ssh/sshd_config.d/*.conf` drop-in files to eliminate false negatives on modern distributions.
-  - **DNS Threat Guard & Wi-Fi Security**: Added resilient fallbacks for `/etc/resolv.conf` and `wpa_cli status` on systems lacking `systemd-resolved` or `NetworkManager`.
-
-### 1.0.60
-
-- **Dropdown / ComboBox Selection for Languages and DNS Threat Guard**:
-  Consolidated sprawling button grids for language selection (11 buttons) and DNS threat protection (provider & scope buttons) into sleek, compact dropdown menus (`ComboBoxText`). Prevents misclicks and creates a much cleaner, responsive settings interface.
-- **Enlarged Window Dimensions and Text Flow (1100px)**:
-  Adjusted the base window width to 1100px (1100x640) with optimized label wrapping limits (65 characters), eliminating crowded paragraphs and horizontal line crunching across all supported languages on modern displays.
-- **Streamlined Updates Flow and Locale-Insensitive Parsing**:
-  Unified the two-step "Check for Updates" and "Upgrade" actions into a single sidebar tab ("🔄 Upgrade"). The tab now passively verifies update availability upon opening and presents a prominent "🚀 Upgrade Now" button. Fixed an issue where `apt-cache policy` failed to parse candidate versions under non-English system locales.
-- **Improved USB Bus Zero-Trust Audit Accuracy on Raspberry Pi**:
-  Enhanced the diagnostic audit evaluation logic so that devices with composite controllers or single-bus hubs (such as Raspberry Pi 4/5) are accurately recognized as passed (green) when USB bus zero-trust containment is active.
-
-### 1.0.59
-
-- **Fixed the Yama LSM diagnostic item never turning green on a device whose
-  kernel doesn't have Yama LSM active** (reported live on a Raspberry Pi) —
-  neither the per-item nor the batch kernel-hardening button ever fixed it,
-  since it was silently writing to a sysctl path that doesn't exist on such
-  a kernel and reporting success anyway. The health check now tells you
-  honestly that this device's kernel wasn't booted with Yama LSM active and
-  can't be fixed automatically (with the Raspberry Pi OS workaround: add
-  `yama` to the `lsm=` list in `/boot/cmdline.txt` and reboot), instead of
-  repeating a "click harden" recommendation that could never work, and no
-  longer shows a harden button for this specific state.
-- **DNS Threat Guard now reverts to your network's actual DNS servers**
-  instead of a bare `resolvectl revert`, which didn't always restore the
-  pre-override servers correctly — it now resolves the real DHCP/
-  NetworkManager-assigned servers first. Switching the DNS protection scope
-  in the DNS tab also now applies immediately instead of waiting for the
-  next cycle.
-- Reduced the default window size and several column widths so the app fits
-  comfortably on smaller displays without clipping.
-
-### 1.0.58
-
-- **Fixed Physical Radio Restore Button on Main Window**:
-  Resolved a UI race condition where clicking the "📡 Restore Radio (Enable Wi-Fi & Bluetooth)" button on the Overview dashboard immediately reverted the button back to the "Restore" state before background unblocking finished, causing restoration to fail and potentially re-killing the radio on a subsequent click.
-- **Enhanced Hardware Radio & Network Reconnection Pipeline**:
-  Ensured both the root daemon (`roamswitch-daemon`) and the user application execute full hardware unblocking via rfkill, re-enable NetworkManager radios (`nmcli radio all on` / `wifi on`), power up Bluetooth controllers (`bluetoothctl power on`), and trigger automatic reconnection for Wi-Fi interfaces (`nmcli device connect`). Integrated automatic cleanup of residual Air-gap lock files upon restore.
-- **Improved Visual Feedback during Radio Toggles**:
-  Temporarily disables the button upon clicking and displays a localized in-progress indicator ("⏳ Restoring Radios..." / "⏳ Severing Radios...") across all 10 languages. Thread-safely refreshes dashboard cards and security audit scores upon completion.
-
-### 1.0.57
-
-- **Unified Physical Radio (Wi-Fi & Bluetooth) Terminology and One-Click Restoration**:
-  Standardized terminology across the UI and documentation to "Physical Radio (Wi-Fi & Bluetooth) Kill / Restore". Added dedicated one-click "Restore Radios (Wi-Fi & Bluetooth)" controls across the Dashboard, Emergency Air-Gap Dialog, Networks tab, and System Tray menu for instant recovery from hardware radio kill. Added clear desktop notifications when toggling hardware radios on and off.
-- **Exhaustive 10-Language Localization Verification**:
-  Completed a comprehensive localization audit across all 10 supported languages (ja, en, zh-Hans, zh-Hant, ko, de, fr, es, it, pt), ensuring full translation coverage for incident details (spoofed IP, attacker MAC, legitimate router MAC, target file, suspicious process) and all tray/dialog/window elements.
-
-### 1.0.56
-
-- **Expanded Situational Context, Decision Guidance, and Quick Actions during Air-Gap**:
-  The emergency alert dialog and Networks tab now display concrete incident details, including spoofed IP/MAC addresses for ARP spoofing or altered path/process name/PID for canary file integrity violations. Packet-level isolation (nftables) and data leak prevention guarantees are explicitly communicated, alongside contextual decision guidance (risks of Man-in-the-Middle on public Wi-Fi vs legitimate router changes on home/office networks). Added four quick-action options: "Disconnect Wi-Fi", "View Detailed Logs", "Close (Keep Blocked)", and "Release Air-Gap".
-- **Enhanced Connectivity Recovery After Releasing Air-Gap**:
-  Automatically triggers NetworkManager connectivity checks and flushes local DNS caches upon Air-Gap release, instantly clearing the question mark ("?") icon on desktop taskbars. Instantly dismisses the emergency alert modal upon releasing Air-Gap.
-- **System Tray Menu (ksni / DBusMenu) Stability Fix**:
-  Vendored and patched the `ksni` crate to eliminate potential out-of-bounds `id2index` panic crashes during dynamic menu rebuilds.
-- **Localization**:
-  All new dialogs and actions fully localized across 10 languages (ja, en, zh-Hans, zh-Hant, ko, de, fr, es, it, pt).
-
-### 1.0.50 - 1.0.51
-
-- **Reduced UI Latency During Air-Gap**: Replaced synchronous ARP cache ping checks in the Networks tab with background thread processing to prevent UI blocking.
-- **Automatic Recovery After ARP Spoofing Stops**: Actively flushes the gateway neighbor cache so the system automatically returns from lockdown to normal operation without requiring manual network reconnection.
+- **Strict Daemon IPC Authentication & Quarantine Vault Hardening**: Implemented kernel-level peer credential validation (`SO_PEERCRED`), symlink traversal prevention, canonical path validation against privilege escalation / arbitrary deletion, and WireGuard argument sanitization.
+- **Diagnostic Calibration & SBC / Raspberry Pi Optimization**: Enforced unattended security upgrade checks (`unattended-upgrades` / `dnf-automatic`), recognized non-UEFI SBC architectures without false negatives, improved `/tmp` and `/dev/shm` noexec verification, and expanded SSH split configuration analysis (`/etc/ssh/sshd_config.d/`).
+- **UI Refresh & Streamlined Upgrades**: Replaced multi-button layouts with compact dropdowns (`ComboBoxText`) for languages and DNS profiles, broadened main window to 1100px, and unified update checks and installation under a single "Upgrade" view.
+- **Hardware Radio Restoration & Air-Gap Resilience**: Strengthened physical radio restoration pipelines (rfkill, NetworkManager, BlueZ), enriched Air-Gap incident context and remediation options, automated recovery following ARP spoofing cessation, and reduced UI latency during lockdowns.
 
 ### 1.0.41 - 1.0.49
 
@@ -143,54 +64,24 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 
 ## RoamSwitch for Mac
 
-## 1.8.4
+### 1.8.4
 
 - **Ephemeral Cookie Separation in Port Security Audits**:
   Isolated HTTP probing routines to use ephemeral, sandboxed cookie storage during local port audits. Prevents credential leakage and cross-service session contamination between audit probes and user web sessions.
 - **Dynamic XPC Code Signature Verification (audit_token)**:
   Enforced strict runtime validation of Apple Developer ID code signatures via `audit_token` on all XPC connections to `RoamSwitchHelper`, preventing unauthorized or injected processes from dispatching privileged tasks.
-- **Pre-execution Permission Verification for External Binaries**:
-  Added comprehensive file permission and ownership checks prior to spawning external helper binaries to guard against tampering and unauthorized binary execution.
-- **WireGuard Configuration Sanitization**:
-  Strengthened interface and config name sanitization in WireGuard tunnel management to block argument injection and command hook execution.
+- **Pre-execution Permission Verification & Configuration Sanitization**:
+  Added comprehensive file permission and ownership checks prior to spawning external helper binaries, and strengthened WireGuard configuration sanitization against argument injection.
 
-## 1.8.3
+### 1.8.0 - 1.8.3
 
-- **Emergency confirmation dialogs now always come to the front.** The four
-  alert dialogs that trigger automatically upon threat detection (BadUSB
-  keyboard authorization, ransomware emergency air-gap, ARP spoofing
-  air-gap, and link guard connection hold) are presented as topmost overlays
-  across all macOS spaces and full-screen apps, even when RoamSwitch is
-  idling in the menu bar.
+- **Topmost Emergency Alert Overlays**: Threat confirmation dialogs (BadUSB, ransomware, ARP spoofing, link hold) display as topmost overlays across all macOS spaces and full-screen apps.
+- **Direct Health Audit Remediation**: Added per-item remediation buttons to immediately enable internal guards or open relevant macOS System Settings panes with automatic re-evaluation.
+- **Malware Scanner False-Positive Mitigation**: Benign EICAR test strings trigger informational notices rather than quarantine (matching Linux behavior).
+- **Enhanced Link Guard via Content Filter**: Outbound connection inspection post-DNS (blocking phishing across DoH/DoT and TLS SNI) and interactive foreground warning panels with safe defaults.
+- **Dual VPN Backend Support**: Added Tailscale Exit Node integration alongside WireGuard tunnels.
 
-## 1.8.2
-
-- **Malware scanning no longer quarantines benign EICAR test files.** Files
-  containing industry-standard EICAR test strings now trigger informational
-  notices without blocking or quarantine across all scan modes.
-- **Added direct remediation buttons to Security Health checks.** Items needing
-  attention (🔴) provide one-click buttons to enable internal guards directly
-  or open relevant System Settings panes.
-
-## 1.8.1
-
-- Improved Link Guard "Warn Only" mode with interactive foreground panels
-  defaulting to safe blocking.
-- Fixed an issue where manually blocked sites were prematurely hard-blocked in
-  warn mode.
-
-## 1.8.0
-
-- **Content Filter Network Extension for Link Guard (Pro):** Inspects outbound
-  connections post-DNS, blocking phishing and malicious hosts even under DoH/DoT
-  encrypted DNS or TLS SNI.
-- **Interactive Warn Mode:** Suspends suspicious connections and presents
-  interactive allow/block prompts.
-- **Dual VPN Backend Support:** Added Tailscale Exit Node support alongside
-  WireGuard tunnels for untrusted networks.
-- Updated privileged helper tool to 1.8.2.
-
-## 1.7.0 - 1.7.6
+### 1.7.0 - 1.7.6
 
 - **Integrated VPN Killswitch:** Introduced automatic WireGuard tunnels with packet-level killswitch enforcement on untrusted networks.
 - **Proactive Gateway ARP/NDP Pinning:** Hardens local neighbor tables on untrusted networks to prevent MITM attacks before they happen.
@@ -198,25 +89,25 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 - **Passive Link Guard:** Real-time outbound filtering against phishing and scam domains using zero-telemetry heuristics.
 - **Non-destructive USB Storage Prompts:** Mounts unapproved drives read-only while offering granular read/write or eject choices.
 
-## 1.6.0 - 1.6.4
+### 1.6.0 - 1.6.4
 
 - **Canary Baseline Persistence:** Persisted decoy file hashes to disk for strict tamper detection and reliable self-healing.
 - **Quarantine Vault Hardening:** Fully revoked execution and read permissions (`chmod 000`) on quarantined files.
 - **Port Anomaly Guard Cleanups:** Automated migration for legacy executable records and notification deduplication.
 
-## 1.5.0 - 1.5.9
+### 1.5.0 - 1.5.9
 
 - **Local AI / LLM Server Protection:** Automated exposure detection and blocking for Ollama, LM Studio, Gradio, and vLLM on `0.0.0.0`.
 - **Clipboard Secret Protection:** Real-time on-device regex scanning for exposed API keys and private keys.
 - **ClamAV Quarantine Enhancements:** Closed bypass paths for `.tmp` extensions and direct terminal downloads (`curl`/`cp`).
 - **Crash Watchdog:** Autonomous LaunchAgent monitor with exponential backoff auto-recovery.
 
-## 1.4.0 - 1.4.8
+### 1.4.0 - 1.4.8
 
 - **Open Source MCP Server:** Released read-only MCP server and heuristics on GitHub; introduced `get_app_help` knowledge base search.
 - **Web & Mail Triple Protection:** Implemented automated download scanning, DNS threat protection, and link safety diagnostics.
 - **Privileged Helper Hardening:** Enforced `audit_token` validation and Team ID pinning against PID reuse attacks.
 
-## 1.0.0 - 1.3.0
+### 1.0.0 - 1.3.0
 
 - **Initial Releases:** Autonomous network environment detection by gateway MAC, automatic firewall/sharing service profile switching, port anomaly blocking, ARP spoof auto-containment, and foundational MCP integration.
