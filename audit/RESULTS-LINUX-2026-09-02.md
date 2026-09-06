@@ -123,4 +123,4 @@ public) is in whitepaper §9: <https://lafine.net/linux/whitepaper>.
 
 ---
 
-*Canonical whitepaper: <https://lafine.net/linux/whitepaper>. Source: `roamswitch-linux/docs/WHITEPAPER.md` (§9, Appendix C).*
+*Canonical whitepaper: <https://lafine.net/linux/whitepaper> (§9, Appendix C).*

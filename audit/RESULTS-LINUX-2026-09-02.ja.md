@@ -120,4 +120,4 @@ sudo strace -f -e trace=connect -p "$(pgrep -x roamswitch-daemon)" 2>&1 | grep -
 
 ---
 
-*正規の設計書: <https://lafine.net/linux/whitepaper>。ソース: `roamswitch-linux/docs/WHITEPAPER.ja.md`（§9・付録 C）。*
+*正規の設計書: <https://lafine.net/linux/whitepaper>（§9・付録 C）。*

@@ -3,7 +3,7 @@
 # Zero Telemetry 外向き通信の監査
 
 RoamSwitch の外向き通信が、ホワイトペーパー
-（[`docs/WHITEPAPER.ja.md`](../docs/WHITEPAPER.ja.md) §7）に記載した4経路だけであることを、
+（<https://lafine.net/security.html> §7）に記載した4経路だけであることを、
 **主張ではなく実測で**確かめるためのツール一式です。
 
 | # | 宛先 | プロセス | 発生条件 |

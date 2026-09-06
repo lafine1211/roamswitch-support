@@ -6,7 +6,7 @@
 
 Tooling to **measure** — not just assert — that RoamSwitch's only outbound
 connections are the four documented in the whitepaper
-([`docs/WHITEPAPER.md`](../docs/WHITEPAPER.md) §7):
+(<https://lafine.net/security.html> §7):
 
 | # | destination | process | when |
 |---|---|---|---|

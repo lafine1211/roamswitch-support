@@ -4,7 +4,7 @@
 
 This guide and automated script (`rs-defense-audit.sh`) provide a repeatable, objective verification suite for testing RoamSwitch's core security boundaries on a target macOS Virtual Machine (VM).
 
-It validates the architecture and security boundaries defined in the [RoamSwitch Whitepaper](../docs/WHITEPAPER.md) through live penetration probes and fault injection.
+It validates the architecture and security boundaries defined in the [RoamSwitch Whitepaper](https://lafine.net/security.html) through live penetration probes and fault injection.
 
 ---
 
@@ -146,5 +146,5 @@ chmod +x ~/rs-defense-audit.sh
 
 ## Related Documentation
 
-- [RoamSwitch Security Architecture Whitepaper](../docs/WHITEPAPER.md)
+- [RoamSwitch Security Architecture Whitepaper](https://lafine.net/security.html)
 - [Zero Telemetry Egress Audit](README.md)

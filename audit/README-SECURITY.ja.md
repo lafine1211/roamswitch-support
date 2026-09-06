@@ -4,7 +4,7 @@
 
 このドキュメントとスクリプト（`rs-defense-audit.sh`）は、RoamSwitch の設計思想（Security by Design / Fail-Closed）に基づき、**「核心的な5つの防御境界が正しく機能しているか」**を macOS 仮想マシン（VM: 標的環境）上で検証・ペネトレーションテストするためのツール一式です。
 
-ホワイトペーパー（[`docs/WHITEPAPER.ja.md`](../docs/WHITEPAPER.ja.md)）で定義した信頼境界・権限モデルを、客観的なスクリプトでテストします。
+ホワイトペーパー（<https://lafine.net/security.html>）で定義した信頼境界・権限モデルを、客観的なスクリプトでテストします。
 
 ---
 
@@ -146,5 +146,5 @@ chmod +x ~/rs-defense-audit.sh
 
 ## 関連ドキュメント
 
-- [ホワイトペーパー（日本語）](../docs/WHITEPAPER.ja.md)
+- [ホワイトペーパー（日本語）](https://lafine.net/security.html)
 - [Zero Telemetry 外向き通信の監査](README.ja.md)

@@ -63,7 +63,7 @@ Prices are shown in USD; checkout is billed in your local currency where support
 RoamSwitch performs **no external network communication of its own**: no analytics,
 no crash reporting, no license "phone home" beyond the one‑time purchase checkout on
 the website. The bundled MCP server is read‑only and speaks local stdio only. See
-[docs/PRIVACY.md](docs/PRIVACY.md).
+the [Privacy Policy](https://lafine.net/privacy.html).
 
 ## MCP server (for Claude Desktop / Claude Code)
 
@@ -110,8 +110,7 @@ security audit, and a read‑only MCP server.
 
 - **Architecture & security whitepaper** — what privileges RoamSwitch holds and what it
   does at that boundary, at a level you can check against the shipping binary:
-  [docs/WHITEPAPER.md](docs/WHITEPAPER.md) ([日本語](docs/WHITEPAPER.ja.md)) ·
-  rendered at <https://lafine.net/security.html>
+  <https://lafine.net/security.html> (English/日本語, switchable on the page)
 - **[`verify.sh`](verify.sh)** — runs the whitepaper's Appendix A checks against your
   installed copy (signature, notarization, entitlements, the MCP server's offline
   response, pf state). It's ~90 lines of read-only shell — read it first, then:
@@ -142,14 +141,14 @@ security audit, and a read‑only MCP server.
 
 - **Bug reports & feature requests:** open an [Issue](../../issues) (templates provided)
 - **Questions & discussion:** [Discussions](../../discussions)
-- Release notes: [CHANGELOG.md](CHANGELOG.md) · Help: [docs/FAQ.md](docs/FAQ.md)
+- Release notes: [CHANGELOG.md](CHANGELOG.md) · Help: [FAQ](https://lafine.net/faq.html)
 
 Japanese and English are both welcome in Issues.
 
 ## Links
 
 - Website & download: https://lafine.net/
-- [FAQ](docs/FAQ.md) · [Privacy Policy](docs/PRIVACY.md) · [Changelog](CHANGELOG.md)
+- [FAQ](https://lafine.net/faq.html) · [Privacy Policy](https://lafine.net/privacy.html) · [Changelog](CHANGELOG.md)
 
 ---
 

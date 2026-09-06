@@ -1,6 +1,6 @@
 #!/bin/bash
 # verify.sh — check an installed RoamSwitch against the claims in the
-# architecture & security whitepaper (docs/WHITEPAPER.md, §Appendix A).
+# architecture & security whitepaper (https://lafine.net/security.html, §Appendix A).
 #
 # Read-only. Two steps optionally use sudo (pfctl / launchctl print); skip them
 # with:  NO_SUDO=1 ./verify.sh
@@ -87,4 +87,4 @@ info "git clone https://github.com/lafine1211/roamswitch-mcp && cd roamswitch-mc
 info "swift build -c release   # same source as the shipping binary"
 info "swift test               # unit + adversarial-input + stdio + mutation fuzz"
 
-printf '\nDone. See docs/WHITEPAPER.md for what each of these confirms.\n'
+printf '\nDone. See https://lafine.net/security.html for what each of these confirms.\n'

@@ -4,7 +4,7 @@
 #
 # Measures RoamSwitch's outbound connections and checks that the only ones
 # attributable to RoamSwitch / RoamSwitchHelper / RoamSwitchMCPServer are the
-# four documented in the whitepaper (docs/WHITEPAPER.md §7).
+# four documented in the whitepaper (https://lafine.net/security.html §7).
 #
 # What it does unattended:
 #   - preflight + environment snapshot

@@ -61,7 +61,7 @@ Pro は永続ライセンス・アップデート無償。購入は **https://la
 RoamSwitch は **アプリ自身による外部ネットワーク通信を一切行いません**。
 アナリティクス・クラッシュレポート・ライセンスの常時通信はありません
 （購入時の Web 決済のみ）。同梱の MCP サーバーは読み取り専用でローカル stdio のみを
-使用します。詳細は [docs/PRIVACY.ja.md](docs/PRIVACY.ja.md)。
+使用します。詳細は [プライバシーポリシー](https://lafine.net/privacy.html)。
 
 ## MCP サーバー連携（Claude Desktop / Claude Code）
 
@@ -106,8 +106,7 @@ MCP サーバーを同梱します。
 
 - **アーキテクチャ／セキュリティ設計書** — RoamSwitch がどんな権限を持ち、その境界で何をしているかを、
   出荷バイナリと照合できる粒度で：
-  [docs/WHITEPAPER.ja.md](docs/WHITEPAPER.ja.md)（[English](docs/WHITEPAPER.md)）·
-  整形版 <https://lafine.net/security.html>
+  <https://lafine.net/security.html>（日本語／English、ページ内で切替可能）
 - **[`verify.sh`](verify.sh)** — 設計書 付録 A のチェックを、インストール済みのアプリに対して実行します
   （署名・公証・entitlements・MCP サーバーのオフライン応答・pf の状態）。約 90 行の読み取り専用シェルです。
   中身を読んでから：
@@ -133,14 +132,14 @@ MCP サーバーを同梱します。
 
 - **バグ報告・機能要望:** [Issue](../../issues) を作成（テンプレートあり）
 - **質問・雑談:** [Discussions](../../discussions)
-- リリースノート: [CHANGELOG.ja.md](CHANGELOG.ja.md) ／ ヘルプ: [docs/FAQ.ja.md](docs/FAQ.ja.md)
+- リリースノート: [CHANGELOG.ja.md](CHANGELOG.ja.md) ／ ヘルプ: [FAQ](https://lafine.net/faq.html)
 
 Issue は日本語・英語どちらでも構いません。
 
 ## リンク
 
 - Web サイト・ダウンロード: https://lafine.net/
-- [FAQ](docs/FAQ.ja.md) ／ [プライバシーポリシー](docs/PRIVACY.ja.md) ／ [変更履歴](CHANGELOG.ja.md)
+- [FAQ](https://lafine.net/faq.html) ／ [プライバシーポリシー](https://lafine.net/privacy.html) ／ [変更履歴](CHANGELOG.ja.md)
 
 ---
 
