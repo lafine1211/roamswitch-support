@@ -13,6 +13,27 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.4.0
+
+- **Added container isolation posture auditing**: Docker socket-mount exposure
+  and privileged-container checks now also run on the desktop client (previously
+  Server Edition only). Detects the active container runtime (`runc` / gVisor /
+  Kata Containers) to surface the container-escape risk of sharing the host
+  kernel, on both editions. Added a known-kernel-CVE exposure check (on by
+  default on the client; on Server Edition it follows the opt-in below).
+- **Server Edition: explicit opt-in for CVE data updates**: the default
+  zero-network-code posture is unchanged — only if the operator explicitly
+  enables `cve_kernel_map_updates_enabled` (default false) does the one
+  exception kick in: a daily anonymous fetch of the container-isolation kernel
+  CVE database from lafine.net (no query string, cookies, or identifying
+  headers; signature-verified). Toggle and inspect it via `roamswitch server
+  config` or the `roamswitch server setup` interactive wizard.
+- **Fixed a ransomware-freeze notification bug**: when a short-lived process
+  exited before the burst detector finished evaluating it, the notification
+  showed a confusing placeholder instead of the process name. The name is now
+  snapshotted the moment the write is first observed, and an honest "unknown"
+  is shown when it genuinely can't be determined.
+
 ### 1.1.1 - 1.3.2
 
 - **Server Edition configuration & documentation overhaul**: every setting the
