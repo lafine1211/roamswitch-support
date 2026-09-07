@@ -204,6 +204,16 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 - **Fixed a dialog rendering bug**: on setups without an active compositor,
   a security alert dialog could leave a solid black window behind it that
   didn't disappear when closed.
+- **Added an explainer dialog before folder-access prompts**: macOS's
+  "would like to access files in your Desktop folder" prompt — triggered
+  when Web & Mail Protection starts monitoring, or when scanning a folder
+  in the Secret/API-key leak auditor — used to appear with no context,
+  which could look suspicious. The app now shows a one-time explainer
+  first, describing why and confirming scanning stays fully on-device
+  (Zero Telemetry).
+- **Fixed missing translations across the UI**: 92 menu items and dialog
+  strings that were falling back to Japanese in non-Japanese locales now
+  have translations in all 9 supported languages.
 
 ## 1.8.8
 
