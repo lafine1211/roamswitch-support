@@ -13,6 +13,52 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.4.2
+
+- **Docker firewall-bypass (`DOCKER-USER`) protection fixed and ported to the
+  desktop client**: Server Edition's protection had no actual deny rule and
+  matched the wrong (post-NAT) port, so it silently blocked nothing. Fixed
+  with an interface-scoped deny rule and pre-NAT port matching, and the same
+  protection now also runs on the desktop client (previously Server Edition
+  only). Added as a new item to the security health check (now 28 items on
+  Server Edition, was 27).
+- **Real-time detection of risky Docker containers**: a new notify-only guard
+  watches `docker events` and flags the instant a container starts with
+  `--privileged` or a `/var/run/docker.sock` bind-mount — a container-escape
+  risk. Runs on both the desktop client and Server Edition; no automatic
+  blocking, since this flags a risky *configuration*, not confirmed
+  compromise.
+- **New File Scan Guard for Server Edition** (opt-in): the embedded YARA
+  engine always scans configured directories (mail spool, file share, upload
+  directory) with no external dependency; enabling `clamav_enabled` adds a
+  ClamAV second opinion. Confirmed threats are quarantined and the operator
+  is notified. Configurable via `roamswitch server config`, the interactive
+  `roamswitch server setup` wizard, or the new `get_file_scan_guard_status`
+  MCP tool. Fixed a sandboxing bug found while building this feature's
+  regression test: the systemd service's `ProtectSystem=strict` didn't grant
+  write access to ClamAV's own directories, so `freshclam`/`clamdscan`
+  silently failed when launched by the daemon.
+- **Secret/API-key leak scanner can now scan a whole directory**:
+  `roamswitch audit-secrets <directory>` recursively scans a folder (e.g. a
+  git checkout), skipping `.git`/`node_modules`/`target`/`vendor`/`dist`/
+  `build`/`__pycache__`/`venv` and any file over 2MB or that looks binary.
+  The same capability is now available to AI agents via the `audit_secrets`
+  MCP tool's new `path` parameter, and to Python SDK users via
+  `audit_secrets_directory()` — all running locally, with content never
+  transmitted anywhere.
+- **`get_quarantine_status` MCP tool now supports Server Edition**: a new
+  `isServer` parameter reads the Server Edition quarantine vault
+  (`/var/lib/roamswitch/quarantine`) instead of always assuming the desktop
+  client's per-user vault.
+- **Fixed: Docker risk notifications ignored the language setting** — they
+  were always shown in Japanese regardless of the configured UI language.
+  Desktop notifications are now fully localized (all 10 supported
+  languages); Server Edition notifications follow its Japanese/English-only
+  policy.
+- **Fixed a dialog rendering bug**: on some display setups, a security alert
+  dialog could leave a solid black window behind it that didn't disappear
+  when closed.
+
 ### 1.4.1
 
 - **Added container isolation posture auditing**: Docker socket-mount exposure
@@ -139,6 +185,25 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 ---
 
 ## RoamSwitch for Mac
+
+## 1.8.9
+
+- **New Docker risk detection guard (Pro, off by default)**: detects the
+  instant a container starts with `--privileged` or a `/var/run/docker.sock`
+  bind-mount — a container-escape risk — and sends a notification. This
+  flags a risky *configuration*, not confirmed compromise, so no automatic
+  action is taken. Mirrors the equivalent guard on the Linux edition, using
+  the same detection logic. Most users don't run Docker, which is why this
+  stays opt-in even on Pro.
+- **Secret/API-key leak auditor can now scan a whole folder**: previously
+  limited to pasted text or the clipboard, the "Secret Leak Audit" window
+  now has a "Choose Folder to Scan" option that recursively audits a
+  directory (e.g. a source checkout), skipping `.git`/`node_modules`/
+  `target`/`vendor`/`dist`/`build`/`__pycache__`/`venv` and any file over
+  2MB or that looks binary. Runs entirely on-device, as before.
+- **Fixed a dialog rendering bug**: on setups without an active compositor,
+  a security alert dialog could leave a solid black window behind it that
+  didn't disappear when closed.
 
 ## 1.8.8
 

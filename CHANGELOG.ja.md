@@ -12,6 +12,48 @@ Linux 版（別系列・1.0.x）でバージョン番号は独立しています
 Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）。
 詳しくは <https://lafine.net/linux>。
 
+### 1.4.2
+
+- **Dockerファイアウォール迂回対策（DOCKER-USER）を修正しデスクトップ版にも
+  移植**: Server Edition の対策には実は拒否ルールが存在せず、しかもDNAT後の
+  ポート番号と誤って照合していたため、実質何も遮断していなかった。外部
+  インターフェース限定の拒否ルールとDNAT前ポートでの照合に修正し、同じ
+  対策をデスクトップ版にも追加（従来Server Edition限定）。セキュリティ
+  健康診断の新項目として追加（Server Editionは27→28項目に増加）。
+- **リスクのあるDockerコンテナのリアルタイム検知を追加**: `docker events`を
+  監視し、`--privileged`起動や`/var/run/docker.sock`のマウント（コンテナ
+  脱出リスク）を検知した瞬間に通知する新ガードを追加。デスクトップ版・
+  Server Edition双方で動作。リスクの高い「設定」であって確認された侵害
+  ではないため、自動遮断は行わず通知のみ。
+- **Server Edition向けにFile Scan Guardを新設**（オプトイン）: 組み込みYARA
+  エンジンが外部依存無しで設定ディレクトリ（メール中継・共有フォルダ・
+  アップロード先など）を常時スキャンし、`clamav_enabled`を有効にすると
+  ClamAVによるセカンドオピニオンも追加。確認された脅威は隔離され運用者に
+  通知。`roamswitch server config`、対話式`roamswitch server setup`
+  ウィザード、新設の`get_file_scan_guard_status` MCPツールから設定可能。
+  この機能の回帰テスト作成中に発覚したサンドボックス不具合も修正:
+  systemdサービスの`ProtectSystem=strict`がClamAV自身のディレクトリへの
+  書き込み権限を許可しておらず、daemon経由で起動した`freshclam`/
+  `clamdscan`が常に失敗していた。
+- **機密情報・APIキー漏洩スキャナがディレクトリ全体をスキャン可能に**:
+  `roamswitch audit-secrets <ディレクトリ>`でフォルダ（gitチェックアウト等）
+  を再帰的にスキャン。`.git`/`node_modules`/`target`/`vendor`/`dist`/
+  `build`/`__pycache__`/`venv`および2MB超・バイナリファイルは除外。同じ
+  機能をAIエージェント向けに`audit_secrets` MCPツールの新しい`path`
+  パラメータとして、Python SDK向けに`audit_secrets_directory()`として
+  提供——いずれもローカルで完結し、内容が外部送信されることはない。
+- **`get_quarantine_status` MCPツールがServer Editionに対応**: 新しい
+  `isServer`パラメータでServer Editionの隔離Vault
+  （`/var/lib/roamswitch/quarantine`）を参照できるように（従来は常に
+  デスクトップ版の個人用Vaultを参照していた）。
+- **修正: Dockerリスク検知の通知が言語設定を無視していた問題** —
+  UI言語設定に関わらず常に日本語で表示されていた。デスクトップ版の通知は
+  対応10言語すべてで正しく表示されるよう修正。Server Editionの通知は
+  日本語・英語のみの方針のまま。
+- **ダイアログの表示不具合を修正**: 一部の表示環境で、セキュリティ警告
+  ダイアログの背後に黒い矩形のウィンドウが残り、ダイアログを閉じても
+  消えないことがあった。
+
 ### 1.4.1
 
 - **コンテナ隔離ポスチャ監査を追加**: Dockerソケットマウント露出・特権コンテナ
@@ -132,6 +174,24 @@ Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）
 ---
 
 ## RoamSwitch for Mac
+
+## 1.8.9
+
+- **Dockerリスク検知ガードを新設（Pro、既定OFF）**: `--privileged`起動や
+  `/var/run/docker.sock`のマウント（コンテナ脱出リスク）を検知した瞬間に
+  通知。リスクの高い「設定」であって確認された侵害ではないため、自動的な
+  対応は行わない。Linux版の同等機能と判定ロジックを一致させている。
+  Dockerを使わないユーザーが大半のため、Proでも既定はOFFのまま。
+- **機密情報・APIキー漏洩監査がフォルダ全体をスキャン可能に**: 従来は
+  貼り付けたテキストやクリップボードのみが対象だったが、「機密情報・API
+  キー漏洩監査」ウィンドウに「フォルダを選択してスキャン」を追加し、
+  ディレクトリ（ソースコードのチェックアウト先など）を再帰的に監査できる
+  ように。`.git`/`node_modules`/`target`/`vendor`/`dist`/`build`/
+  `__pycache__`/`venv`および2MB超・バイナリファイルは除外。従来通り
+  完全にローカルで完結する。
+- **ダイアログの表示不具合を修正**: コンポジタが有効でない環境で、
+  セキュリティ警告ダイアログの背後に黒い矩形のウィンドウが残り、
+  ダイアログを閉じても消えないことがあった。
 
 ## 1.8.8
 
