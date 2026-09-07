@@ -156,19 +156,22 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
   pinning status, an SSH Remote Login configuration audit (root login
   disabled, key-only auth), and a sudo NOPASSWD audit.
 
-## 1.8.6
+### 1.8.4 - 1.8.6
 
-- **Air-gap failsafe redesigned to be safe**: The `KeepAlive.PathState`
-  mechanism added in 1.8.5 to keep the privileged helper's air-gap failsafe
-  alive occasionally caused the app to restart itself after a normal Quit,
-  so it has been reverted. In its place, a fully independent watchdog daemon
-  that never touches the interactive helper's own launch configuration now
-  wakes on its own every 3 minutes, checks whether the air-gap's 10-minute
+- **Air-gap failsafe redesigned to be safe**: A fix to make sure the air-gap's
+  10-minute network-lockdown deadline lifts on its own even if the helper
+  process crashes mid-lockdown. The first attempt (1.8.5) used
+  `KeepAlive.PathState` in the privileged helper's own LaunchDaemon plist,
+  which occasionally caused the app to restart itself after a normal Quit —
+  that was reverted and replaced (1.8.6) with a fully independent watchdog
+  daemon that never touches the interactive helper's own launch
+  configuration. It wakes on its own every 3 minutes, checks whether the
   deadline has passed, and — if so — restores the network and exits, with no
   way to interfere with a normal app quit. The underlying timestamp check
   was also hardened to stay correct across NTP corrections, manual clock
   changes, and right after a reboot, by pairing a monotonic uptime counter
   with the wall clock.
+  *(Special thanks to [Super Funicular](https://dev.to/superfunicular) for raising the edge-case inquiry during our discussion on [Dev.to](https://dev.to/superfunicular/turn-an-old-android-phone-into-a-screen-off-security-camera-no-cloud-lan-only-5cll).)*
 - **Automatic Air-Gap isolation tied to Apple XProtect detections**: Without
   requiring the EndpointSecurity entitlement, RoamSwitch now triggers an
   emergency network air-gap the moment Apple's own XProtect engine logs an
@@ -181,15 +184,6 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
   used to let the connection through (fail-open); it now matches the Linux
   client and blocks it instead (fail-closed, not cached, so the next attempt
   re-prompts). The hold window was also shortened from 25s to 8s.
-
-## 1.8.5
-
-- **Autonomous Air-Gap Failsafe via launchd PathState (Thanks to Super Funicular)**:
-  Configured `KeepAlive.PathState` in `RoamSwitchHelper`'s LaunchDaemon plist targeting `/Library/Application Support/RoamSwitch/pf_airgap_since`. If the privileged helper process terminates while an air-gap is active, launchd automatically resurrects it without waiting for an incoming XPC call or user action. This ensures the 10-minute packet filter isolation timeout executes autonomously even if the menu bar app is dead.
-  *(Special thanks to [Super Funicular](https://dev.to/superfunicular) for raising the edge-case inquiry during our discussion on [Dev.to](https://dev.to/superfunicular/turn-an-old-android-phone-into-a-screen-off-security-camera-no-cloud-lan-only-5cll).)*
-
-## 1.8.4
-
 - **Ephemeral Cookie Separation in Port Security Audits**:
   Isolated HTTP probing routines to use ephemeral, sandboxed cookie storage during local port audits. Prevents credential leakage and cross-service session contamination between audit probes and user web sessions.
 - **Dynamic XPC Code Signature Verification (audit_token)**:

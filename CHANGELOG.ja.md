@@ -146,18 +146,20 @@ Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）
   SSHリモートログインの設定監査(root禁止・鍵認証必須になっているか)、
   sudoのパスワード省略設定(NOPASSWD)の監査を追加しました。
 
-## 1.8.6
+### 1.8.4 - 1.8.6
 
-- **エアギャップ・フェイルセーフの安全な再設計**: 1.8.5で導入した特権ヘルパーの
-  `KeepAlive.PathState`によるエアギャップ・フェイルセーフが、まれに通常の
-  「終了」操作後にアプリが再起動してしまう不具合を引き起こしていたため撤回
-  しました。代わりに、ヘルパー本体の常駐設定には一切手を加えない、完全に
-  独立した監視デーモンを追加。3分ごとに単体で起動し、エアギャップの
-  タイムスタンプが10分の期限を超えていれば自律的にネットワークを復旧して
-  終了する方式に変更し、通常のアプリ終了操作とは物理的に干渉しなくなり
-  ました。あわせて、このタイムスタンプの判定をNTP補正・手動時計変更・
-  reboot直後のいずれにも影響されないよう、単調増加時間と壁時計を組み合わせた
-  方式に強化しています。
+- **エアギャップ・フェイルセーフの安全な設計**: ヘルパープロセスが
+  クラッシュしても10分のパケットフィルター全遮断タイムアウトが自律的に
+  解除されるようにする改善。当初(1.8.5)は特権ヘルパー本体の
+  `KeepAlive.PathState`で自律再起動させる方式で実装しましたが、まれに通常の
+  「終了」操作後にアプリが再起動してしまう不具合があったため撤回し、
+  ヘルパー本体の常駐設定には一切手を加えない完全に独立した監視デーモンに
+  再設計しました(1.8.6)。3分ごとに単体で起動し、期限を超えていれば
+  自律的にネットワークを復旧して終了するため、通常のアプリ終了操作とは
+  物理的に干渉しません。タイムスタンプの判定もNTP補正・手動時計変更・
+  reboot直後のいずれにも影響されないよう、単調増加時間と壁時計を
+  組み合わせた方式に強化しています。
+  *(Dev.to の技術ディスカッションにおける [Super Funicular 氏](https://dev.to/superfunicular)（[該当記事](https://dev.to/superfunicular/turn-an-old-android-phone-into-a-screen-off-security-camera-no-cloud-lan-only-5cll)）の洞察と提起に深く感謝いたします。)*
 - **Apple XProtect検知に連動する自動Air-Gap隔離**: EndpointSecurity権限を
   使わずに、AppleのマルウェアXProtectが実際にマルウェアを検知・駆除した
   瞬間を検知条件として、通信を緊急遮断する機能を追加(Pro版、既定ON)。
@@ -169,15 +171,6 @@ Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）
   従来は接続を許可(fail-open)していましたが、Linux版と挙動を統一し、
   遮断(fail-closed、キャッシュなし・次回再確認)に変更しました。保留時間も
   25秒→8秒に短縮。
-
-## 1.8.5
-
-- **launchd PathState によるエアギャップ・フェイルセーフの完全自律化（謝辞: Super Funicular 氏）**:
-  特権ヘルパー `RoamSwitchHelper` の LaunchDaemon plist に `KeepAlive.PathState`（監視パス: `/Library/Application Support/RoamSwitch/pf_airgap_since`）を設定しました。エアギャップ（ロックダウン）作動中に特権ヘルパーがクラッシュ等で終了した場合でも、メニューバーアプリの XPC 呼び出しやユーザー操作を待つことなく launchd が即座に自律再起動させ、アプリが停止していても10分のパケットフィルター全遮断タイムアウトが確実に自律解除されるよう堅牢化しました。
-  *(Dev.to の技術ディスカッションにおける [Super Funicular 氏](https://dev.to/superfunicular)（[該当記事](https://dev.to/superfunicular/turn-an-old-android-phone-into-a-screen-off-security-camera-no-cloud-lan-only-5cll)）の洞察と提起に深く感謝いたします。)*
-
-## 1.8.4
-
 - **ローカルポート監査時のCookie分離**:
   開放ポートのHTTP監査プローブにおいて、エフェメラルな専用Cookieストレージを使用するように分離しました。ブラウザや他サービスの認証Cookieの漏洩や、監査リクエストによる意図しないセッション汚染を防止します。
 - **特権ヘルパーのコード署名検証強化 (動的 audit_token 検証)**:
