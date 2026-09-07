@@ -13,7 +13,7 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
-### 1.4.0
+### 1.4.1
 
 - **Added container isolation posture auditing**: Docker socket-mount exposure
   and privileged-container checks now also run on the desktop client (previously
