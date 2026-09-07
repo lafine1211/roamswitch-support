@@ -13,8 +13,12 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
-### 1.4.2
+### 1.4.3
 
+- **Secret/API-key leak scanner: folder scanning added to the desktop GUI**:
+  the GTK "Secret & API Key Leak Auditor" tab (previously text/clipboard
+  only) now has a "Choose Folder to Scan" button, matching the CLI/MCP/SDK
+  capability added below.
 - **Docker firewall-bypass (`DOCKER-USER`) protection fixed and ported to the
   desktop client**: Server Edition's protection had no actual deny rule and
   matched the wrong (post-NAT) port, so it silently blocked nothing. Fixed
