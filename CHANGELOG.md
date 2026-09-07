@@ -119,6 +119,34 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 
 ## RoamSwitch for Mac
 
+## 1.8.7
+
+- **Static-signature detection for downloaded files**: without requiring the
+  EndpointSecurity entitlement, a lightweight static signature layer now
+  checks downloads for the industry-standard EICAR test string and a set of
+  well-documented, publicly known reverse-shell one-liners (bash/sh
+  `/dev/tcp/`, netcat `-e`, Python `pty.spawn`, Perl `Socket`, PHP
+  `fsockopen`). Runs alongside ClamAV and keeps working even when ClamAV
+  isn't installed.
+- **New login-item persistence monitoring**: detects the moment a new
+  LaunchAgent/LaunchDaemon plist is installed, and flags it when it invokes
+  a raw script interpreter (`/bin/bash` and similar) directly — malicious
+  content is usually hidden in the interpreter's arguments rather than in a
+  signed executable, so a validly-signed interpreter alone isn't a clean
+  bill of health.
+- **Emergency lockdown on suspicious Terminal commands (off by default)**:
+  targets "ClickFix" — the social-engineering technique where a fake
+  warning page talks the user into pasting and running a command
+  themselves. Watches shell history for known-bad patterns and triggers an
+  emergency network air-gap on a match. A bare `curl | bash` (used by many
+  legitimate installers) is deliberately not flagged on its own — only
+  narrower combinations, like decoding base64 straight into a shell or
+  AppleScript, are. Off by default given the disruption a false positive
+  would cause.
+- **Three additions to the comprehensive security report**: gateway ARP
+  pinning status, an SSH Remote Login configuration audit (root login
+  disabled, key-only auth), and a sudo NOPASSWD audit.
+
 ## 1.8.6
 
 - **Air-gap failsafe redesigned to be safe**: The `KeepAlive.PathState`
