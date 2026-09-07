@@ -119,6 +119,15 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 
 ## RoamSwitch for Mac
 
+## 1.8.8
+
+- **Fixed helper version sync**: the privileged helper method backing the
+  1.8.7 sudo NOPASSWD audit could fail to take effect after upgrading an
+  existing install, because the helper's own version string wasn't bumped
+  alongside it. When this happened, the "Sudo Privilege Escalation Audit"
+  item in the comprehensive security report stayed stuck on "not yet
+  checked" (fresh installs were unaffected).
+
 ## 1.8.7
 
 - **Static-signature detection for downloaded files**: without requiring the
