@@ -12,6 +12,34 @@ Linux 版（別系列・1.0.x）でバージョン番号は独立しています
 Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）。
 詳しくは <https://lafine.net/linux>。
 
+### 1.5.0
+
+- **パッケージCVE照合機能を新規追加**: インストール済みのOSパッケージと、
+  開発中プロジェクトの依存関係を、ローカルに保持した既知CVEマップと
+  突き合わせる新機能。ネットワーク接続は一切行わない（組み込みの
+  ベースラインは意図的に空で、`roamswitch-updater`の日次配信で実データを
+  取得するまでは何も検出しない）。
+  - **OSパッケージ**: `dpkg`（Debian/Ubuntu）・`pacman`（Arch Linux）・
+    `dnf`（RHEL・CentOS Stream・AlmaLinux・Rocky Linux。Fedoraは
+    Red Hat自身のセキュリティデータが対象外としているため非対応）・
+    `zypper`（openSUSE Leap。SLESは有料フィードのため非対応）を
+    自動判定して列挙。
+  - **言語エコシステム7種**（開発者向け・任意）: npm・PyPI・crates.io・
+    RubyGems・Packagist・Go・Mavenの依存関係ロックファイル
+    （package-lock.json・requirements.txt・Pipfile.lock・poetry.lock・
+    Cargo.lock・Gemfile.lock・composer.lock・go.sum・pom.xml）を、
+    指定したプロジェクトフォルダから解析。
+  - CLI: `roamswitch scan-packages [FOLDER...]`。MCPツール:
+    `run_package_cve_scan`・`run_package_cve_scan_languages`。GTK GUIに
+    新規タブ「📦 パッケージCVE照合」を追加。
+  - CVEデータが未取得の場合、スキャン実行時にバックグラウンドで
+    日次配信の取得を試行するよう改善（次回スキャンや24時間後の定時
+    実行を待たずに済む）。
+- **内蔵ヘルプ（`get_app_help`）の不具合を修正**: `topic: "setting"`
+  （設定ガイド）で絞り込むと、該当データが存在せず常に空振りしていた。
+  実在するconfig.jsonの設定項目に基づいたガイドを追加し、対応するMCP
+  リソース `roamswitch://docs/settings-guide` も新規登録。
+
 ### 1.4.3
 
 - **機密情報・APIキー漏洩スキャナ: デスクトップGUIにフォルダスキャンを追加**:

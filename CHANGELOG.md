@@ -13,6 +13,33 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.5.0
+
+- **New: Package CVE Scan**. Checks installed OS packages and your
+  project's dependencies against a locally-held known-CVE map. No network
+  activity at all (the embedded baseline ships deliberately empty; nothing
+  is detected until `roamswitch-updater`'s daily fetch installs real data).
+  - **OS packages**: auto-detects `dpkg` (Debian/Ubuntu), `pacman` (Arch
+    Linux), `dnf` (RHEL, CentOS Stream, AlmaLinux, Rocky Linux — not
+    Fedora, which Red Hat's own security data doesn't track), and `zypper`
+    (openSUSE Leap — not SLES, whose feed requires a paid subscription).
+  - **7 language ecosystems** (developer opt-in): parses dependency
+    lockfiles for npm, PyPI, crates.io, RubyGems, Packagist, Go, and Maven
+    (package-lock.json, requirements.txt, Pipfile.lock, poetry.lock,
+    Cargo.lock, Gemfile.lock, composer.lock, go.sum, pom.xml) in project
+    folders you specify.
+  - CLI: `roamswitch scan-packages [FOLDER...]`. MCP tools:
+    `run_package_cve_scan` and `run_package_cve_scan_languages`. New
+    "📦 Package CVE Scan" tab in the GTK GUI.
+  - If CVE data hasn't been fetched yet, running a scan now also kicks off
+    a background fetch attempt, instead of waiting for the next scan or
+    the next scheduled daily update.
+- **Fixed a bug in the built-in help (`get_app_help`)**: filtering by
+  `topic: "setting"` always returned nothing, since no matching content
+  existed. Added a real settings guide sourced from actual config.json
+  fields, plus a new matching MCP resource,
+  `roamswitch://docs/settings-guide`.
+
 ### 1.4.3
 
 - **Secret/API-key leak scanner: folder scanning added to the desktop GUI**:
