@@ -260,6 +260,19 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 
 ## RoamSwitch for Mac
 
+## 1.9.1
+
+- **Important: fixed known-CVE maps (Package CVE Scan, Active Vulnerability
+  Scan) always reporting "not fetched" on their publish day** (paired with
+  the Linux 1.5.2 fix). The embedded seed's version string used a
+  "`<date>-seed`" format; compared lexicographically against a published
+  feed's date-only version, the seed would incorrectly win on the exact day
+  it was published. Changed the seed version to an empty string so real
+  data always wins, regardless of the date.
+- **Fixed raw Markdown (headings, bold, code spans) showing up in the
+  Package CVE Scan findings table's summary column**: now stripped to
+  plain text for display.
+
 ## 1.9.0
 
 - **New: Active Vulnerability Scan (off by default)**. Ported from the
