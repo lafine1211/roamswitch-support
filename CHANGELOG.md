@@ -13,6 +13,32 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.5.2
+
+- **Important: fixed known-CVE maps (Package CVE Scan, Active Vulnerability
+  Scan) always reporting "not fetched" on their publish day**. The embedded
+  seed's version string used a "`<date>-seed`" format; compared
+  lexicographically against a published feed's date-only version, the seed
+  would incorrectly win on the exact day it was published. Changed the seed
+  version to an empty string so real data always wins, regardless of the
+  date.
+- **Fixed dependency package CVE scanning (npm/PyPI/crates.io, etc.)
+  reporting "no vulnerabilities found" when the CVE data simply hadn't been
+  fetched yet**: now correctly distinguishes "no data yet" from "clean",
+  matching the OS-package tab's existing behavior.
+- **Fixed a misleading "Delete" label on watched folders**: the button only
+  removes a folder from RoamSwitch's watch list — it never deletes the
+  folder itself. Relabeled to "Remove from list" (Package CVE Scan and
+  malware-scan watched-folder tabs).
+- **Fixed the openSUSE package-CVE map never successfully publishing**: map
+  generation linked every package to every CVE within a single patch
+  definition unconditionally, so large kernel/browser-engine patches with
+  many sub-packages and CVEs exploded combinatorially into a 226MB file —
+  exceeding GitHub's 100MB single-file limit and silently failing every
+  publish attempt. Now skips linking when a patch definition's
+  package×CVE fan-out is too large to trust, rather than publishing
+  possibly-wrong associations.
+
 ### 1.5.1
 
 - **Important: fixed a bug that could take down network connectivity right
