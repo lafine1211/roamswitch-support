@@ -13,6 +13,23 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.5.1
+
+- **Important: fixed a bug that could take down network connectivity right
+  after install**. Link Guard (the phishing-protection feature that
+  inspects HTTP/HTTPS/DNS traffic) queued *every* packet of *every*
+  established connection to a single-threaded NFQUEUE consumer with no
+  bound, forever. Under real traffic (page loads, video, downloads) that
+  consumer could fall behind and jam the queue, causing lost connectivity
+  or a guard crash. Fixed by capping queuing to the first few packets of
+  each connection (enough to read the TLS SNI / HTTP Host) via a kernel-side
+  `ct original packets` filter. Also moved the threat feed (840k+ domains)
+  reload off the packet-processing thread onto a dedicated one, and made
+  the queue loop self-heal (auto-restart) if it ever exits unexpectedly.
+- **Made the 3-second USB Zero-Trust reconciliation idempotent**: it now
+  skips the sysfs writes and log line entirely when the desired state
+  already matches, instead of re-applying and re-logging on every tick.
+
 ### 1.5.0
 
 - **New: Package CVE Scan**. Checks installed OS packages and your
