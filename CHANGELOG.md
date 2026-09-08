@@ -217,6 +217,49 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 
 ## RoamSwitch for Mac
 
+## 1.9.0
+
+- **New: Active Vulnerability Scan (off by default)**. Ported from the
+  Linux edition. For a service found listening on `127.0.0.1` during a
+  port scan, sends a single harmless, read-only probe to confirm it's
+  actually reachable without authentication — not just "the port is
+  open." Covers Redis, Memcached, MongoDB, and dockerd (services that are
+  unauthenticated by default), plus CORS misconfiguration, path
+  traversal, and open-redirect checks against arbitrary local dev
+  servers. Redis (CVE-2022-24834 and 7 others) and Memcached
+  (CVE-2018-1000115) are additionally checked against known-CVE version
+  ranges using only a harmless version-query command — no exploit payload
+  is ever sent. Opt in from the menu bar's Ports submenu, then run it
+  manually from the port detail sheet. The known-CVE map updates via the
+  same daily, receive-only, signature-verified feed as the ransomware
+  kernel-CVE map.
+- **New: Package CVE Scan**. Same design as the Linux edition, ported to
+  macOS. Checks installed Homebrew packages and dependency lockfiles for
+  npm, PyPI, crates.io, RubyGems, Packagist, Go, and Maven against a
+  locally-held known-CVE map. No network activity at all; if the data
+  hasn't been fetched yet, running a scan now also kicks off a background
+  fetch attempt.
+- **Closed 4 gaps in the MCP server**. The AI-agent-facing MCP server now
+  exposes secret/API-key leak scanning (`audit_secrets`), security-log
+  auditing (`audit_security_logs`), quarantined-file listing
+  (`get_quarantine_status`), and ransomware-canary monitoring status
+  (`get_canary_status`) — all of which already existed in the desktop
+  GUI. Also fixed the MCP server always reporting its version as
+  "1.0.0", and fixed responses always coming back in Japanese regardless
+  of the language selected in the app.
+- **Fixed 2 Pro default-value inconsistencies**. The ransomware
+  canary-file guard, unlike the app's other auto-containment guards,
+  didn't persist an explicit OFF choice across restarts — it's now
+  consistent with the others, and can be toggled from the menu bar (there
+  was previously no way to change it at all). Separately, ARP-spoofing
+  containment and XProtect-triggered auto-containment could kick in
+  without warning the first time Pro was enabled; a one-time notification
+  now explains what happened and how to undo it.
+- **Filled in gaps in Help & Guide**. Added entries for Package CVE Scan,
+  Active Vulnerability Scan, ClickFix protection, persistence monitoring,
+  and XProtect-triggered auto-containment — all already implemented but
+  missing from the in-app help.
+
 ## 1.8.9
 
 - **New Docker risk detection guard (Pro, off by default)**: detects the
