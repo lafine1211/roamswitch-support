@@ -363,6 +363,25 @@ Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）
 
 ## RoamSwitch for Mac
 
+## 1.9.3
+
+- **新機能: Air-Gap発動の引き金となる3ガード(Ransomware Canary/Port Anomaly/
+  Runtime Threat Containment)のインシデント履歴をMCPに露出**: Air-Gap(緊急
+  ネットワーク遮断)がなぜ発動したかを、メインアプリと別プロセスのMCPサーバー
+  から確認する手段がこれまで存在しなかった。既存の`get_canary_status`に
+  `recentIncidents`を追加、新規MCPツール`get_port_anomaly_incidents`・
+  `get_runtime_threat_status`を追加、`get_guard_status`のガード一覧に
+  `runtimeThreatContainment`を追加。各インシデントはアプリ本体の共有
+  UserDefaultsへ永続化されるため、メインアプリを経由せずMCP単体でも直近の
+  検知内容を確認できる。
+- **修正: 上記の開発中に見つかったバグ、Runtime Threat Containmentのシミュ
+  レーション実行時に検知インシデントの詳細(`lastIncident`)がMCPレスポンス
+  に反映されないことがあった**: 実際のXProtect検知経路は発動前に個別に
+  インシデント情報を記録していたが、動作確認用のシミュレーション経路は
+  この記録処理を経由しておらず、発動日時は記録されても検知内容の詳細が
+  欠落していた。すべての発動経路で一貫してインシデント情報が記録される
+  よう修正。
+
 ## 1.9.2
 
 - **重要: 「AIに相談する材料をコピー」とMCP経由のログ監査結果で、シークレット

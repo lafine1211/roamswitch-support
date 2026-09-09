@@ -385,6 +385,28 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 
 ## RoamSwitch for Mac
 
+## 1.9.3
+
+- **New: incident history for the three guards behind an Air-Gap trigger,
+  exposed via MCP**: investigating why an Air-Gap (emergency network
+  isolation) fired was previously impossible from the separate MCP server
+  process — the actual trigger reason for all three guards capable of
+  causing one lived only in the main app process's memory.
+  `get_canary_status` now includes `recentIncidents`; two new MCP tools,
+  `get_port_anomaly_incidents` and `get_runtime_threat_status`, were added;
+  `get_guard_status`'s guard list now includes `runtimeThreatContainment`.
+  Each incident is persisted to the app's shared UserDefaults, so the MCP
+  server can report recent detections on its own without going through the
+  main app.
+- **Fixed a bug found while building the above: the Runtime Threat
+  Containment simulation path could leave the detected incident's detail
+  (`lastIncident`) missing from the MCP response**: the real
+  XProtect-detection path recorded incident details before triggering
+  containment, but the built-in "simulation" test path (used to safely
+  exercise the Air-Gap flow) skipped that step, so the containment date was
+  recorded but the incident detail wasn't. Fixed so every trigger path
+  records incident details consistently.
+
 ## 1.9.2
 
 - **Important: fixed secret masking not being applied to the "Copy AI
