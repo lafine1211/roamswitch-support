@@ -385,6 +385,17 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 
 ## RoamSwitch for Mac
 
+## 1.9.4
+
+- **Fixed: releasing an Air-Gap isolation triggered by Ransomware Canary
+  protection could repeatedly re-trigger false detections — and repeated
+  network cutoffs — even though no decoy file had actually been tampered
+  with**: depending on timing, the release-time self-heal (regenerating
+  decoy files, then rebuilding the real-time file watchers) could itself
+  produce a spurious detection event for a file that was never actually
+  modified. Detections occurring in a brief grace window right after the
+  watchers are rebuilt are now ignored, breaking this false-positive loop.
+
 ## 1.9.3
 
 - **New: incident history for the three guards behind an Air-Gap trigger,
