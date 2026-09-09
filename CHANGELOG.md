@@ -13,6 +13,41 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.6.0
+
+- **New: Log Audit anomaly detection & automatic secret masking**.
+  `roamswitch audit-logs` and the `audit_security_logs` MCP tool now group
+  log messages into templates (masking IPs, hex/hash tokens, and numbers)
+  to flag two kinds of anomaly: a pattern never seen before on this host,
+  and a frequency spike (Z-score > 3.0) within the scanned window. The
+  known-template baseline is persisted at
+  `~/.config/roamswitch/log_template_baseline.json` (template identities
+  only, no time-series data).
+  - **Security fix**: any API key, token, or private-key header that
+    happened to appear in a log line is now scrubbed before it can reach
+    the GUI, the "copy for AI consultation" clipboard text, or — more
+    importantly — the raw JSON an MCP client (e.g. an AI agent) receives.
+    Previously only the composed AI-consultation prompt was masked; the
+    underlying event data handed to MCP callers was not.
+  - The "copy for AI consultation" prompt is now hardcoded in English
+    (previously Japanese), since it's meant to be pasted into an external
+    AI chat and should stay independent of the app's own display language.
+- **New: Server Edition Log Audit notifications**. A lightweight periodic
+  `journalctl` scan (`log_audit_enabled`, default on;
+  `log_audit_interval_secs`, default 1800s) dispatches a
+  Telegram/LINE/Webhook alert through the same channels as File Scan Guard
+  and FIM when a new pattern or frequency spike is detected.
+- **New MCP tool: `verify_fim`**. Critical Path FIM verification (~150
+  critical files) was previously CLI-only (`roamswitch fim verify`); it's
+  now also reachable read-only via MCP and the Rust SDK, so AI agents and
+  third-party tools can check file-integrity status without shelling out.
+- **SDK: closed a gap where three existing MCP tools had no client
+  wrapper**. Added `package_cve_scan()`, `package_cve_scan_languages()`,
+  and `verify_fim()` to both `roamswitchkit` (in-tree) and the public
+  `roamswitch-linux-kit` crate — these tools already existed in
+  `roamswitch-mcp`, but were unreachable outside of hand-rolled JSON-RPC
+  calls.
+
 ### 1.5.4
 
 - **Fixed `clamd` sitting resident using 1GB+ of RAM at all times even when

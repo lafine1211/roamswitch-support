@@ -12,6 +12,40 @@ Linux 版（別系列・1.0.x）でバージョン番号は独立しています
 Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）。
 詳しくは <https://lafine.net/linux>。
 
+### 1.6.0
+
+- **新機能: ログ監査のテンプレート異常検知 + シークレット自動マスキング**。
+  `roamswitch audit-logs`/MCPツール`audit_security_logs`が、ログメッセー
+  ジをテンプレート化（IP・16進/ハッシュ文字列・数値をマスク）し、「過去
+  に見たことのない新規パターン」と「頻度異常（Z-score > 3.0の統計的スパ
+  イク）」の2種類の異常を検知するようになりました。既知テンプレートの
+  ベースラインは`~/.config/roamswitch/log_template_baseline.json`に永続
+  化されます（テンプレート識別子のみ、時系列データは保持しません）。
+  - **セキュリティ修正**: ログ行にたまたま含まれていたAPIキー・トーク
+    ン・秘密鍵ヘッダー等が、GUI表示・「AIに相談する材料をコピー」・そ
+    して特に**MCP経由でAIエージェント等が受け取る生のJSON**に渡る前に
+    マスキングされるようになりました。従来はAI相談用に組み立てた文章
+    のみをマスクしており、MCP呼び出し元に渡る元データ自体はマスクされ
+    ていませんでした。
+  - 「AIに相談する材料をコピー」のプロンプトは、外部AIチャットに貼り付
+    けるためのものでありアプリ自体の表示言語とは無関係であるべきとい
+    う判断から、日本語ハードコードから英語ハードコードに変更しました。
+- **新機能: Server EditionのLog Audit通知**。軽量な`journalctl`定期スキ
+  ャン（`log_audit_enabled`、既定ON。`log_audit_interval_secs`、既定
+  1800秒）により、新規パターンや頻度異常を検知した際にFile Scan Guard・
+  FIMと同じ通知チャネル（Telegram/LINE/Webhook）へ通知します。
+- **新規MCPツール: `verify_fim`**。約150箇所のクリティカルパスファイル
+  整合性検証（FIM）は従来CLI専用（`roamswitch fim verify`）でしたが、読
+  み取り専用でMCP・Rust SDKからも呼び出せるようになりました。AIエージェ
+  ントや外部ツールがシェルアウトせずにファイル改ざん検知状況を確認でき
+  ます。
+- **SDK: 既存の3つのMCPツールにクライアントラッパーが無かった欠落を解
+  消**。`roamswitchkit`（モノレポ内）と公開クレート`roamswitch-linux-kit`
+  の両方に`package_cve_scan()`・`package_cve_scan_languages()`・
+  `verify_fim()`を追加。これらのツール自体は`roamswitch-mcp`に既に実装
+  されていましたが、自前でJSON-RPCを組まない限り外部から呼び出す手段が
+  ありませんでした。
+
 ### 1.5.4
 
 - **`clamd`が使っていなくても常時1GB超のRAMを消費し続けていた問題を修正
