@@ -13,6 +13,26 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.5.4
+
+- **Fixed `clamd` sitting resident using 1GB+ of RAM at all times even when
+  never used, and made it opt-in**. Even if the ClamAV integration
+  (clamdscan/clamscan) was never used, the package's `clamav-daemon`
+  recommended dependency and the distro's own postinst unconditionally
+  started the systemd service, so a plain install alone burned ~1.1GB of
+  RAM continuously (verified live). Server Edition already had a proven fix
+  for this (keep `clamd` masked+stopped while `clamav_enabled=false`, and
+  self-heal it — run `freshclam`, unmask, start — the moment it flips to
+  `true`); extracted that into a shared function and ported it to the
+  desktop client too. The new `clamav_enabled` setting (default `true`,
+  matching prior behavior) is now a checkbox in the GUI; turning it off
+  stops `clamd` and frees its memory while the built-in YARA engine keeps
+  running as the first line of defense. The toggle takes effect immediately
+  with no restart needed. Note: the USB storage guard relies on ClamAV
+  alone with no YARA fallback of its own, so disabling it means USB
+  insertions go completely unscanned — a disclosed trade-off of turning
+  this off, not a silent gap.
+
 ### 1.5.3
 
 - **Important: fixed a bug where, with USB Zero-Trust enabled, newly

@@ -12,6 +12,23 @@ Linux 版（別系列・1.0.x）でバージョン番号は独立しています
 Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）。
 詳しくは <https://lafine.net/linux>。
 
+### 1.5.4
+
+- **`clamd`が使っていなくても常時1GB超のRAMを消費し続けていた問題を修正
+  し、opt-in化**。ClamAV連携(clamdscan/clamscan)を一度も使わなくても、
+  パッケージが`clamav-daemon`を推奨依存として引き込み、ディストリの
+  postinstが問答無用でsystemdサービスを常時起動させるため、インストール
+  しただけで実測1.1GBのRAMが常時消費され続けていた。Server Editionには
+  既にこの問題を解決済みの仕組み(`clamav_enabled=false`の間は`clamd`を
+  mask+stopで待機させ、`true`にした瞬間だけ`freshclam`実行→unmask→
+  起動する自己修復ロジック)があったため、共有関数として切り出しデスク
+  トップ版にも移植。新設定`clamav_enabled`(既定`true`、従来動作を維持)
+  をGUIのチェックボックスから切り替え可能にし、無効化すると`clamd`は
+  停止してメモリを解放(組み込みYARAエンジンによる一次防御は継続)。
+  トグルは再起動不要で即座に反映される。なお、USBストレージガードは
+  ClamAVのみに依存しYARAの一次防御を持たないため、無効化時はUSB挿入時
+  のスキャン自体が完全にスキップされる点は既知のトレードオフとして開示。
+
 ### 1.5.3
 
 - **重要: USB Zero-Trust有効時、マウス等キーボード以外の新規USBデバイスが
