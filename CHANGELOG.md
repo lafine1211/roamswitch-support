@@ -13,6 +13,22 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.8.0
+
+- **Improved: malware-detection notifications now carry a ClamAV
+  second opinion**. When the system-wide on-access guard's (fanotify)
+  built-in YARA-style engine flagged a "dangerous signature," the user
+  previously had only an internal rule name to judge Quarantine vs. Allow
+  by — and it has genuinely misfired on harmless files before (this
+  project's own docs, ordinary JSON/db files). The same file is now also
+  scanned with ClamAV (clamdscan/clamscan) after the built-in hit; the
+  confirmation dialog and notification now say whether ClamAV agrees (and
+  its detection name) or found nothing (likely a false positive). When
+  ClamAV disagrees, the notification's urgency drops from critical to
+  normal to reduce alert fatigue from false positives. Either way,
+  quarantine still only happens after the user explicitly confirms —
+  nothing is auto-quarantined.
+
 ### 1.7.0
 
 - **New: incident history for the three guards behind an Air-Gap trigger,
@@ -384,6 +400,21 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 ---
 
 ## RoamSwitch for Mac
+
+## 1.9.5 (unreleased)
+
+- **Improved: the Download Guard's static-signature detection now gets a
+  ClamAV second opinion**: when `StaticSignatureScanner` (a lightweight,
+  hand-rolled heuristic) flagged a downloaded file as a threat, it was
+  quarantined immediately with only the internal detection name shown to
+  the user. The same file is now also scanned with ClamAV before that
+  notification goes out; if ClamAV agrees, its detection name is included,
+  and if it disagrees, the notification says so and points to the
+  Quarantine Vault ("likely a false positive — check the contents and
+  Restore if it looks fine"). The alert sound is softened from
+  `defaultCritical` to `default` when ClamAV disagrees. Whether the file is
+  quarantined, and the existing ability to restore a false positive, are
+  both unchanged.
 
 ## 1.9.4
 
