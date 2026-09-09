@@ -342,6 +342,39 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 
 ## RoamSwitch for Mac
 
+## 1.9.2
+
+- **Important: fixed secret masking not being applied to the "Copy AI
+  Consultation Material" text and the log audit's MCP response**: the "Mac
+  Security Log Audit" feature already had a mechanism to detect and mask
+  secrets (`SecretLeakScanning`), but neither the clipboard-copy path nor
+  the JSON response returned by the MCP server actually used it. If a raw
+  system log happened to contain something like an API key, it could be
+  passed through unmasked when pasted into an external AI chat or consumed
+  by an AI agent over MCP. Masking is now applied to every message the log
+  audit extracts, consistently across both the clipboard copy and the MCP
+  response.
+- **Added template-based log anomaly detection**: in addition to the
+  existing 6 hardcoded categories (sudo/ssh/gatekeeper/xprotect, etc.), the
+  "Mac Security Log Audit" now templatizes log messages and detects
+  frequency spikes and previously-unseen patterns (ported from the
+  already-shipped Linux edition). Surfaced in the KPI card, the
+  AI-consultation text, and the MCP response (`templateAnomalies`).
+- **Added an audit `timestamp` to the MCP `get_security_report` response.**
+- **Fixed a Bad USB guard bug where an external keyboard already connected
+  at the moment the guard was enabled wasn't added to the allowlist**: with
+  an external keyboard plugged in, enabling the guard didn't auto-approve
+  it — it merely happened not to be blocked yet. The next time it was
+  unplugged and replugged, it would be treated as an unapproved device,
+  triggering the approval dialog and briefly blocking keystrokes even
+  though it was the user's own everyday keyboard. Fixed by auto-registering
+  all currently-connected keyboards to the allowlist the moment the guard
+  is enabled.
+- **Fixed the "Mac Security Log Audit" window freezing when the "All"
+  category filter was selected on a day with a large number of events**:
+  capped the number of rendered rows and made the localization lookup used
+  by each row far cheaper.
+
 ## 1.9.1
 
 - **Important: fixed known-CVE maps (Package CVE Scan, Active Vulnerability
