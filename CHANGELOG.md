@@ -13,6 +13,46 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.9.0
+
+- **New: SSID/gateway history learning with an Evil-Twin SSID warning**:
+  Learns the {SSID, gateway MAC} pairs of networks you've connected to
+  before, and warns when connecting to an unknown SSID whose name is a
+  near-miss (edit-distance) for one already known — e.g. "Airport_WiFi"
+  vs. "Airport_WlFi".
+- **New: keystroke-timing anomaly detection for the BadUSB keyboard guard
+  (advisory signal)**: While a keyboard is held blocked pending approval,
+  its keystroke timing (mean interval + coefficient of variation) is
+  analyzed for the near-constant, unnaturally uniform pattern typical of
+  a scripted injection attack (Rubber Ducky and similar BadUSB tools).
+  When detected, the approval notification gets stronger wording — the
+  existing block/approve flow itself is unaffected. Holding a key down
+  (OS autorepeat) is correctly excluded, not miscounted as a fast burst.
+- **New: blast-radius evidence for Ransomware Canary detections**: On a
+  hit, the number of other files changed in the watched directories
+  within the last 60 seconds is now recorded and appended to the
+  notification. A wide blast radius is strong evidence of a live
+  encryption attack; a narrow one is the profile of most false positives
+  — quicker evidence for deciding whether to release containment. Shared
+  by the Server Edition canary engine, so this applies there too.
+- **New: JA3 TLS-client fingerprint matching for Link Guard traffic
+  classification (mechanism only)**: Adds matching against a feed of
+  known-malicious JA3 fingerprints (a hash computed from the TLS
+  ClientHello), extracted in the same single pass over the ClientHello
+  bytes already used for SNI — negligible added cost. No feed data is
+  shipped yet, so this cannot produce a real hit today.
+- **Fixed: Link Guard's NFQUEUE worker crashed and needlessly reinstalled
+  its nftables table on ordinary packet bursts**: When several packets
+  from the same connection arrived within a short burst, the kernel could
+  already resolve an earlier packet via the rule's `bypass` (fail-open)
+  flag before the daemon's verdict for it arrived, and would answer that
+  now-stale verdict with `NLMSG_ERROR(ENOENT)`. The packet itself was
+  already safely resolved either way, but this was previously treated as
+  a fatal queue error, tearing down and reinstalling the whole table.
+  Connectivity was never actually affected (the same `bypass` fail-open
+  design already covers that), but this eliminated the needless
+  reinstall churn and error-log noise.
+
 ### 1.8.0
 
 - **Improved: malware-detection notifications now carry a ClamAV
