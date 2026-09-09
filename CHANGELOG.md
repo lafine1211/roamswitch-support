@@ -13,6 +13,49 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.7.0
+
+- **New: incident history for the three guards behind an Air-Gap trigger,
+  exposed via MCP and the CLI**. Investigating why an Air-Gap (emergency
+  network isolation) fired used to be impossible from a separate process —
+  the actual trigger reason for all three guards capable of causing one
+  lived only in daemon memory:
+  - **eBPF Runtime Guard** (Server Edition): new `get_ebpf_incidents` MCP
+    tool and `roamswitch server ebpf` CLI command report the current
+    containment status (isolation mode, isolated PIDs, maintenance ports
+    kept reachable) and up to the 50 most recent containment decisions
+    (trigger rule, process, action taken), now persisted to
+    `/var/lib/roamswitch/{ebpf_status,ebpf_incidents}.json`.
+  - **Port Anomaly Guard**: new `get_port_anomaly_incidents` MCP tool and
+    `roamswitch port-anomaly` CLI command report baseline status,
+    currently auto-isolated ports, and up to the 50 most recent detected
+    incidents (previously-unseen executables that started listening on an
+    externally-exposed port), now persisted to the existing
+    `/var/lib/roamswitch/port_guard.json`.
+  - **Ransomware Canary**: fixed `get_canary_status`'s `recent_incidents`,
+    which had always come back empty (the MCP handler recreated the
+    detection engine from scratch on every call, discarding its
+    in-memory incident log) — it's now backed by a persisted
+    `/var/lib/roamswitch/canary_incidents.json` and reflects real
+    detections. `roamswitch canary` (unchanged code) automatically
+    benefits from the same fix.
+  - This closes a real gap for local-LLM/MCP-based offline triage during a
+    network cutoff: previously none of these three primary trigger
+    reasons were queryable from outside the daemon process.
+- **SDK**: added `get_port_anomaly_incidents()` / `get_ebpf_incidents()` to
+  both `roamswitchkit` (in-tree) and the public `roamswitch-linux-kit`
+  crate; `canary_status()` automatically returns real incident data now
+  that the underlying bug is fixed.
+- **Fixed**: the CLI's own `--help` footer and the `roamswitch(1)` man
+  page's `SEE ALSO` section pointed at a nonexistent headless-ops guide URL
+  (a file that never existed, in the wrong repository). Both now point to
+  <https://lafine.net/linux-cli.html>.
+- **Docs**: the `roamswitch(1)` man page was missing several subcommands
+  that already existed in the CLI (`server` and all its subcommands,
+  `fim`, `emergency-restore`, `scan-vulns`, `scan-packages`) — added, along
+  with the server-side files (`server.conf`, `fim_baseline.db`, the new
+  incident-history JSON files) they read or write.
+
 ### 1.6.0
 
 - **New: Log Audit anomaly detection & automatic secret masking**.

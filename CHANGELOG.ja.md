@@ -12,6 +12,50 @@ Linux 版（別系列・1.0.x）でバージョン番号は独立しています
 Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）。
 詳しくは <https://lafine.net/linux>。
 
+### 1.7.0
+
+- **新機能: Air-Gap発動の引き金となる3ガードのインシデント履歴を、MCP・
+  CLI両方に露出**。Air-Gap（緊急ネットワーク遮断）がなぜ発動したかを、
+  別プロセスから調査する手段がこれまで存在しませんでした。発動しうる
+  3つのガードすべてで、実際の発動理由がdaemonのメモリ内にしかなかった
+  ためです。
+  - **eBPFランタイムガード**（Server Edition）: 新規MCPツール
+    `get_ebpf_incidents`とCLIコマンド`roamswitch server ebpf`が、現在の
+    隔離状態（隔離モード・隔離対象PID・保守用に開放中のポート）と、直近
+    最大50件の隔離判断履歴（発動ルール・対象プロセス・実施した対処内容）
+    を報告します。`/var/lib/roamswitch/{ebpf_status,ebpf_incidents}.json`
+    へ永続化されるようになりました。
+  - **Port Anomaly Guard**: 新規MCPツール`get_port_anomaly_incidents`と
+    CLIコマンド`roamswitch port-anomaly`が、ベースライン取得状況・現在
+    自動遮断中のポート・直近最大50件の検知インシデント（未知の実行ファ
+    イルが外部公開ポートで待ち受けを開始した記録）を報告します。既存の
+    `/var/lib/roamswitch/port_guard.json`へ永続化されるようになりました。
+  - **ランサムウェア・カナリア**: `get_canary_status`の`recent_incidents`
+    が常に空になっていたバグを修正しました（MCPハンドラが呼び出しのた
+    びに検知エンジンを新規作成しており、メモリ内のインシデント履歴が毎
+    回破棄されていました）。`/var/lib/roamswitch/canary_incidents.json`
+    への永続化により実際の検知結果を反映するようになりました。
+    `roamswitch canary`（コード自体は変更なし）もこの修正の恩恵を自動的
+    に受けます。
+  - ネットワーク遮断下でのローカルLLM＋MCPによるオフライン・トリアージ
+    において、これら3つの主要な発動理由がいずれもdaemonプロセスの外か
+    ら確認できないという実質的な穴を解消しました。
+- **SDK**: `roamswitchkit`（モノレポ内）と公開クレート
+  `roamswitch-linux-kit`の両方に`get_port_anomaly_incidents()`・
+  `get_ebpf_incidents()`を追加。`canary_status()`は上記バグ修正により
+  自動的に実データを返すようになりました。
+- **修正**: CLI自身の`--help`末尾と`roamswitch(1)` manページの
+  `SEE ALSO`が、実在しないヘッドレス運用ガイドのURL（そもそも存在した
+  ことのないファイルを、しかも誤ったリポジトリ内で参照）を案内していま
+  した。両方とも<https://lafine.net/linux-cli.html>を指すよう修正しま
+  した。
+- **ドキュメント**: `roamswitch(1)` manページに、CLIには既に実装済み
+  だった複数のサブコマンド（`server`とその全サブコマンド・`fim`・
+  `emergency-restore`・`scan-vulns`・`scan-packages`）の記載が漏れてい
+  たため追加しました。あわせて、これらが読み書きするサーバー側ファイル
+  （`server.conf`・`fim_baseline.db`・新規のインシデント履歴JSON群）も
+  記載しました。
+
 ### 1.6.0
 
 - **新機能: ログ監査のテンプレート異常検知 + シークレット自動マスキング**。
