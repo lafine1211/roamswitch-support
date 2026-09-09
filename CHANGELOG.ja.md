@@ -377,7 +377,7 @@ Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）
 
 ## RoamSwitch for Mac
 
-## 1.9.5 (未リリース)
+## 1.9.5
 
 - **新機能: Wi-Fi履歴学習によるなりすまし(Evil Twin)SSID警告**: 過去に
   接続したWi-Fiの{SSID, ゲートウェイMAC}を学習し、未知のSSIDが登録済み

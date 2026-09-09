@@ -401,7 +401,7 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 
 ## RoamSwitch for Mac
 
-## 1.9.5 (unreleased)
+## 1.9.5
 
 - **New: Wi-Fi history learning with an Evil Twin (SSID spoofing) warning**:
   RoamSwitch now learns the {SSID, gateway MAC} of networks you've
