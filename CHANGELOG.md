@@ -13,6 +13,33 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.5.3
+
+- **Important: fixed a bug where, with USB Zero-Trust enabled, newly
+  connected USB devices other than keyboards (mice, etc.) could become
+  permanently unusable**. Enabling `authorized_default=0` (USB Zero-Trust)
+  makes every newly connected USB device come up kernel-unauthorized by
+  default, but the guard's reconciliation loop only ever re-authorized USB
+  hubs and allow-listed storage devices. Every other device class — mice,
+  webcams, headsets, and so on — had no path to ever get authorized at
+  all, so it simply stopped working the moment it was plugged in.
+  Generalized the auto-authorize logic: everything except storage now gets
+  authorized automatically (keyboards remain defended purely in software
+  via `EVIOCGRAB` and are still never touched at the kernel-authorization
+  level).
+- **Fixed the RHEL known-CVE map, which had never actually been delivered
+  even once**. The RHEL map reached ~130,000 package/CVE pairs, ~130MB as
+  plain JSON — over GitHub's 100MB single-file limit — so every generation
+  run's push had been silently failing. Switched to gzip delivery
+  (~130MB → ~3.4MB): `roamswitch-updater` verifies the signature over the
+  raw gzip bytes and only decompresses after verification, writing plain
+  JSON to the install path as before. Also switched the map-generation
+  pipeline's zstd extraction to a streaming approach that never writes the
+  decompressed tarball to disk, fixing a silent, logless crash caused by
+  GitHub Actions runners running out of disk space. This is the first
+  release where RHEL, CentOS Stream, AlmaLinux, and Rocky Linux actually
+  receive real package-CVE data.
+
 ### 1.5.2
 
 - **Important: fixed known-CVE maps (Package CVE Scan, Active Vulnerability
@@ -316,7 +343,7 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
   and XProtect-triggered auto-containment — all already implemented but
   missing from the in-app help.
 
-## 1.8.9
+### 1.8.9
 
 - **New Docker risk detection guard (Pro, off by default)**: detects the
   instant a container starts with `--privileged` or a `/var/run/docker.sock`
@@ -345,7 +372,7 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
   strings that were falling back to Japanese in non-Japanese locales now
   have translations in all 9 supported languages.
 
-## 1.8.8
+### 1.8.8
 
 - **Fixed helper version sync**: the privileged helper method backing the
   1.8.7 sudo NOPASSWD audit could fail to take effect after upgrading an
@@ -354,7 +381,7 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
   item in the comprehensive security report stayed stuck on "not yet
   checked" (fresh installs were unaffected).
 
-## 1.8.7
+### 1.8.7
 
 - **Static-signature detection for downloaded files**: without requiring the
   EndpointSecurity entitlement, a lightweight static signature layer now
