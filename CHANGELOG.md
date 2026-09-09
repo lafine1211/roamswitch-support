@@ -403,6 +403,37 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 
 ## 1.9.5 (unreleased)
 
+- **New: Wi-Fi history learning with an Evil Twin (SSID spoofing) warning**:
+  RoamSwitch now learns the {SSID, gateway MAC} of networks you've
+  previously connected to, and warns when an unfamiliar SSID is
+  edit-distance-close to one you already trust (e.g. "Airport_WiFi" vs.
+  "Airport_WlFi").
+- **Improved: reduced ARP-spoofing false positives from legitimate network
+  roaming**: when the gateway IP stays the same but its MAC address
+  changes, the guard now treats it as a legitimate roam between two
+  different networks (rather than spoofing) if the SSID changed at the
+  same time — many routers reuse the same private IP (e.g. 192.168.1.1)
+  across unrelated networks, which previously triggered false alarms.
+- **New: keystroke-timing anomaly detection for Bad USB (auxiliary
+  signal)**: input from a keyboard currently blocked as unauthorized is now
+  analyzed for inter-keystroke timing; a pattern consistent with scripted
+  input (as produced by Rubber-Ducky-style BadUSB attack devices) adds a
+  warning to the notification text. Purely informational — the existing
+  block/approve flow is unchanged.
+- **New: JA3 TLS client-fingerprint matching for Link Guard traffic
+  classification (groundwork only)**: added the matching machinery against
+  known-malware JA3 fingerprints (a hash derived from the TLS ClientHello).
+  No feed data is distributed yet, so this can't actually flag anything in
+  practice today.
+- **Improved: Log Audit's template anomaly detection no longer flags the
+  burst of routine Gatekeeper assessment log lines a package manager
+  update (Homebrew, etc.) can produce** (parity with the Linux edition).
+- **Important: fixed a bug that could crash the MCP server under certain
+  conditions**: the localized-string cache added in 1.9.3 wasn't safe for
+  concurrent access from background queues. Some MCP tool calls (e.g.
+  `get_exposed_ports`) could corrupt the cache's internal state and crash
+  the server when multiple threads wrote to it at once. Fixed by adding
+  proper locking.
 - **Improved: the Download Guard's static-signature detection now gets a
   ClamAV second opinion**: when `StaticSignatureScanner` (a lightweight,
   hand-rolled heuristic) flagged a downloaded file as a threat, it was
