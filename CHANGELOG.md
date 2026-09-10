@@ -13,6 +13,28 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.9.16
+
+- **Added: a warmup protection that skips the automatic notification for
+  new-pattern-only anomalies (no genuine frequency spike among them)
+  during a host's first 7 days after baseline capture.** The individual
+  known-noise exclusions and the structural systemd-lifecycle exclusion
+  (1.9.13-1.9.15) are already in place, but a host with many not-yet-seen
+  OS or third-party components still saw a burst of "new pattern"
+  notifications right after its first learning cycle, and that burst had
+  real operational cost (people disabling the feature from alert
+  fatigue). Frequency-spike detection, the USB/port/FIM guards, and
+  viewing the full log-audit results manually or via MCP are all
+  unaffected. Only the automatic notification is gated, and only for a
+  bounded window.
+
+### 1.9.15
+
+- **Fix: the systemd resource-accounting exclusion was too strict.** It
+  required all three of "CPU time," "memory peak," and "swap peak," so a
+  short-lived session/scope's shorter form ("Consumed X CPU time." alone,
+  no memory stats) slipped through as a false "new pattern." Relaxed.
+
 ### 1.9.14
 
 - **Improved: structural detection of systemd's own unit-lifecycle
