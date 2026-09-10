@@ -13,6 +13,21 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.9.12
+
+- **Fix: old/new process collision on an apt upgrade restart caused
+  duplicate notifications and lost learning progress** (paired with the
+  Mac edition). During an `apt upgrade`-triggered daemon restart, the old
+  (not-yet-terminated) process and the new one could both fire an
+  immediate startup scan and race on the same baseline file, with the
+  loser's write silently clobbering the winner's, producing "frequency
+  learning stuck at 1/3 forever," "the same alert fired twice," and "an
+  already-connected USB keyboard's 'connected' notification arrived
+  twice." The scheduler's first tick is now delayed by one full interval,
+  and each process's very first scan learns silently without notifying.
+  Also added a few newly-observed startup banner lines to the exclusion
+  list.
+
 ### 1.9.11
 
 - **Fix: overlapping scan windows re-flagged the same event repeatedly**
