@@ -13,6 +13,24 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.9.4
+
+- **Important: fixed the Server Edition Log Audit's baseline (known
+  patterns, frequency history) never actually persisting**.
+  `roamswitch-server.service` runs as `User=root` (so `$HOME` is `/root`)
+  inside a systemd sandbox (`ProtectHome=read-only` +
+  `ProtectSystem=strict`) that only permits writes to `/etc/roamswitch`,
+  `/var/lib/roamswitch`, and `/run/roamswitch`. The Log Audit baseline file
+  was designed to live under `~/.config/roamswitch/` (i.e.
+  `/root/.config/roamswitch/`), so every write from the daemon silently
+  failed. Neither "new pattern" detection nor the per-template frequency
+  history added in 1.9.3 could ever actually learn anything, so a user's
+  own legitimate recurring job kept re-triggering a "frequency spike" no
+  matter how many days it had already been running. When running as root,
+  the baseline now lives under `/var/lib/roamswitch/`, the same location
+  already used by the other state files. Manual invocation via the CLI,
+  GUI, or MCP (as a non-root user) is unaffected.
+
 ### 1.9.3
 
 - **Improved: the Log Audit's frequency-spike detection now compares each

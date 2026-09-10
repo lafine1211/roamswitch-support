@@ -12,6 +12,23 @@ Linux 版（別系列・1.0.x）でバージョン番号は独立しています
 Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）。
 詳しくは <https://lafine.net/linux>。
 
+### 1.9.4
+
+- **重要: Server Editionのログ監査で、ベースライン(既知パターン・頻度
+  履歴)が一度も永続化されていなかった不具合を修正**: `roamswitch-server.
+  service`は`User=root`(HOME=/root)かつ`ProtectHome=read-only`・
+  `ProtectSystem=strict`のsystemdサンドボックスで稼働しており、書き込みが
+  許可されているのは`/etc/roamswitch`・`/var/lib/roamswitch`・
+  `/run/roamswitch`のみだった。ログ監査のベースラインファイルは
+  `~/.config/roamswitch/`(=`/root/.config/roamswitch/`)への保存を想定
+  していたため、デーモンからの書き込みは毎回サイレントに失敗し、
+  「新規パターン」検知も1.9.3で追加したテンプレート頻度履歴も一度も
+  学習が成立していなかった。結果として、利用者自身の正規の定期ジョブが
+  何日運用しても毎回「頻度急増」として誤検知され続けていた。root権限で
+  動作している場合は他の状態ファイルと同じ`/var/lib/roamswitch/`配下を
+  使うよう修正した。CLI・GUI・MCP経由の手動実行(非root)は従来通り
+  動作する。
+
 ### 1.9.3
 
 - **改善: ログ監査の頻度急増検知を、テンプレート自身の過去の頻度と比較
