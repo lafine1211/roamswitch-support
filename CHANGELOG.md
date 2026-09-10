@@ -13,6 +13,16 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.9.13
+
+- **Fix: two of the log audit's own diagnostic log lines triggered false
+  positives.** The "Log Audit anomaly detected" line itself, and the
+  hourly Server Security Routine Audit's completion line, were both
+  routine self-narration from the daemon but weren't in the exclusion
+  list, so they kept re-triggering as "new pattern" (the former
+  recursively: the log audit flagging its own diagnostic output). Added to
+  the exclusion list.
+
 ### 1.9.12
 
 - **Fix: old/new process collision on an apt upgrade restart caused
