@@ -13,6 +13,15 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.9.10
+
+- **Fix: server daemon restart banner lines triggered false positives.**
+  Unconditional startup lines (Docker protection enabling, kernel sysctl
+  hardening, default-deny policy application, the startup message itself)
+  were flagged as "new pattern" on every restart. Since restarts only
+  happen on upgrade, this could have taken months to fully learn. Added to
+  the exclusion list.
+
 ### 1.9.9
 
 - **Fix: notification history (`roamswitch notifications`) was effectively
