@@ -271,6 +271,21 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 
 ## RoamSwitch for Mac
 
+## 1.9.8
+
+- **New: detects ClickFix-style malicious commands on the clipboard**.
+  Addresses a scam technique (ClickFix) where a fake ad or CAPTCHA page,
+  reached by searching for a name like "ChatGPT," tells the victim to
+  open Spotlight and paste a "verification code" that's actually a
+  malicious command. The existing ClickFix guard only watched terminal
+  history (`~/.zsh_history`, `~/.bash_history`), so once attackers pivoted
+  to Script Editor to dodge Terminal's multi-line-paste warning, it had no
+  visibility at all (Script Editor writes to neither history file). The
+  same detection logic is now wired into the clipboard monitor already
+  running for API-key leak detection, so it warns at copy-time. This
+  covers Terminal, Script Editor, Spotlight, or any other paste
+  destination uniformly, since the check happens before the paste.
+
 ## 1.9.7
 
 - **Improved: the "Copy AI Consultation Material" text now shows a
