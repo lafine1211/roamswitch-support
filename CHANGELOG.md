@@ -13,6 +13,20 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.9.1
+
+- **Fixed: `upower.service` crash-restart loop from a conflict with the
+  Server Edition's user-namespace hardening, which false-triggered the
+  log-audit anomaly detector**: Server Edition permanently sets
+  `user.max_user_namespaces=0` to close off a privilege-escalation attack
+  surface, but `upower.service` (the power-management daemon) requests
+  `PrivateUsers=yes` (its own private user namespace) to start. On laptop
+  hardware the two collided: namespace creation was refused and the unit
+  kept failing to start. The log-audit frequency-spike detector was
+  misreporting this known-benign noise as a new anomaly; that false
+  positive is now suppressed. `upower.service` itself (battery status,
+  etc.) is unaffected.
+
 ### 1.9.0
 
 - **New: SSID/gateway history learning with an Evil-Twin SSID warning**:

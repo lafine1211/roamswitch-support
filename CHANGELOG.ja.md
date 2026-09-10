@@ -12,6 +12,18 @@ Linux 版（別系列・1.0.x）でバージョン番号は独立しています
 Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）。
 詳しくは <https://lafine.net/linux>。
 
+### 1.9.1
+
+- **修正: upower.serviceが、Server Editionのuser namespaceハードニングと
+  衝突してクラッシュ再起動ループに陥り、ログ監査の異常検知アラートを
+  誤って発火させていた問題を修正**: Server Editionは権限昇格の攻撃面を
+  塞ぐため`user.max_user_namespaces=0`を恒久設定するが、`upower.service`
+  (電源管理デーモン)は`PrivateUsers=yes`(独立したuser namespaceの作成)
+  を要求するため、ノートPC上でこの2つの設定が衝突し、user namespace
+  作成が拒否されて起動失敗を繰り返していた。ログ監査の頻度急増検知が
+  この既知の無害なノイズを新規の異常として誤報していたのを解消した。
+  upower.service自体の動作(バッテリー状態の取得等)には影響しない。
+
 ### 1.9.0
 
 - **新機能: SSID/ゲートウェイ履歴学習によるなりすまし(Evil Twin)SSID警告**:
