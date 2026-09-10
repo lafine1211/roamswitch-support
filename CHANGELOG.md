@@ -13,6 +13,33 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.9.19
+
+- **Fixed: Client Edition-only commands returned wrong or fabricated
+  information on Server Edition.** `roamswitch guards` always claimed
+  every guard was "ON" without checking any actual setting at all (this
+  was wrong on Client Edition too, not just Server). `roamswitch
+  quarantine list` and plain `roamswitch status` (no `--server` flag)
+  silently defaulted to Client Edition whenever the `isServer` argument
+  was omitted, so running either on a Server Edition host always returned
+  the wrong result; omitting it now auto-detects the edition actually
+  installed instead. The hidden `roamswitch airgap enable/disable`
+  command declared "✓ isolation triggered" even when it failed to reach
+  the client daemon at all (which never runs on Server Edition). `roamswitch
+  guards` and `sharing` now refuse clearly on Server Edition instead of
+  showing Client Edition-only concepts that don't apply there.
+- **Important: fixed several security actions that reported success
+  without confirming anything actually happened.** `emergency-restore`
+  declared success without checking whether the nftables isolation tables
+  it tried to remove were actually gone (the same pattern as the `airgap`
+  fix, in the command operators run specifically to confirm an emergency
+  lockdown is over). Kernel/mount hardening (sysctl writes, the `/dev/shm`
+  remount, USB Zero-Trust) silently discarded every write failure and
+  always reported success regardless. The GUI's "Harden" and "Kernel
+  Hardening" buttons showed "✓ Applied" the instant the request was sent
+  to the daemon, without waiting for its actual reply; fixed to wait for
+  the real result.
+
 ### 1.9.18
 
 - **Important: fixed a root-cause bug in the log audit's template-masking

@@ -12,6 +12,28 @@ Linux 版（別系列・1.0.x）でバージョン番号は独立しています
 Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）。
 詳しくは <https://lafine.net/linux>。
 
+### 1.9.19
+
+- **修正: Server Editionでクライアント専用コマンドが誤情報を返す不具合**:
+  `roamswitch guards`が実際の設定を一切見ず全ガード「ON」固定表示して
+  いた(Client Editionでも実際の設定を反映していなかった不具合を含む)。
+  `roamswitch quarantine list`・`roamswitch status`(--server無し)は
+  isServer引数省略時に常にClient Edition扱いしていたため、Server
+  Editionで実行すると常に誤った結果を返していた(省略時は実際にインス
+  トールされているEditionを自動判定するよう変更)。隠しコマンド
+  `roamswitch airgap enable/disable`は、クライアントdaemonへの接続に
+  失敗しても(Server Editionではdaemon自体が存在しない)「✓ 緊急遮断
+  しました」と成功を偽装していた。`roamswitch guards`・`sharing`は
+  Server Editionで明確な拒否メッセージを表示するよう変更。
+- **重要: 複数のセキュリティ操作が、実際の成否を確認せず成功を偽装
+  していた不具合を修正**: `emergency-restore`が実際にnftablesテーブル
+  が削除されたか確認せず常に成功と表示(airgapと同じパターン)。
+  カーネル/マウント強化(sysctl・/dev/shm再マウント・USB Zero-Trust)が
+  全ての書き込み失敗を握りつぶし常に成功を返していた。GUIの「個別
+  強化」「カーネル防衛一括強化」ボタンがdaemon IPCの応答を待たずに
+  常に「✓ 適用しました」と表示していた問題も、実際の応答を待つよう
+  修正。
+
 ### 1.9.18
 
 - **重要: ログ監査のテンプレート化(新規パターン検知の基盤)にあった
