@@ -308,6 +308,14 @@ Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）
 
 ## RoamSwitch for Mac
 
+## 1.9.13
+
+- **修正: ログイン/ログアウト時の誤検知**: macOS内部の`PersistentAppsSupport`
+  (ログイン時のアプリ再起動機能)と`BTMManager`(Background Task
+  Management)のイベントが、セキュリティと無関係にもかかわらず「頻度急増」
+  として検知されていた(普段ほとんど出現しないため、次のログインだけで
+  極端なz-scoreになっていた)。除外リストに追加。
+
 ## 1.9.12
 
 - **修正: 自動ログ監査の通知本文と誤検知**(Linux版と対): 通知本文が内部

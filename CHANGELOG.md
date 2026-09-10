@@ -336,6 +336,15 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 
 ## RoamSwitch for Mac
 
+## 1.9.13
+
+- **Fix: login/logout false positives.** macOS's internal
+  `PersistentAppsSupport` (the reopen-apps-at-login feature) and
+  `BTMManager` (Background Task Management) events were flagged as
+  "frequency spike" despite having nothing to do with security (they're
+  nearly absent the rest of the time, so the very next login produced an
+  extreme z-score). Added to the exclusion list.
+
 ## 1.9.12
 
 - **Fix: Automatic Log Audit notification body and a false positive**
