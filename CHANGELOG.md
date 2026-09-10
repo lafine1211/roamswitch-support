@@ -205,6 +205,26 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 
 ## RoamSwitch for Mac
 
+## 1.9.17
+
+- **Improved: replaced yet another one-off log-audit exclusion with a
+  class-level structural rule.** `-[Application setState:]` and
+  `-[ApplicationManager handleCASEvent:withData:] | kLSNotify...` were
+  false-flagged as "new pattern" (5 in one notification) despite being
+  routine internal bookkeeping that fires on every ordinary app
+  launch/quit/focus change. Having added three exclusions of this shape in
+  as many days, a 24-hour, 16,340-line sample of this Mac's own
+  `process == "loginwindow"` stream (the same query the audit itself
+  issues) showed that two generic AppKit/LaunchServices classes,
+  `Application` and `ApplicationManager`, alone accounted for 23% (1,756
+  lines) of loginwindow's entire trace-log volume, none of it containing
+  any authentication-adjacent keyword, while loginwindow's actual
+  authentication-domain classes (`LWScreenLock`, `LWAuthServiceManager`,
+  `LWPAMManager`, ...) share the exact same trace format but stayed clear
+  of the exclusion. Now excludes by class identity instead of selector or
+  message text, so any future selector these two classes log under is
+  covered automatically, no new exclusion needed.
+
 ## 1.9.16
 
 - **Added: Critical Path FIM, a background tamper-detection guard for

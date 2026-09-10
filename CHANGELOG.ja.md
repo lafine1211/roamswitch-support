@@ -182,6 +182,25 @@ Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）
 
 ## RoamSwitch for Mac
 
+## 1.9.17
+
+- **改善: ログ監査のloginwindow起因誤検知を、個別文言の列挙ではなく
+  クラス単位の構造的判定に変更**: `-[Application setState:]`・
+  `-[ApplicationManager handleCASEvent:withData:] | kLSNotify...`が、
+  通常のアプリ起動・終了・フォーカス移動のたびに出力される内部
+  ブックキーピングにもかかわらず誤検知されていた(実際の通知で
+  「新規パターン5件」として発報)。数日のうちに同種の除外を3件
+  個別追加していたため、このMac自身の直近24時間分のloginwindow
+  ログ(16,340件)を実地調査したところ、`Application`/
+  `ApplicationManager`という2つの汎用AppKit/LaunchServicesクラスだけで
+  全体の23%(1,756件)を占め、その全件が認証関連キーワードを一切含ま
+  ない一方、`LWScreenLock`・`LWAuthServiceManager`・`LWPAMManager`等の
+  loginwindow自身の認証ドメインクラスは同じトレース書式でも除外対象
+  にならないことを確認できた。これに基づき、選択子や文言ではなく
+  「クラス名がApplication/ApplicationManagerか」で一括除外するよう
+  変更。将来これら2クラスが新しい選択子でログを出しても、個別追加
+  なしに自動対応する。
+
 ## 1.9.16
 
 - **追加: 重要システムファイルの改ざんをバックグラウンド監視する
