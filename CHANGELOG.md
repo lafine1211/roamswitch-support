@@ -13,6 +13,18 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.9.8
+
+- **Improved: the log audit (new-pattern / frequency-anomaly detection) now
+  runs on a background schedule in the client edition too**. Previously the
+  frequency-anomaly baseline (each template's historical frequency) never
+  learned anything unless a user manually ran `roamswitch audit-logs` or an
+  AI agent called it via MCP. Server Edition already ran this in the
+  background; the client edition just sat idle instead. The client daemon
+  now runs the same scheduler Server Edition already had (every 1800
+  seconds by default, can be disabled), sending a desktop notification when
+  it finds something.
+
 ### 1.9.7
 
 - **New: notification history (keeps the past 7 days)**. Adds a way to look
