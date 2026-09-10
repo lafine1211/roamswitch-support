@@ -13,6 +13,28 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.9.21
+
+- **Fixed: Log Audit's own routine housekeeping noise no longer shows up as
+  "new pattern" hits.** Live investigation of a run of frequent alerts
+  traced them to anacron's own fixed job-scheduling narration (start/stop,
+  timestamp bookkeeping), tailscaled's control-plane connection state
+  (long-poll timeouts, disco-key rotation), cups-browsed's wrapper-script
+  trace output, Tor's idle-timeout message, and the `pam_unix(cron:session)`
+  session open/close bookkeeping for cron jobs, all now excluded. The
+  `CRON[pid]: (user) CMD (...)` line itself (the actual configured command,
+  where a newly added malicious crontab entry would first surface) is
+  deliberately left untouched.
+- **Added: a "still learning" note on repeated Log Audit alerts.** The
+  client edition's desktop notification now explains, the same way
+  Server Edition's external alerts already did, that a repeated "new
+  pattern"/frequency-spike hit is expected to stop paging on its own once
+  that template's own baseline has learned enough about it.
+- **Changed: the client edition's Log Audit notification is now
+  10-language**, matching every other client-edition dialog (it had been
+  JA/EN-only). The CLI and Server Edition's external alerts remain
+  JA/EN-only by design.
+
 ### 1.9.20
 
 - **Added: Resource Exhaustion / Process Anomaly Guard (Server Edition
@@ -292,6 +314,21 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 ---
 
 ## RoamSwitch for Mac
+
+## 1.9.21
+
+- **Fixed: lock-screen sleep/wake and status-widget internal logs were
+  treated as anomalies.** `SleepWakeCallback_block_invoke` and related
+  power-lifecycle narration (scoped to specific function-name prefixes,
+  since its subsystem also carries authentication-domain classes that must
+  stay fully monitored) and the lock screen's Wi-Fi/Battery status-widget
+  internal trace (a numeric-ID-plus-class-name format, e.g. "150766294:
+  Battery pause 0xbb1346120") are now excluded.
+- **Added: a "still learning" note on repeated Log Audit alerts
+  (10 languages).** `ScheduledLogAuditGuard`'s notification now explains
+  that a repeated "new pattern"/frequency-spike hit is expected to stop
+  paging on its own once that template's own baseline has learned enough
+  about it.
 
 ## 1.9.20
 
