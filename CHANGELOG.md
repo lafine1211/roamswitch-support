@@ -363,6 +363,17 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 
 ## RoamSwitch for Mac
 
+## 1.9.15
+
+- **Fix: the kickoff scan no longer notifies, plus a CFPasteboardRef false
+  positive** (paired with the Linux edition). The kickoff scan that runs
+  shortly after enabling Automatic Log Audit inevitably covers a window
+  containing this same app launch's own one-off startup narration; it now
+  learns silently instead of notifying about it. Also fixed: a transient
+  pasteboard-server hiccup (`CFPasteboardRef`, harmless) wasn't in the
+  exclusion list, so a real notification once highlighted it as an
+  unrelated representative example.
+
 ## 1.9.14
 
 - **Fix: overlapping scan windows re-flagged the same event repeatedly**
