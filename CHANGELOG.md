@@ -205,6 +205,24 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 
 ## RoamSwitch for Mac
 
+### 1.9.16
+
+- **Added: Critical Path FIM, a background tamper-detection guard for
+  critical system files (Pro).** Watches a small, fixed set of low-churn
+  paths that no routine OS update or Homebrew install ever touches:
+  `/etc/sudoers`, `/etc/pam.d/sudo`, `/etc/ssh/sshd_config` (+
+  `sshd_config.d`), `/etc/hosts`, and root's `authorized_keys` (the Mac
+  counterpart to roamswitch-linux's Critical Path FIM). LaunchAgent/Daemon
+  persistence is deliberately excluded here (it churns far too much for a
+  plain hash diff) and stays covered by the existing signature +
+  Homebrew-Cellar-provenance check instead. Combines an FSEvents-based
+  near-real-time trigger with an hourly backstop scan; a genuine violation
+  keeps re-flagging on every scan until a human explicitly re-trusts the
+  current state, rather than silently healing itself.
+- **Fixed: CoreAudio HAL internal trace-log false positive.** Lines like
+  `HALC_ProxyIOContext`, occasionally emitted via loginwindow, were
+  misreported as a log-audit anomaly. Added to the exclusion list.
+
 ### 1.9.13 - 1.9.15
 
 - **Resolved false positives and duplicate notifications around Automatic

@@ -182,6 +182,22 @@ Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）
 
 ## RoamSwitch for Mac
 
+### 1.9.16
+
+- **追加: 重要システムファイルの改ざんをバックグラウンド監視する
+  Critical Path FIM (Pro)**: `/etc/sudoers`・`/etc/pam.d/sudo`・
+  `/etc/ssh/sshd_config`(+`sshd_config.d`)・`/etc/hosts`・rootの
+  `authorized_keys`という、OSアップデートやHomebrewでは通常触られない
+  低頻度変更パスに絞ったSHA-256ベースライン監視(roamswitch-linuxの
+  Critical Path FIMのMac版対応)。LaunchAgent/Daemon全般は誤検知率が
+  高いため対象外とし、既存の署名検証+Homebrew Cellar配下判定による
+  監視(1.9.x以前から搭載)に引き続き委ねている。FSEventsによる準
+  リアルタイム検知+1時間ごとの周期バックストップスキャンで、実際の
+  改ざんは人間が明示的に再承認するまで再検知され続ける(自己修復しない)。
+- **修正: CoreAudio HAL内部トレースログの誤検知**: `HALC_ProxyIOContext`
+  等、loginwindow経由で稀に出力される内部トレースログが、ログ監査の
+  異常として誤検知されていた。除外リストに追加。
+
 ### 1.9.13 - 1.9.15
 
 - **自動ログ監査(1.9.10で追加)まわりの誤検知・二重通知を解消**: 有効化
