@@ -13,6 +13,31 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.9.3
+
+- **Improved: the Log Audit's frequency-spike detection now compares each
+  template against its own history** (paired with the Mac edition): the
+  previous Z-score was only a comparison against other templates seen
+  within the same scan window, with no per-template frequency history kept
+  at all. A user's own legitimate cron job, or a burst of `sudo`/`systemctl
+  reload` activity from an `apt upgrade`, could therefore keep
+  re-triggering a "frequency spike" every single day, no matter how long
+  it had been running (several repeat alerts on the same host on
+  2026-09-10). Each template's historical occurrence count is now learned
+  and persisted, and once a pattern has been observed consistently enough
+  (3 times), it's judged against that history instead. A template still
+  building up history falls back to the previous cross-template
+  comparison, so detection of a genuinely new pattern is unchanged.
+- **Improved: the daily updater timer switched from a fixed time of day to
+  a boot-relative interval**: the `systemd` timer previously used
+  `OnCalendar=daily` (a fixed time, defaulting to just after midnight), so
+  a host that's only powered on during certain hours (e.g. a laptop run
+  only during the day) could go indefinitely without ever hitting that
+  slot. `Persistent=` only covers missed `OnCalendar=` elapses, not this
+  case, so the timer now uses `OnBootSec=`/`OnUnitActiveSec=` instead,
+  which fires reliably every day regardless of the host's actual uptime
+  hours.
+
 ### 1.9.2
 
 - **Improved: Log Audit alerts now include a package-manager correlation
