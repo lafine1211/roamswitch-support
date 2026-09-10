@@ -308,6 +308,16 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 
 ## RoamSwitch for Mac
 
+## 1.9.10
+
+- **New: Automatic Log Audit (Pro)** (paired with the Linux edition).
+  Previously the Mac security log audit only ever ran when opened manually
+  from the menu bar or called by an AI agent via MCP, so the frequency
+  baseline (each log template's historical frequency) never learned
+  anything for a user who never triggered it. Adds an option to scan in the
+  background every hour and notify on new patterns or frequency spikes
+  (menu bar → Malware Protection, on by default for Pro).
+
 ## 1.9.9
 
 - **New: notification history (keeps the past 7 days)** (paired with the
