@@ -67,287 +67,32 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
   design already covers that), but this eliminated the needless
   reinstall churn and error-log noise.
 
-### 1.8.0
+### 1.4.1 - 1.8.0
 
-- **Improved: malware-detection notifications now carry a ClamAV
-  second opinion**. When the system-wide on-access guard's (fanotify)
-  built-in YARA-style engine flagged a "dangerous signature," the user
-  previously had only an internal rule name to judge Quarantine vs. Allow
-  by — and it has genuinely misfired on harmless files before (this
-  project's own docs, ordinary JSON/db files). The same file is now also
-  scanned with ClamAV (clamdscan/clamscan) after the built-in hit; the
-  confirmation dialog and notification now say whether ClamAV agrees (and
-  its detection name) or found nothing (likely a false positive). When
-  ClamAV disagrees, the notification's urgency drops from critical to
-  normal to reduce alert fatigue from false positives. Either way,
-  quarantine still only happens after the user explicitly confirms —
-  nothing is auto-quarantined.
-
-### 1.7.0
-
-- **New: incident history for the three guards behind an Air-Gap trigger,
-  exposed via MCP and the CLI**. Investigating why an Air-Gap (emergency
-  network isolation) fired used to be impossible from a separate process —
-  the actual trigger reason for all three guards capable of causing one
-  lived only in daemon memory:
-  - **eBPF Runtime Guard** (Server Edition): new `get_ebpf_incidents` MCP
-    tool and `roamswitch server ebpf` CLI command report the current
-    containment status (isolation mode, isolated PIDs, maintenance ports
-    kept reachable) and up to the 50 most recent containment decisions
-    (trigger rule, process, action taken), now persisted to
-    `/var/lib/roamswitch/{ebpf_status,ebpf_incidents}.json`.
-  - **Port Anomaly Guard**: new `get_port_anomaly_incidents` MCP tool and
-    `roamswitch port-anomaly` CLI command report baseline status,
-    currently auto-isolated ports, and up to the 50 most recent detected
-    incidents (previously-unseen executables that started listening on an
-    externally-exposed port), now persisted to the existing
-    `/var/lib/roamswitch/port_guard.json`.
-  - **Ransomware Canary**: fixed `get_canary_status`'s `recent_incidents`,
-    which had always come back empty (the MCP handler recreated the
-    detection engine from scratch on every call, discarding its
-    in-memory incident log) — it's now backed by a persisted
-    `/var/lib/roamswitch/canary_incidents.json` and reflects real
-    detections. `roamswitch canary` (unchanged code) automatically
-    benefits from the same fix.
-  - This closes a real gap for local-LLM/MCP-based offline triage during a
-    network cutoff: previously none of these three primary trigger
-    reasons were queryable from outside the daemon process.
-- **SDK**: added `get_port_anomaly_incidents()` / `get_ebpf_incidents()` to
-  both `roamswitchkit` (in-tree) and the public `roamswitch-linux-kit`
-  crate; `canary_status()` automatically returns real incident data now
-  that the underlying bug is fixed.
-- **Fixed**: the CLI's own `--help` footer and the `roamswitch(1)` man
-  page's `SEE ALSO` section pointed at a nonexistent headless-ops guide URL
-  (a file that never existed, in the wrong repository). Both now point to
-  <https://lafine.net/linux-cli.html>.
-- **Docs**: the `roamswitch(1)` man page was missing several subcommands
-  that already existed in the CLI (`server` and all its subcommands,
-  `fim`, `emergency-restore`, `scan-vulns`, `scan-packages`) — added, along
-  with the server-side files (`server.conf`, `fim_baseline.db`, the new
-  incident-history JSON files) they read or write.
-
-### 1.6.0
-
-- **New: Log Audit anomaly detection & automatic secret masking**.
-  `roamswitch audit-logs` and the `audit_security_logs` MCP tool now group
-  log messages into templates (masking IPs, hex/hash tokens, and numbers)
-  to flag two kinds of anomaly: a pattern never seen before on this host,
-  and a frequency spike (Z-score > 3.0) within the scanned window. The
-  known-template baseline is persisted at
-  `~/.config/roamswitch/log_template_baseline.json` (template identities
-  only, no time-series data).
-  - **Security fix**: any API key, token, or private-key header that
-    happened to appear in a log line is now scrubbed before it can reach
-    the GUI, the "copy for AI consultation" clipboard text, or — more
-    importantly — the raw JSON an MCP client (e.g. an AI agent) receives.
-    Previously only the composed AI-consultation prompt was masked; the
-    underlying event data handed to MCP callers was not.
-  - The "copy for AI consultation" prompt is now hardcoded in English
-    (previously Japanese), since it's meant to be pasted into an external
-    AI chat and should stay independent of the app's own display language.
-- **New: Server Edition Log Audit notifications**. A lightweight periodic
-  `journalctl` scan (`log_audit_enabled`, default on;
-  `log_audit_interval_secs`, default 1800s) dispatches a
-  Telegram/LINE/Webhook alert through the same channels as File Scan Guard
-  and FIM when a new pattern or frequency spike is detected.
-- **New MCP tool: `verify_fim`**. Critical Path FIM verification (~150
-  critical files) was previously CLI-only (`roamswitch fim verify`); it's
-  now also reachable read-only via MCP and the Rust SDK, so AI agents and
-  third-party tools can check file-integrity status without shelling out.
-- **SDK: closed a gap where three existing MCP tools had no client
-  wrapper**. Added `package_cve_scan()`, `package_cve_scan_languages()`,
-  and `verify_fim()` to both `roamswitchkit` (in-tree) and the public
-  `roamswitch-linux-kit` crate — these tools already existed in
-  `roamswitch-mcp`, but were unreachable outside of hand-rolled JSON-RPC
-  calls.
-
-### 1.5.4
-
-- **Fixed `clamd` sitting resident using 1GB+ of RAM at all times even when
-  never used, and made it opt-in**. Even if the ClamAV integration
-  (clamdscan/clamscan) was never used, the package's `clamav-daemon`
-  recommended dependency and the distro's own postinst unconditionally
-  started the systemd service, so a plain install alone burned ~1.1GB of
-  RAM continuously (verified live). Server Edition already had a proven fix
-  for this (keep `clamd` masked+stopped while `clamav_enabled=false`, and
-  self-heal it — run `freshclam`, unmask, start — the moment it flips to
-  `true`); extracted that into a shared function and ported it to the
-  desktop client too. The new `clamav_enabled` setting (default `true`,
-  matching prior behavior) is now a checkbox in the GUI; turning it off
-  stops `clamd` and frees its memory while the built-in YARA engine keeps
-  running as the first line of defense. The toggle takes effect immediately
-  with no restart needed. Note: the USB storage guard relies on ClamAV
-  alone with no YARA fallback of its own, so disabling it means USB
-  insertions go completely unscanned — a disclosed trade-off of turning
-  this off, not a silent gap.
-
-### 1.5.3
-
-- **Important: fixed a bug where, with USB Zero-Trust enabled, newly
-  connected USB devices other than keyboards (mice, etc.) could become
-  permanently unusable**. Enabling `authorized_default=0` (USB Zero-Trust)
-  makes every newly connected USB device come up kernel-unauthorized by
-  default, but the guard's reconciliation loop only ever re-authorized USB
-  hubs and allow-listed storage devices. Every other device class — mice,
-  webcams, headsets, and so on — had no path to ever get authorized at
-  all, so it simply stopped working the moment it was plugged in.
-  Generalized the auto-authorize logic: everything except storage now gets
-  authorized automatically (keyboards remain defended purely in software
-  via `EVIOCGRAB` and are still never touched at the kernel-authorization
-  level).
-- **Fixed the RHEL known-CVE map, which had never actually been delivered
-  even once**. The RHEL map reached ~130,000 package/CVE pairs, ~130MB as
-  plain JSON — over GitHub's 100MB single-file limit — so every generation
-  run's push had been silently failing. Switched to gzip delivery
-  (~130MB → ~3.4MB): `roamswitch-updater` verifies the signature over the
-  raw gzip bytes and only decompresses after verification, writing plain
-  JSON to the install path as before. Also switched the map-generation
-  pipeline's zstd extraction to a streaming approach that never writes the
-  decompressed tarball to disk, fixing a silent, logless crash caused by
-  GitHub Actions runners running out of disk space. This is the first
-  release where RHEL, CentOS Stream, AlmaLinux, and Rocky Linux actually
-  receive real package-CVE data.
-
-### 1.5.2
-
-- **Important: fixed known-CVE maps (Package CVE Scan, Active Vulnerability
-  Scan) always reporting "not fetched" on their publish day**. The embedded
-  seed's version string used a "`<date>-seed`" format; compared
-  lexicographically against a published feed's date-only version, the seed
-  would incorrectly win on the exact day it was published. Changed the seed
-  version to an empty string so real data always wins, regardless of the
-  date.
-- **Fixed dependency package CVE scanning (npm/PyPI/crates.io, etc.)
-  reporting "no vulnerabilities found" when the CVE data simply hadn't been
-  fetched yet**: now correctly distinguishes "no data yet" from "clean",
-  matching the OS-package tab's existing behavior.
-- **Fixed a misleading "Delete" label on watched folders**: the button only
-  removes a folder from RoamSwitch's watch list — it never deletes the
-  folder itself. Relabeled to "Remove from list" (Package CVE Scan and
-  malware-scan watched-folder tabs).
-- **Fixed the openSUSE package-CVE map never successfully publishing**: map
-  generation linked every package to every CVE within a single patch
-  definition unconditionally, so large kernel/browser-engine patches with
-  many sub-packages and CVEs exploded combinatorially into a 226MB file —
-  exceeding GitHub's 100MB single-file limit and silently failing every
-  publish attempt. Now skips linking when a patch definition's
-  package×CVE fan-out is too large to trust, rather than publishing
-  possibly-wrong associations.
-
-### 1.5.1
-
-- **Important: fixed a bug that could take down network connectivity right
-  after install**. Link Guard (the phishing-protection feature that
-  inspects HTTP/HTTPS/DNS traffic) queued *every* packet of *every*
-  established connection to a single-threaded NFQUEUE consumer with no
-  bound, forever. Under real traffic (page loads, video, downloads) that
-  consumer could fall behind and jam the queue, causing lost connectivity
-  or a guard crash. Fixed by capping queuing to the first few packets of
-  each connection (enough to read the TLS SNI / HTTP Host) via a kernel-side
-  `ct original packets` filter. Also moved the threat feed (840k+ domains)
-  reload off the packet-processing thread onto a dedicated one, and made
-  the queue loop self-heal (auto-restart) if it ever exits unexpectedly.
-- **Made the 3-second USB Zero-Trust reconciliation idempotent**: it now
-  skips the sysfs writes and log line entirely when the desired state
-  already matches, instead of re-applying and re-logging on every tick.
-
-### 1.5.0
-
-- **New: Package CVE Scan**. Checks installed OS packages and your
-  project's dependencies against a locally-held known-CVE map. No network
-  activity at all (the embedded baseline ships deliberately empty; nothing
-  is detected until `roamswitch-updater`'s daily fetch installs real data).
-  - **OS packages**: auto-detects `dpkg` (Debian/Ubuntu), `pacman` (Arch
-    Linux), `dnf` (RHEL, CentOS Stream, AlmaLinux, Rocky Linux — not
-    Fedora, which Red Hat's own security data doesn't track), and `zypper`
-    (openSUSE Leap — not SLES, whose feed requires a paid subscription).
-  - **7 language ecosystems** (developer opt-in): parses dependency
-    lockfiles for npm, PyPI, crates.io, RubyGems, Packagist, Go, and Maven
-    (package-lock.json, requirements.txt, Pipfile.lock, poetry.lock,
-    Cargo.lock, Gemfile.lock, composer.lock, go.sum, pom.xml) in project
-    folders you specify.
-  - CLI: `roamswitch scan-packages [FOLDER...]`. MCP tools:
-    `run_package_cve_scan` and `run_package_cve_scan_languages`. New
-    "📦 Package CVE Scan" tab in the GTK GUI.
-  - If CVE data hasn't been fetched yet, running a scan now also kicks off
-    a background fetch attempt, instead of waiting for the next scan or
-    the next scheduled daily update.
-- **Fixed a bug in the built-in help (`get_app_help`)**: filtering by
-  `topic: "setting"` always returned nothing, since no matching content
-  existed. Added a real settings guide sourced from actual config.json
-  fields, plus a new matching MCP resource,
-  `roamswitch://docs/settings-guide`.
-
-### 1.4.3
-
-- **Secret/API-key leak scanner: folder scanning added to the desktop GUI**:
-  the GTK "Secret & API Key Leak Auditor" tab (previously text/clipboard
-  only) now has a "Choose Folder to Scan" button, matching the CLI/MCP/SDK
-  capability added below.
-- **Docker firewall-bypass (`DOCKER-USER`) protection fixed and ported to the
-  desktop client**: Server Edition's protection had no actual deny rule and
-  matched the wrong (post-NAT) port, so it silently blocked nothing. Fixed
-  with an interface-scoped deny rule and pre-NAT port matching, and the same
-  protection now also runs on the desktop client (previously Server Edition
-  only). Added as a new item to the security health check (now 28 items on
-  Server Edition, was 27).
-- **Real-time detection of risky Docker containers**: a new notify-only guard
-  watches `docker events` and flags the instant a container starts with
-  `--privileged` or a `/var/run/docker.sock` bind-mount — a container-escape
-  risk. Runs on both the desktop client and Server Edition; no automatic
-  blocking, since this flags a risky *configuration*, not confirmed
-  compromise.
-- **New File Scan Guard for Server Edition** (opt-in): the embedded YARA
-  engine always scans configured directories (mail spool, file share, upload
-  directory) with no external dependency; enabling `clamav_enabled` adds a
-  ClamAV second opinion. Confirmed threats are quarantined and the operator
-  is notified. Configurable via `roamswitch server config`, the interactive
-  `roamswitch server setup` wizard, or the new `get_file_scan_guard_status`
-  MCP tool. Fixed a sandboxing bug found while building this feature's
-  regression test: the systemd service's `ProtectSystem=strict` didn't grant
-  write access to ClamAV's own directories, so `freshclam`/`clamdscan`
-  silently failed when launched by the daemon.
-- **Secret/API-key leak scanner can now scan a whole directory**:
-  `roamswitch audit-secrets <directory>` recursively scans a folder (e.g. a
-  git checkout), skipping `.git`/`node_modules`/`target`/`vendor`/`dist`/
-  `build`/`__pycache__`/`venv` and any file over 2MB or that looks binary.
-  The same capability is now available to AI agents via the `audit_secrets`
-  MCP tool's new `path` parameter, and to Python SDK users via
-  `audit_secrets_directory()` — all running locally, with content never
-  transmitted anywhere.
-- **`get_quarantine_status` MCP tool now supports Server Edition**: a new
-  `isServer` parameter reads the Server Edition quarantine vault
-  (`/var/lib/roamswitch/quarantine`) instead of always assuming the desktop
-  client's per-user vault.
-- **Fixed: Docker risk notifications ignored the language setting** — they
-  were always shown in Japanese regardless of the configured UI language.
-  Desktop notifications are now fully localized (all 10 supported
-  languages); Server Edition notifications follow its Japanese/English-only
-  policy.
-- **Fixed a dialog rendering bug**: on some display setups, a security alert
-  dialog could leave a solid black window behind it that didn't disappear
-  when closed.
-
-### 1.4.1
-
-- **Added container isolation posture auditing**: Docker socket-mount exposure
-  and privileged-container checks now also run on the desktop client (previously
-  Server Edition only). Detects the active container runtime (`runc` / gVisor /
-  Kata Containers) to surface the container-escape risk of sharing the host
-  kernel, on both editions. Added a known-kernel-CVE exposure check (on by
-  default on the client; on Server Edition it follows the opt-in below).
-- **Server Edition: explicit opt-in for CVE data updates**: the default
-  zero-network-code posture is unchanged — only if the operator explicitly
-  enables `cve_kernel_map_updates_enabled` (default false) does the one
-  exception kick in: a daily anonymous fetch of the container-isolation kernel
-  CVE database from lafine.net (no query string, cookies, or identifying
-  headers; signature-verified). Toggle and inspect it via `roamswitch server
-  config` or the `roamswitch server setup` interactive wizard.
-- **Fixed a ransomware-freeze notification bug**: when a short-lived process
-  exited before the burst detector finished evaluating it, the notification
-  showed a confusing placeholder instead of the process name. The name is now
-  snapshotted the moment the write is first observed, and an honest "unknown"
-  is shown when it genuinely can't be determined.
+- **Added Package CVE Scan**: matches installed OS packages (dpkg/pacman/
+  dnf/zypper) and 7 language-ecosystem dependencies (npm/PyPI/crates.io,
+  etc.) against a locally-held known-CVE map. No network activity at all
+  (1.5.0).
+- **Added Log Audit template anomaly detection + automatic secret
+  masking**: flags previously-unseen patterns and frequency spikes
+  (Z-score), and masks API keys etc. in log lines across both the
+  clipboard-copy path and the raw JSON an MCP client receives (1.6.0).
+- **Exposed incident history for the three guards behind an Air-Gap
+  trigger (eBPF Runtime Guard / Port Anomaly / Ransomware Canary) via
+  MCP and the CLI**: trigger reasons are now queryable from outside the
+  daemon process (1.7.0).
+- **Added File Scan Guard, Docker risk detection, and container isolation
+  posture auditing**; the secret/API-key leak scanner can now recursively
+  scan a whole directory (1.4.1, 1.4.3).
+- **Improved malware-detection notifications with a ClamAV second
+  opinion**, lowering alert urgency on a false positive (1.8.0).
+- **Important fixes**: an NFQUEUE queue jam that could take down network
+  connectivity right after install (1.5.1), USB Zero-Trust leaving every
+  non-storage device (mice, etc.) permanently unusable (1.5.3), known-CVE
+  maps always reporting "not fetched" on their publish day (1.5.2), the
+  RHEL/openSUSE package-CVE maps never actually publishing due to
+  GitHub's file-size limit (1.5.2, 1.5.3), and `clamd` sitting resident
+  using 1GB+ of RAM even when never used (1.5.4).
 
 ### 1.1.1 - 1.3.2
 
@@ -512,184 +257,44 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
   modified. Detections occurring in a brief grace window right after the
   watchers are rebuilt are now ignored, breaking this false-positive loop.
 
-## 1.9.3
+### 1.9.0 - 1.9.3
 
-- **New: incident history for the three guards behind an Air-Gap trigger,
-  exposed via MCP**: investigating why an Air-Gap (emergency network
-  isolation) fired was previously impossible from the separate MCP server
-  process — the actual trigger reason for all three guards capable of
-  causing one lived only in the main app process's memory.
-  `get_canary_status` now includes `recentIncidents`; two new MCP tools,
-  `get_port_anomaly_incidents` and `get_runtime_threat_status`, were added;
-  `get_guard_status`'s guard list now includes `runtimeThreatContainment`.
-  Each incident is persisted to the app's shared UserDefaults, so the MCP
-  server can report recent detections on its own without going through the
-  main app.
-- **Fixed a bug found while building the above: the Runtime Threat
-  Containment simulation path could leave the detected incident's detail
-  (`lastIncident`) missing from the MCP response**: the real
-  XProtect-detection path recorded incident details before triggering
-  containment, but the built-in "simulation" test path (used to safely
-  exercise the Air-Gap flow) skipped that step, so the containment date was
-  recorded but the incident detail wasn't. Fixed so every trigger path
-  records incident details consistently.
+- **Added Active Vulnerability Scan and Package CVE Scan** (ported from
+  the Linux edition, off by default): harmless read-only probes against
+  local services, and dependency/OS-package matching against a known-CVE
+  map. Network activity is receive-only and signature-verified (1.9.0).
+- **Closed gaps in the MCP server**: secret-leak scanning, log auditing,
+  quarantine listing, canary status, and incident history for the three
+  guards behind an Air-Gap trigger are now all reachable via MCP (1.9.0,
+  1.9.3).
+- **Added Log Audit automatic secret masking + template anomaly
+  detection** (parity with the Linux edition): masks API keys etc. across
+  both the clipboard-copy path and the MCP response (1.9.2).
+- **Important fixes**: known-CVE maps always reporting "not fetched" on
+  their publish day (1.9.1, paired with Linux 1.5.2), an external keyboard
+  already connected when the Bad USB guard was enabled never getting
+  allow-listed (1.9.2), the Log Audit window freezing under the "All"
+  filter (1.9.2), and the Runtime Threat Containment simulation path
+  leaving incident detail missing from the MCP response (1.9.3).
 
-## 1.9.2
+### 1.8.4 - 1.8.9
 
-- **Important: fixed secret masking not being applied to the "Copy AI
-  Consultation Material" text and the log audit's MCP response**: the "Mac
-  Security Log Audit" feature already had a mechanism to detect and mask
-  secrets (`SecretLeakScanning`), but neither the clipboard-copy path nor
-  the JSON response returned by the MCP server actually used it. If a raw
-  system log happened to contain something like an API key, it could be
-  passed through unmasked when pasted into an external AI chat or consumed
-  by an AI agent over MCP. Masking is now applied to every message the log
-  audit extracts, consistently across both the clipboard copy and the MCP
-  response.
-- **Added template-based log anomaly detection**: in addition to the
-  existing 6 hardcoded categories (sudo/ssh/gatekeeper/xprotect, etc.), the
-  "Mac Security Log Audit" now templatizes log messages and detects
-  frequency spikes and previously-unseen patterns (ported from the
-  already-shipped Linux edition). Surfaced in the KPI card, the
-  AI-consultation text, and the MCP response (`templateAnomalies`).
-- **Added an audit `timestamp` to the MCP `get_security_report` response.**
-- **Fixed a Bad USB guard bug where an external keyboard already connected
-  at the moment the guard was enabled wasn't added to the allowlist**: with
-  an external keyboard plugged in, enabling the guard didn't auto-approve
-  it — it merely happened not to be blocked yet. The next time it was
-  unplugged and replugged, it would be treated as an unapproved device,
-  triggering the approval dialog and briefly blocking keystrokes even
-  though it was the user's own everyday keyboard. Fixed by auto-registering
-  all currently-connected keyboards to the allowlist the moment the guard
-  is enabled.
-- **Fixed the "Mac Security Log Audit" window freezing when the "All"
-  category filter was selected on a day with a large number of events**:
-  capped the number of rendered rows and made the localization lookup used
-  by each row far cheaper.
-
-## 1.9.1
-
-- **Important: fixed known-CVE maps (Package CVE Scan, Active Vulnerability
-  Scan) always reporting "not fetched" on their publish day** (paired with
-  the Linux 1.5.2 fix). The embedded seed's version string used a
-  "`<date>-seed`" format; compared lexicographically against a published
-  feed's date-only version, the seed would incorrectly win on the exact day
-  it was published. Changed the seed version to an empty string so real
-  data always wins, regardless of the date.
-- **Fixed raw Markdown (headings, bold, code spans) showing up in the
-  Package CVE Scan findings table's summary column**: now stripped to
-  plain text for display.
-
-## 1.9.0
-
-- **New: Active Vulnerability Scan (off by default)**. Ported from the
-  Linux edition. For a service found listening on `127.0.0.1` during a
-  port scan, sends a single harmless, read-only probe to confirm it's
-  actually reachable without authentication — not just "the port is
-  open." Covers Redis, Memcached, MongoDB, and dockerd (services that are
-  unauthenticated by default), plus CORS misconfiguration, path
-  traversal, and open-redirect checks against arbitrary local dev
-  servers. Redis (CVE-2022-24834 and 7 others) and Memcached
-  (CVE-2018-1000115) are additionally checked against known-CVE version
-  ranges using only a harmless version-query command — no exploit payload
-  is ever sent. Opt in from the menu bar's Ports submenu, then run it
-  manually from the port detail sheet. The known-CVE map updates via the
-  same daily, receive-only, signature-verified feed as the ransomware
-  kernel-CVE map.
-- **New: Package CVE Scan**. Same design as the Linux edition, ported to
-  macOS. Checks installed Homebrew packages and dependency lockfiles for
-  npm, PyPI, crates.io, RubyGems, Packagist, Go, and Maven against a
-  locally-held known-CVE map. No network activity at all; if the data
-  hasn't been fetched yet, running a scan now also kicks off a background
-  fetch attempt.
-- **Closed 4 gaps in the MCP server**. The AI-agent-facing MCP server now
-  exposes secret/API-key leak scanning (`audit_secrets`), security-log
-  auditing (`audit_security_logs`), quarantined-file listing
-  (`get_quarantine_status`), and ransomware-canary monitoring status
-  (`get_canary_status`) — all of which already existed in the desktop
-  GUI. Also fixed the MCP server always reporting its version as
-  "1.0.0", and fixed responses always coming back in Japanese regardless
-  of the language selected in the app.
-- **Fixed 2 Pro default-value inconsistencies**. The ransomware
-  canary-file guard, unlike the app's other auto-containment guards,
-  didn't persist an explicit OFF choice across restarts — it's now
-  consistent with the others, and can be toggled from the menu bar (there
-  was previously no way to change it at all). Separately, ARP-spoofing
-  containment and XProtect-triggered auto-containment could kick in
-  without warning the first time Pro was enabled; a one-time notification
-  now explains what happened and how to undo it.
-- **Filled in gaps in Help & Guide**. Added entries for Package CVE Scan,
-  Active Vulnerability Scan, ClickFix protection, persistence monitoring,
-  and XProtect-triggered auto-containment — all already implemented but
-  missing from the in-app help.
-
-### 1.8.9
-
-- **New Docker risk detection guard (Pro, off by default)**: detects the
-  instant a container starts with `--privileged` or a `/var/run/docker.sock`
-  bind-mount — a container-escape risk — and sends a notification. This
-  flags a risky *configuration*, not confirmed compromise, so no automatic
-  action is taken. Mirrors the equivalent guard on the Linux edition, using
-  the same detection logic. Most users don't run Docker, which is why this
-  stays opt-in even on Pro.
-- **Secret/API-key leak auditor can now scan a whole folder**: previously
-  limited to pasted text or the clipboard, the "Secret Leak Audit" window
-  now has a "Choose Folder to Scan" option that recursively audits a
-  directory (e.g. a source checkout), skipping `.git`/`node_modules`/
-  `target`/`vendor`/`dist`/`build`/`__pycache__`/`venv` and any file over
-  2MB or that looks binary. Runs entirely on-device, as before.
-- **Fixed a dialog rendering bug**: on setups without an active compositor,
-  a security alert dialog could leave a solid black window behind it that
-  didn't disappear when closed.
-- **Added an explainer dialog before folder-access prompts**: macOS's
-  "would like to access files in your Desktop folder" prompt — triggered
-  when Web & Mail Protection starts monitoring, or when scanning a folder
-  in the Secret/API-key leak auditor — used to appear with no context,
-  which could look suspicious. The app now shows a one-time explainer
-  first, describing why and confirming scanning stays fully on-device
-  (Zero Telemetry).
-- **Fixed missing translations across the UI**: 92 menu items and dialog
-  strings that were falling back to Japanese in non-Japanese locales now
-  have translations in all 9 supported languages.
-
-### 1.8.8
-
-- **Fixed helper version sync**: the privileged helper method backing the
-  1.8.7 sudo NOPASSWD audit could fail to take effect after upgrading an
-  existing install, because the helper's own version string wasn't bumped
-  alongside it. When this happened, the "Sudo Privilege Escalation Audit"
-  item in the comprehensive security report stayed stuck on "not yet
-  checked" (fresh installs were unaffected).
-
-### 1.8.7
-
-- **Static-signature detection for downloaded files**: without requiring the
-  EndpointSecurity entitlement, a lightweight static signature layer now
-  checks downloads for the industry-standard EICAR test string and a set of
-  well-documented, publicly known reverse-shell one-liners (bash/sh
-  `/dev/tcp/`, netcat `-e`, Python `pty.spawn`, Perl `Socket`, PHP
-  `fsockopen`). Runs alongside ClamAV and keeps working even when ClamAV
-  isn't installed.
-- **New login-item persistence monitoring**: detects the moment a new
-  LaunchAgent/LaunchDaemon plist is installed, and flags it when it invokes
-  a raw script interpreter (`/bin/bash` and similar) directly — malicious
-  content is usually hidden in the interpreter's arguments rather than in a
-  signed executable, so a validly-signed interpreter alone isn't a clean
-  bill of health.
-- **Emergency lockdown on suspicious Terminal commands (off by default)**:
-  targets "ClickFix" — the social-engineering technique where a fake
-  warning page talks the user into pasting and running a command
-  themselves. Watches shell history for known-bad patterns and triggers an
-  emergency network air-gap on a match. A bare `curl | bash` (used by many
-  legitimate installers) is deliberately not flagged on its own — only
-  narrower combinations, like decoding base64 straight into a shell or
-  AppleScript, are. Off by default given the disruption a false positive
-  would cause.
-- **Three additions to the comprehensive security report**: gateway ARP
-  pinning status, an SSH Remote Login configuration audit (root login
-  disabled, key-only auth), and a sudo NOPASSWD audit.
-
-### 1.8.4 - 1.8.6
+- **Added static-signature detection for downloads, ClickFix protection
+  (off by default), and a Docker risk detection guard (off by default)**:
+  EICAR/reverse-shell one-liner detection, an emergency lockdown on
+  suspicious Terminal commands, and container-escape configuration alerts
+  (1.8.7, 1.8.9).
+- **Added automatic Air-Gap isolation tied to Apple XProtect detections**
+  (Pro, on by default). Redesigned the air-gap failsafe as a fully
+  independent watchdog daemon so its lockdown deadline lifts reliably even
+  if the helper process crashes (1.8.4 - 1.8.6).
+- **The secret/API-key leak auditor can now scan a whole folder** (1.8.9).
+- **Link Guard's "warn" mode now fails closed**, with a shorter hold
+  window (25s → 8s); hardened the privileged helper's code-signature
+  verification (dynamic `audit_token`) and pre-execution checks for
+  external binaries (1.8.4 - 1.8.7).
+- Several minor fixes in this span too: dialog rendering glitches, 92
+  missing translations, and a helper version-sync bug.
 
 - **Air-gap failsafe redesigned to be safe**: A fix to make sure the air-gap's
   10-minute network-lockdown deadline lifts on its own even if the helper
