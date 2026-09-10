@@ -296,6 +296,17 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 
 ## RoamSwitch for Mac
 
+## 1.9.9
+
+- **New: notification history (keeps the past 7 days)** (paired with the
+  Linux edition). Adds a way to look back through the notifications
+  RoamSwitch has sent (security log-audit anomalies, ClickFix detections,
+  and the like). Previously a desktop notification just vanished once it
+  was shown, with no way to check "wait, what did that notification a
+  minute ago actually say." Available from the menu bar's "🔔 Notification
+  History…" and the MCP tool `get_notification_history`. Entries older
+  than the retention window are pruned automatically.
+
 ## 1.9.8
 
 - **New: detects ClickFix-style malicious commands on the clipboard**.
