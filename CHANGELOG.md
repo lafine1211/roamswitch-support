@@ -13,6 +13,49 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.9.20
+
+- **Added: Resource Exhaustion / Process Anomaly Guard (Server Edition
+  only).** Both memory-exhaustion DoS attacks and use-after-free exploit
+  crash loops target network-reachable public services, not a consumer
+  desktop's threat model, so this is Server Edition-only. RSS-trend
+  detection flags "sustained growth that never recovers" rather than
+  "monotonic growth," so a healthy GC-backed runtime's (Go, JVM, ...)
+  normal sawtooth memory pattern is never mistaken for a leak. Crash-loop
+  detection adds no new polling; it structurally recognizes systemd's own
+  fixed restart/failure vocabulary (a kernel-verified sender) on the
+  journalctl tail Log Audit already maintains (Docker containers are
+  watched via `docker events`). Since a memory metric alone can never
+  confirm intent, a flagged PID is correlated against the same PID's
+  recent eBPF Runtime Guard / Critical Path FIM events to assign a
+  confidence tier (possible/correlated). Check it with `roamswitch
+  resource-guard` or the `get_resource_guard_incidents` MCP tool.
+- **Fixed: digits embedded in the hostname could cause Log Audit's learned
+  template baseline to "forget" everything at once.** The 1.9.18 digit-
+  masking fix also started masking digits fused inside a hostname (e.g.
+  "SX2BD1TC"), which changed every single template's shape the moment it
+  shipped and made an entire production server's already-learned baseline
+  reappear as "new pattern" all at once. The hostname is now replaced with
+  a fixed placeholder before any other masking runs, since it's a
+  per-host constant that never distinguishes one template from another.
+- **Fixed: false-positive ransomware freeze on a plain `cp`/`mv`.** Live
+  investigation found copying a folder of naturally high-entropy files
+  (photos, videos, zip archives) with `cp -r` triggered the entropy-burst
+  ransomware detector and froze the process (SIGSTOP). `cp`/`mv` can
+  never themselves be a ransomware encryption mechanism (pure byte copy /
+  rename, no data transformation), so both are now allowlisted.
+- **Fixed: most client daemon notifications never appeared in
+  `roamswitch notifications`.** Only 2 of 28 call sites recorded to
+  notification history (ransomware freeze, malware quarantine, ARP-spoof
+  containment, link-guard blocks, and more were silently missing).
+  Recording now happens once, inside the shared notification-send
+  function itself, instead of being repeated (and missed) at each call
+  site.
+- **Fixed: a generated `postinst` script's indentation could corrupt the
+  FIM apt hook's heredoc terminator**, occasionally breaking `dpkg
+  --configure`.
+- Removed the unmaintained Python SDK (`python/roamswitch`).
+
 ### 1.9.19
 
 - **Fixed: Client Edition-only commands returned wrong or fabricated
@@ -249,6 +292,20 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 ---
 
 ## RoamSwitch for Mac
+
+## 1.9.20
+
+- **Fixed: lock-screen wallpaper rendering framework logs were treated as
+  anomalies.** Three internal-diagnostic message shapes emitted by
+  `loginwindow`'s own wallpaper crossfade pipeline (`com.apple.wallpaper`'s
+  "Release Assertion N", `com.apple.coreanimation`'s "CAMetalLayer
+  ignoring invalid setDrawableSize ...", and `com.apple.avatarkit`'s
+  "Error while writing subdiv data") were showing up in Log Audit as
+  frequency-spike anomalies. All three are purely graphical Apple
+  framework internals with zero security relevance. Rather than
+  enumerating each message's text, these are now excluded structurally by
+  the unified log's `subsystem` field, set by the logging process
+  itself, so it can't be forged the same way arbitrary message text could.
 
 ## 1.9.19
 
