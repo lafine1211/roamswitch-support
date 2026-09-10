@@ -13,6 +13,19 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.9.6
+
+- **New: detects ClickFix-style malicious commands on the clipboard**
+  (paired with the Mac edition). Addresses a scam technique (ClickFix)
+  where a fake ad or CAPTCHA page, reached by searching for a name like
+  "ChatGPT," tells the victim to paste a "verification code" that's
+  actually a malicious command into the GNOME/KDE run dialog or similar.
+  The Linux edition previously had no defense of this kind at all (no
+  shell-history watcher, no clipboard monitor). Polls the clipboard via
+  `gtk::Clipboard` (works transparently across both X11 and Wayland) and
+  warns at copy-time, so it catches the paste destination uniformly
+  whether it's a terminal, the GNOME/KDE run dialog, or anywhere else.
+
 ### 1.9.5
 
 - **Improved: Log Audit alerts now show a template's learning progress**.
