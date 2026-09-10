@@ -13,6 +13,18 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.9.5
+
+- **Improved: Log Audit alerts now show a template's learning progress**.
+  A template flagged as a "frequency spike" gave no way to tell whether it
+  was only judged provisionally by the cross-template fallback (its own
+  frequency history is still under 3 observations), or whether it has
+  actually deviated from an already-established baseline of its own. When
+  applicable, both the notification and `roamswitch audit-logs` now note,
+  per anomaly line, that its baseline is still learning (N of 3
+  observations so far) and expected to stop paging on its own once
+  learned.
+
 ### 1.9.4
 
 - **Important: fixed the Server Edition Log Audit's baseline (known
