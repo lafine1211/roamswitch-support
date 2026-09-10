@@ -250,6 +250,25 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 
 ## RoamSwitch for Mac
 
+## 1.9.19
+
+- **Important: fixed four security items that reported success without
+  confirming anything, or never checked their claim at all.** Automatic
+  dev-server port blocking used to declare "blocked" the instant the pf
+  rule request was sent, without waiting for the async helper call that
+  actually applies it (failures now show a message prompting manual
+  action instead). Malware quarantine's file move silently discarded its
+  own errors, so a failed move was still reported as "quarantined" (now
+  only claims success once the move is confirmed). The Security Dashboard's
+  "macOS Accessory Connection Protection" item hardcoded `isPassed: true`
+  and never checked the actual system setting at all; fixed by reading the
+  live value via `ioreg` (no documented API exists for this, so this was
+  implemented only after verifying live, with the user's help, that
+  toggling "Ask Every Time" vs "Always Allow" actually changes the value
+  read). Critical Path FIM now notifies if it fails to reach the
+  privileged helper several times in a row, instead of silently going
+  blind with no visible sign at all.
+
 ## 1.9.18
 
 - **Important: fixed a root-cause template-masking bug in the log audit**
