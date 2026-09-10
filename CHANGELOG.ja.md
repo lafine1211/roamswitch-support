@@ -12,6 +12,17 @@ Linux 版（別系列・1.0.x）でバージョン番号は独立しています
 Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）。
 詳しくは <https://lafine.net/linux>。
 
+### 1.9.7
+
+- **新機能: 通知履歴(過去1週間保持)**: RoamSwitchが送信した通知(ログ監査
+  異常、ClickFix検知など)を一覧で振り返れる機能を追加した。これまでは
+  デスクトップ通知は表示された瞬間に流れて消えるだけで、後から「そう
+  いえばさっき何か通知が来ていた」と思い出しても確認する手段が
+  無かった。`roamswitch notifications`コマンド、GUIアプリの新しい
+  「通知」タブ、MCPの`get_notification_history`ツール、SDK
+  (roamswitchkit)の`notification_history()`メソッドから参照できる。
+  保持期間を過ぎた通知は自動的に削除される。
+
 ### 1.9.6
 
 - **新機能: クリップボード上のClickFix型不正コマンドを検知**(Mac版と対):

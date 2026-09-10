@@ -13,6 +13,18 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.9.7
+
+- **New: notification history (keeps the past 7 days)**. Adds a way to look
+  back through the notifications RoamSwitch has sent (log-audit anomalies,
+  ClickFix detections, and the like). Previously a desktop notification
+  just vanished once it was shown, with no way to check "wait, what did
+  that notification a minute ago actually say." Available via the
+  `roamswitch notifications` command, a new "Notifications" tab in the GUI
+  app, the MCP tool `get_notification_history`, and the SDK
+  (roamswitchkit)'s `notification_history()` method. Entries older than
+  the retention window are pruned automatically.
+
 ### 1.9.6
 
 - **New: detects ClickFix-style malicious commands on the clipboard**
