@@ -223,6 +223,18 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 
 ## RoamSwitch for Mac
 
+## 1.9.18
+
+- **Important: fixed a root-cause template-masking bug in the log audit**
+  (paired with the Linux edition). The exact same bug found and verified
+  against the Linux edition's own production server (digits fused directly
+  onto a letter, with no separator, never got masked because the regex
+  required a word boundary that doesn't exist there) turned out to exist
+  in Mac's independent implementation too, so the same fix was ported
+  over. Resolves lines containing a duration string (e.g.
+  `wait=3h17m58s`) being treated as a distinct "new pattern" every single
+  time.
+
 ## 1.9.17
 
 - **Improved: replaced yet another one-off log-audit exclusion with a
