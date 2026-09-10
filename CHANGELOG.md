@@ -348,6 +348,15 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 
 ## RoamSwitch for Mac
 
+## 1.9.14
+
+- **Fix: overlapping scan windows re-flagged the same event repeatedly**
+  (paired with the Linux edition). A kickoff scan landing close to the
+  first regular-interval scan, or timer drift across a sleep/wake cycle,
+  could put the same historical event inside two consecutive audit
+  windows, re-counting and re-alerting it. Now remembers the last
+  processed message and only scores genuinely new ones next time.
+
 ## 1.9.13
 
 - **Fix: login/logout false positives.** macOS's internal
