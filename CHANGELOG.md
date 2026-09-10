@@ -13,6 +13,18 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.9.11
+
+- **Fix: overlapping scan windows re-flagged the same event repeatedly**
+  (paired with the Mac edition). The audit window deliberately overlaps
+  the previous scheduled run's (to avoid missing anything at the
+  boundary), so the same historical event (say, one `apt upgrade`) kept
+  getting re-counted and re-alerted for as long as it stayed inside the
+  "past 1 hour" window (confirmed live: the same 10 lines paged twice, 5
+  minutes apart, on the production server). Now remembers the last
+  processed line and only scores genuinely new lines next time; display
+  stats still reflect the full requested window as before.
+
 ### 1.9.10
 
 - **Fix: server daemon restart banner lines triggered false positives.**
