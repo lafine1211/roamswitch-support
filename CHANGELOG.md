@@ -271,6 +271,18 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 
 ## RoamSwitch for Mac
 
+## 1.9.7
+
+- **Improved: the "Copy AI Consultation Material" text now shows a
+  template's learning progress** (paired with the Linux edition). A
+  template flagged as a "frequency spike" gave no way to tell whether it
+  was only judged provisionally by the cross-template fallback (its own
+  frequency history is still under 3 observations), or whether it has
+  actually deviated from an already-established baseline of its own.
+  Affected anomaly lines now note that the baseline is still learning (N
+  of 3 observations so far) and expected to stop appearing on its own once
+  learned.
+
 ## 1.9.6
 
 - **Improved: the Mac Security Log Audit's frequency-spike detection now
