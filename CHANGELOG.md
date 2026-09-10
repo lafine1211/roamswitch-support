@@ -13,6 +13,21 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.9.14
+
+- **Improved: structural detection of systemd's own unit-lifecycle
+  narration, generally resolving false positives** (client and server
+  editions both). Previously each routine service (`logrotate`, `cups`,
+  `dpkg-db-backup`, ...) needed its own exclusion added one at a time, so
+  any not-yet-catalogued one kept paging as "new pattern." Now matched
+  structurally instead: the sending process, which journald ties to
+  kernel-verified credentials an attacker cannot forge, is genuinely
+  systemd itself, and the message matches systemd's own fixed phrasing
+  ("Starting", "Started", "Stopping", etc.) regardless of which unit.
+  Detection coverage is unaffected, since anything an attacker actually
+  runs is a different process entirely. Also excluded Ollama's and Ubuntu
+  Pro's own routine logging.
+
 ### 1.9.13
 
 - **Fix: two of the log audit's own diagnostic log lines triggered false
