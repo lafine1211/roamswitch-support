@@ -13,6 +13,25 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.9.9
+
+- **Fix: notification history (`roamswitch notifications`) was effectively
+  always empty.** A daemon running as root (client or server edition)
+  records notifications to `/var/lib/roamswitch/`, but running the CLI as a
+  regular user only ever read `~/.config/roamswitch/`, so daemon-originated
+  notifications (log-audit anomalies, ransomware detections, essentially
+  everything that matters) never showed up. Reading now merges both
+  locations.
+- **Fix: two log-audit false positives.** The server daemon's own routine
+  logging (FIM's periodic "all clear" sweep, the egress guard's periodic
+  blocklist reload) and snapd's package-update churn weren't in the
+  benign-noise exclusion list, so a freshly-rebuilt baseline flooded with
+  "new pattern" hits for both. Added to the exclusion list.
+- **Improved: notification readability.** Notifications now lead with the
+  actual, unmasked log line instead of our internal masked (`<NUM>`, etc.)
+  template string, and show a one-line breakdown ("N new patterns, K
+  frequency spikes") up front (server and client both).
+
 ### 1.9.8
 
 - **Improved: the log audit (new-pattern / frequency-anomaly detection) now
