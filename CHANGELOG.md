@@ -13,6 +13,24 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.9.18
+
+- **Important: fixed a root-cause bug in the log audit's template-masking
+  regex (the foundation of "new pattern" detection).** Digits directly
+  adjacent to a letter, with no separator, such as an ISO8601 timestamp's
+  `...-10T04:...` or a duration like `wait=3h17m58s`, weren't masked at
+  all, because the masking regex required a word boundary around the
+  digits and none exists there. `roamswitch-server-daemon`'s own self-logs
+  embed exactly this shape (a microsecond-precision timestamp the
+  `tracing` crate adds automatically), so a line like "FIM routine
+  integrity verification passed" could never learn its way into "known" no
+  matter how many times it had genuinely already been seen, since its
+  embedded timestamp made every occurrence's template unique. Verified
+  against this project's own production server: applying the fixed
+  masking to its 691 already-learned templates collapsed them to 285
+  (58.8%). Most of the individual self-log exclusions added earlier this
+  cycle were, in effect, papering over this same bug.
+
 ### 1.9.17
 
 - **Added: Critical Path FIM (tamper detection) now runs automatically in
