@@ -308,6 +308,12 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 
 ## RoamSwitch for Mac
 
+## 1.9.11
+
+- **Fix: two Automatic Log Audit notification strings were missing
+  translations.** The notification's title and body, added in 1.9.10,
+  displayed in Japanese regardless of the selected language. Fixed.
+
 ## 1.9.10
 
 - **New: Automatic Log Audit (Pro)** (paired with the Linux edition).
