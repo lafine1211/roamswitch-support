@@ -12,6 +12,20 @@ Linux 版（別系列・1.0.x）でバージョン番号は独立しています
 Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）。
 詳しくは <https://lafine.net/linux>。
 
+### 1.9.2
+
+- **改善: ログ監査アラートに、パッケージ管理活動との相関ヒントを追加**:
+  `apt`/`dnf`/`zypper`/`pacman`によるパッケージ更新は、postinstスクリプト
+  等が内部でsudo昇格や`systemctl daemon-reload`を何度も行うため、頻度急増
+  検知(sudoセッション急増・systemd reloadの急増など)を誤って引き起こす
+  ことがあった。テンプレート文字列だけでは、利用者がこれを実際の攻撃の
+  兆候と区別できなかった(v1.9.1公開直後のアップグレードで発覚)。監査
+  対象の時間帯にパッケージ管理ツールのログファイル(`dpkg.log`等)が更新
+  されていた場合、Server Editionの通知・`roamswitch audit-logs`双方に
+  「この時間帯にパッケージ管理の実行履歴が見つかりました」という注記を
+  追加するようにした。異常自体は引き続き通常通り検知・報告し、注記に
+  よる抑制は行わない(本物の不正なsudo昇格を見逃さないため)。
+
 ### 1.9.1
 
 - **修正: upower.serviceが、Server Editionのuser namespaceハードニングと

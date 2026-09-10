@@ -13,6 +13,22 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.9.2
+
+- **Improved: Log Audit alerts now include a package-manager correlation
+  hint**: an `apt`/`dnf`/`zypper`/`pacman` upgrade can trigger a burst of
+  `sudo` sessions and `systemctl daemon-reload` calls from its own
+  postinst/trigger scripts, which the frequency-spike detector could
+  misreport as an anomaly — and the template text alone gave no way to
+  tell that apart from an actual attack (discovered right after the
+  v1.9.1 upgrade itself triggered exactly this). If a package-manager log
+  file (e.g. `dpkg.log`) was touched during the scanned window, both the
+  Server Edition notification and `roamswitch audit-logs` now note that
+  package-management activity coincided with the alert. The anomaly
+  itself is still detected and reported as before — this only adds
+  context, it never suppresses a real spike (so a genuine unauthorized
+  `sudo` escalation is still flagged).
+
 ### 1.9.1
 
 - **Fixed: `upower.service` crash-restart loop from a conflict with the
