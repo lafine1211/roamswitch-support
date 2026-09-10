@@ -205,7 +205,7 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 
 ## RoamSwitch for Mac
 
-### 1.9.16
+## 1.9.16
 
 - **Added: Critical Path FIM, a background tamper-detection guard for
   critical system files (Pro).** Watches a small, fixed set of low-churn
@@ -223,7 +223,7 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
   `HALC_ProxyIOContext`, occasionally emitted via loginwindow, were
   misreported as a log-audit anomaly. Added to the exclusion list.
 
-### 1.9.13 - 1.9.15
+## 1.9.13 - 1.9.15
 
 - **Resolved false positives and duplicate notifications around Automatic
   Log Audit (1.9.10)**: the kickoff scan right after enabling now learns
@@ -236,7 +236,7 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 - **Improved notification bodies**: now show a "N new patterns, K
   frequency spikes" breakdown plus readable example log lines.
 
-### 1.9.6 - 1.9.12
+## 1.9.6 - 1.9.12
 
 - **Added detection of ClickFix-style malicious commands on the
   clipboard**, including the Script Editor pivot used to dodge Terminal's
@@ -251,7 +251,7 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 - **Fixed two Automatic Log Audit notification strings missing
   translations**.
 
-### 1.9.0 - 1.9.5
+## 1.9.0 - 1.9.5
 
 - **Added Active Vulnerability Scan and Package CVE Scan** (ported from
   the Linux edition, off by default).
@@ -269,7 +269,7 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
   conditions**: the localized-string cache wasn't safe for concurrent
   access.
 
-### 1.8.4 - 1.8.9
+## 1.8.4 - 1.8.9
 
 - **Added static-signature detection for downloads, ClickFix protection
   (off by default), and a Docker risk detection guard (off by default)**:
@@ -289,7 +289,7 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 - Several minor fixes in this span too: dialog rendering glitches, 92
   missing translations, and a helper version-sync bug.
 
-### 1.8.0 - 1.8.3
+## 1.8.0 - 1.8.3
 
 - **Topmost Emergency Alert Overlays**: threat confirmation dialogs (BadUSB, ransomware, ARP spoofing, link hold) display as topmost overlays across all macOS spaces and full-screen apps.
 - **Direct Health Audit Remediation**: added per-item remediation buttons to immediately enable internal guards or open relevant macOS System Settings panes with automatic re-evaluation.
@@ -297,7 +297,7 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 - **Enhanced Link Guard via Content Filter**: outbound connection inspection post-DNS (blocking phishing across DoH/DoT and TLS SNI) and interactive foreground warning panels with safe defaults.
 - **Dual VPN Backend Support**: added Tailscale Exit Node integration alongside WireGuard tunnels.
 
-### 1.6.0 - 1.7.6
+## 1.6.0 - 1.7.6
 
 - **Integrated VPN Killswitch**: automatic WireGuard tunnels with packet-level killswitch enforcement on untrusted networks.
 - **Proactive Gateway ARP/NDP Pinning**: hardens local neighbor tables on untrusted networks to prevent MITM attacks before they happen.
@@ -305,13 +305,13 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 - **Passive Link Guard**: real-time outbound filtering against phishing and scam domains.
 - **Canary baseline persistence** (decoy file hashes saved to disk for strict tamper detection) and **Quarantine Vault hardening** (`chmod 000` on quarantined files).
 
-### 1.4.0 - 1.5.9
+## 1.4.0 - 1.5.9
 
 - **Local AI / LLM server protection**: automated exposure detection and blocking for Ollama, LM Studio, Gradio, and vLLM on `0.0.0.0`.
 - **Clipboard secret protection**: real-time on-device regex scanning for exposed API keys and private keys.
 - **Open Source MCP Server**: released a read-only MCP server and heuristics on GitHub.
 - **Web & Mail triple protection**, **privileged helper hardening**, and **a crash watchdog** with autonomous auto-recovery.
 
-### 1.0.0 - 1.3.0
+## 1.0.0 - 1.3.0
 
 - **Initial Releases**: autonomous network environment detection by gateway MAC, automatic firewall/sharing service profile switching, port anomaly blocking, ARP spoof auto-containment, and foundational MCP integration.
