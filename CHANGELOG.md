@@ -13,6 +13,26 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.9.17
+
+- **Added: Critical Path FIM (tamper detection) now runs automatically in
+  the background on the client edition too.** Previously FIM was
+  Server-Edition-only, so a day-to-day client machine had no ongoing
+  integrity monitoring at all if its root account got compromised (only a
+  manual `roamswitch fim verify`). Added the same event-driven fanotify
+  watch plus periodic backstop scan the server daemon already runs, and
+  added the systemd binary itself (`/usr/lib/systemd/systemd`) to the
+  monitored set. A legitimate file replacement during an apt/dnf/zypper
+  package upgrade is now distinguished from real tampering by checking, via
+  a structural lock-file probe, whether a package-manager transaction is
+  actually in progress (not by matching the writing process's name
+  against an enumerated list), so a transient false "tampering" alert
+  mid-upgrade is deferred (the periodic scan still re-verifies regardless,
+  so nothing is ever missed). The tampering warning log now also records
+  the actual writing process's name for context. Packaging (the apt
+  Post-Invoke hook, and the RPM-family path unit) now ships in the client
+  edition's .deb/.rpm too.
+
 ### 1.9.16
 
 - **Added: a warmup protection that skips the automatic notification for
