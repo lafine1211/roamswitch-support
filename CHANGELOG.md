@@ -336,6 +336,18 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 
 ## RoamSwitch for Mac
 
+## 1.9.12
+
+- **Fix: Automatic Log Audit notification body and a false positive**
+  (paired with the Linux edition). The notification body was showing our
+  internal masked template text twice; it now leads with the actual,
+  readable log line and shows a one-line breakdown ("N new patterns, K
+  frequency spikes") plus up to 3 examples. Also fixed: AppKit's internal
+  focus-change KVO notification ("firstResponder changed") is harmless
+  noise unrelated to security, but wasn't in the exclusion list, so a real
+  notification once highlighted it as the unrelated representative
+  example.
+
 ## 1.9.11
 
 - **Fix: two Automatic Log Audit notification strings were missing
