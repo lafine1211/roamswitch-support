@@ -216,6 +216,21 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 
 ## RoamSwitch for Mac
 
+## 1.9.6
+
+- **Improved: the Mac Security Log Audit's frequency-spike detection now
+  compares each template against its own history** (paired with the Linux
+  edition): the previous Z-score was only a comparison against other
+  templates seen within the same scan window, with no per-template
+  frequency history kept at all. A legitimate recurring job, or a burst of
+  log lines from an OS component, could therefore keep re-triggering a
+  "frequency spike" every single time, no matter how many times it had
+  already happened. Each template's historical occurrence count is now
+  learned and retained, and once a pattern has been observed consistently
+  enough (3 times), it's judged against that history instead. A template
+  still building up history falls back to the previous cross-template
+  comparison, so detection of a genuinely new pattern is unchanged.
+
 ## 1.9.5
 
 - **New: Wi-Fi history learning with an Evil Twin (SSID spoofing) warning**:
