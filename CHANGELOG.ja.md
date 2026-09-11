@@ -378,6 +378,17 @@ Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）
 
 ## RoamSwitch for Mac
 
+## 1.9.22
+
+- **修正: ログ監査のマスキングが`0x`接頭辞付きポインタアドレスを捕捉
+  できない不具合**: 既存のhex用正規表現は"0x"の直後に単語境界が発生
+  しないため、XPC接続ID等の"0x..."形式アドレスを一切マスクできて
+  いなかった。`[0xbb38aae40] invalidated because the current process
+  cancelled the connection by calling xpc_connection_cancel()`のように
+  接続のたびにアドレスが変わるログが、永久に「新規パターン」として
+  鳴り続けていたことから発覚。0x接頭辞付きの16進を先にまとめてマスク
+  する専用の正規表現を追加した。
+
 ## 1.9.21
 
 - **修正: ロック画面のスリープ/ウェイク処理・ステータスウィジェットの

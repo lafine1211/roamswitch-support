@@ -430,6 +430,18 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 
 ## RoamSwitch for Mac
 
+## 1.9.22
+
+- **Fixed: Log Audit's masking couldn't catch `0x`-prefixed pointer
+  addresses.** The existing hex regex never fires right after "0x" (no
+  word boundary between the "x" and the hex digits that follow), so
+  XPC connection IDs and similar `0x...` addresses passed through
+  completely unmasked. Lines like `[0xbb38aae40] invalidated because
+  the current process cancelled the connection by calling
+  xpc_connection_cancel()` kept re-triggering as a "new pattern" forever
+  since the address changes on every connection. Added a dedicated regex
+  that masks `0x`-prefixed hex first.
+
 ## 1.9.21
 
 - **Fixed: lock-screen sleep/wake and status-widget internal logs were
