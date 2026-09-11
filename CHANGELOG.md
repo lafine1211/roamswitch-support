@@ -13,6 +13,20 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.9.27
+
+- **Fixed: Log Audit's masking couldn't catch `0x`-prefixed pointer
+  addresses.** The existing hex regex (`\b[0-9a-fA-F]{8,}\b`) never fires
+  right after "0x" (no word boundary between the "x" and the hex digits
+  that follow), so XPC connection IDs and similar `0x...` addresses passed
+  through completely unmasked, the same root cause as the digit/hostname
+  fusion bug in a different shape. Found live on the macOS edition: lines
+  like `[0xbb38aae40] invalidated because the current process cancelled
+  the connection by calling xpc_connection_cancel()` kept re-triggering as
+  a "new pattern" forever since the address changes on every connection.
+  Added a dedicated regex that masks `0x`-prefixed hex first. Ported the
+  identical fix to the macOS edition too.
+
 ### 1.9.26
 
 - **Fixed: `audit-secrets`'s recursive directory scan could recurse forever
