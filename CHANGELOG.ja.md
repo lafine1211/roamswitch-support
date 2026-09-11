@@ -12,6 +12,14 @@ Linux 版（別系列・1.0.x）でバージョン番号は独立しています
 Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）。
 詳しくは <https://lafine.net/linux>。
 
+### 1.9.23
+
+- **追加: 対話型セットアップウィザードにCPU負荷監視のON/OFF項目**:
+  `resource_guard_load_enabled`がこれまで`server.conf`の直接編集でしか
+  設定できず、`roamswitch server setup`から発見できなかったため追加。
+  メモリリーク・クラッシュループ・ゾンビプロセス数の検知は引き続き既定
+  で常時有効(個別トグルなし)。
+
 ### 1.9.22
 
 - **追加: Resource Guardにゾンビプロセス数・システム負荷の持続的増加検知**:

@@ -13,6 +13,14 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.9.23
+
+- **Added: a CPU-load-monitoring on/off prompt in the interactive setup
+  wizard.** `resource_guard_load_enabled` was previously only settable by
+  editing `server.conf` directly and had no presence in `roamswitch server
+  setup`. Memory-leak, crash-loop, and zombie-process-count detection stay
+  on by default with no individual toggle.
+
 ### 1.9.22
 
 - **Added: Resource Guard now tracks sustained zombie-process-count and
