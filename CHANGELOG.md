@@ -13,6 +13,44 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.9.22
+
+- **Added: Resource Guard now tracks sustained zombie-process-count and
+  system-load growth.** The same trend logic already used for RSS ("flag
+  sustained growth with no recovery, not merely monotonic growth", so a
+  healthy GC-backed runtime's normal sawtooth is never mistaken for a leak)
+  now also applies to zombie (defunct) process count and the CPU-core-
+  normalized 15-minute load average. Prompted by a real incident: a
+  publicly exposed Redis container under load accumulated a large backlog
+  of zombie child processes. Both ride the same sampling tick as RSS, no
+  new polling added. Load-average monitoring specifically can be toggled
+  off on its own via `resource_guard_load_enabled`, for workloads with
+  legitimate long, uninterrupted busy periods.
+- **Fixed: DOCKER-USER chain protection could get permanently stuck
+  reporting "not found" due to a startup-order race with Docker.** Live
+  investigation found `roamswitch-server` starting 53 seconds before
+  `docker.service` became active. Fixed the systemd unit's ordering and
+  added a 5-attempt, 3-second-interval retry.
+- **Fixed: the kernel CVE check now cross-references the package manager
+  for corroborating context.** Distros that backport security fixes
+  without bumping the kernel's version string were a known blind spot;
+  rather than risk silencing a genuinely still-vulnerable system by
+  auto-passing on "no pending update," the check's pass/fail verdict is
+  unchanged; only the message text now notes whether a kernel update is
+  actually pending.
+- **Fixed: 7 false-verdict bugs found in the 28-item security audit.** A
+  core-dump check that always reported "passed" regardless of the actual
+  setting, an overly loose LUKS-encryption fallback, Docker checks that
+  reported "safe" whenever the check itself failed to run, sudoers
+  auditing that never read the main `/etc/sudoers` file, a Default-Deny
+  check pointed at the wrong systemd unit, a false warning on legitimately
+  multihomed hosts (`rp_filter=2`), and a `pacman` exit-code
+  misinterpretation.
+- **Fixed: two more routine Log Audit noise sources excluded**
+  (`whoopsie-upload-all`'s fixed crash-reporter narration, and a read-only
+  `crontab -l` self-listing, scoped to only when the acting and target user
+  match).
+
 ### 1.9.21
 
 - **Fixed: Log Audit's own routine housekeeping noise no longer shows up as
