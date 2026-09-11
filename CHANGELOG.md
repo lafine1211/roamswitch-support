@@ -13,6 +13,19 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.9.26
+
+- **Fixed: `audit-secrets`'s recursive directory scan could recurse forever
+  through a symlink cycle.** Live investigation found `roamswitch
+  audit-secrets .` pinned at ~96% CPU for over 95 minutes with no way to
+  finish. The directory check used `Path::is_dir()`, which follows
+  symlinks, so a self-referencing or cyclic symlink anywhere under the
+  scanned root sent it into unbounded recursion. Switched to the
+  lstat-based `DirEntry::file_type()` (never follows the link) and now
+  skips symlinks unconditionally, matching how ripgrep/fd behave by
+  default. Confirmed the macOS edition's `FileManager.enumerator` already
+  doesn't follow symlinks, so no change was needed there.
+
 ### 1.9.25
 
 - **Fixed: Log Audit re-detecting its own past alerts as new patterns,
