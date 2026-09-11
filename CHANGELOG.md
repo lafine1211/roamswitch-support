@@ -13,6 +13,38 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.9.25
+
+- **Fixed: Log Audit re-detecting its own past alerts as new patterns,
+  forever.** Dispatching an anomaly notification's (multi-line) body via
+  `sudo`-wrapped `notify-send` makes `sudo` log the entire command line,
+  embedded newlines included; Log Audit split `journalctl`'s raw text on
+  every newline with no regard for whether a line was a genuine new record,
+  so each fragment of a past notification's own body (including quoted
+  fragments of even-earlier alerts) got re-ingested as a fresh "new
+  pattern" on the next run, on a live client machine, without bound. Fixed
+  by folding any line lacking journalctl's real fixed-width record header
+  back into the previous line, and by structurally excluding this daemon's
+  own `-a RoamSwitch` notify-send self-dispatch (which can never converge
+  to a learned baseline on its own, since its body content differs every
+  time by design).
+- **Fixed: the ransomware-entropy allowlist not applying to already-exited
+  short-lived processes.** Even an allowlisted tool like `pip` could get
+  frozen if it had already exited by the time the burst threshold was
+  evaluated (a fresh `/proc/{pid}/comm` read then fails and defaults to
+  "not allowlisted"), which is exactly what was happening during Docker
+  `RUN` steps and apt/dpkg unpacking. Root-caused from a live report that
+  Docker builds were being killed by a false ransomware freeze. Now prefers
+  the process name already cached from its first observation over a live
+  re-read.
+- **Fixed/generalized: Log Audit's AppArmor-profile matching, plus new
+  routine-noise exclusions.** The `ubuntu_pro_esm_cache` AppArmor-denial
+  filter previously matched only one specific capability, missing its
+  `//cloud_id` sub-profile (hat) form; generalized to match the whole
+  profile-name prefix. Also newly excludes NetworkManager state-transition
+  narration, update-notifier's routine chatter, nm-dispatcher completion
+  notices, and the PackageKit/polkitd startup sequence.
+
 ### 1.9.24
 
 - **Fixed: ARP-spoofing detection false-flagged Docker bridge-internal
