@@ -13,6 +13,30 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.9.24
+
+- **Fixed: ARP-spoofing detection false-flagged Docker bridge-internal
+  IPs.** Live investigation found the normal MAC-address change of a
+  recreated container (on `docker0`'s internal range) being misread as an
+  external gateway-spoofing attack. Now reads `/proc/net/arp`'s device
+  column (kernel-attributed per entry, unforgeable) and structurally
+  excludes entries on `docker0` or `br-<12 hex chars>` (Docker's own fixed
+  naming convention).
+- **Fixed: the GUI's notification-history tab never updated on its own.**
+  Most notifications come from `roamswitch-daemon`, a separate process
+  from the GUI, so a one-time read at tab-build time went stale the moment
+  the daemon appended a new entry, requiring an app restart to see it.
+  Changed to the same refresh pattern every other tab already uses.
+- **Fixed: a false ransomware-encryption detection on `pip`.** Installing
+  packages unpacks many already-compressed wheel files in a burst, the
+  same shape already allowlisted for `npm`/`cargo`; `pip`/`pip3` were the
+  one gap (confirmed live: a real SIGSTOP freeze mid-install).
+  Allowlisted.
+- **Fixed: routine systemd user-session-startup noise in Log Audit.**
+  "Reached target ..." / "Listening on ..." lines emitted every time a
+  user logs in are now excluded via the existing lifecycle-narration
+  filter; a single login had produced 8 "new pattern" hits in one alert.
+
 ### 1.9.23
 
 - **Added: a CPU-load-monitoring on/off prompt in the interactive setup
