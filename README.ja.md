@@ -22,7 +22,7 @@ Macのネットワーク境界を自律的に守るメニューバーアプリ�
 **https://lafine.net/**
 
 - 署名・公証済みの `.dmg`（Mac App Store 外での直接配布）
-- **macOS 13 Ventura 以降**（Apple silicon / Intel 対応）
+- **macOS 13 Ventura 以降** / Apple silicon 専用（M1 / M2 / M3 / M4 以降）
 - 最新バージョン: **1.9.24**
 
 ## 主な機能
@@ -32,7 +32,7 @@ Macのネットワーク境界を自律的に守るメニューバーアプリ�
 | Wi‑Fi 自動検知 & カーネルパケット遮断 (`pf`) | ✅ | ✅ |
 | プロファイル別セキュリティレベル（信頼 / 標準 / ロックダウン） | ✅ | ✅ |
 | SSH / SMB / 画面共有 / AirDrop の自動停止・復元 | ✅ | ✅ |
-| Mac セキュリティ診断（FileVault / SIP / Gatekeeper / 自動更新） | ✅ 手動 | ✅ + バックグラウンド自律巡回 |
+| Mac セキュリティ総合診断 18 項目（FileVault / SIP / Gatekeeper / 自動更新 / XProtect / ファイアウォール / ステルス / Wi‑Fi 暗号化 / ARP / SSH / sudo / 公開ポート / ダウンロード・DNS・リンク保護 / USB・アクセサリ防御） | ✅ 手動 | ✅ + バックグラウンド自律巡回 |
 | マルウェア対策（XProtect / ClamAV の状態監査・スキャン） | ✅ 手動 | ✅ + ウイルス定義自動更新 |
 | Wi‑Fi 暗号化強度警告・ARPスプーフィング検知・公開ポート/USB 監視 | ✅ | ✅ |
 | 🚨 ランサムウェア様の暗号化活動検知 → 緊急 Air‑Gap 遮断 (`pf`) | ❌ | 🚀 |
@@ -42,6 +42,16 @@ Macのネットワーク境界を自律的に守るメニューバーアプリ�
 | 🔌 不正 USB / BadUSB ストレージガード + マウント時 ClamAV 自動スキャン | ❌ | 🚀 |
 | 🌐 Web・メールダウンロード保護（Pickle形式AIモデル検知対応） / DNS 脅威保護 / リンク安全性診断 | ❌ | 🚀 |
 | 🔑 APIキー・シークレット漏洩チェッカー（完全ローカル・クリップボード保護） | ✅ | ✅ |
+| 🧬 ランタイム脅威封じ込め（Apple XProtect がマルウェアを検知した瞬間に自動 Air‑Gap） | ❌ | 🚀 |
+| 🪤 ランサムウェア・カナリア（おとりファイル）＋インシデント履歴 | ❌ | 🚀 |
+| 🔒 VPN トンネル + キルスイッチ（WireGuard / Tailscale）を未信頼ネットで自動確立 | ❌ | 🚀 |
+| 🎣 リンク保護（`/etc/hosts` シンクホール＋コンテンツフィルタ機能拡張でフィッシング接続を遮断） | ❌ | 🚀 |
+| 🧩 永続化監視（新規 LaunchAgent/Daemon）・ClickFix シェル履歴ガード | ❌ | 🚀 |
+| 📂 クリティカルパス FIM（root 専用システムファイルの SHA‑256 ベースラインをバックグラウンド検証） | ❌ | 🚀 |
+| 🧾 セキュリティログ監査（機密情報の自動マスキング＋ログテンプレート異常検知） | ✅ | ✅ |
+| 🧯 統合インシデントタイムライン・通知履歴（直近 7 日） | ✅ | ✅ |
+| 🐞 Homebrew formula / 依存ロックファイルのローカル CVE 照合（通信なし） | ✅ | ✅ |
+| 🧪 実証型脆弱性検証（`127.0.0.1` 限定・オプトイン・既定 OFF） | ✅ | ✅ |
 | 📄 ログ・診断結果のエクスポート（CSV / JSON） | ❌ | 🚀 |
 | 利用可能台数 | 1 台 | 2 台 |
 
@@ -73,7 +83,14 @@ MCP 対応クライアントから Mac のセキュリティ状況を問い合�
 claude mcp add roamswitch /Applications/RoamSwitch.app/Contents/MacOS/RoamSwitchMCPServer
 ```
 
-提供ツール: `get_security_report` / `get_exposed_ports` / `get_guard_status` / `audit_url_safety` / `get_app_help`
+提供ツール（全 15 種・すべて読み取り専用）: `get_security_report` / `get_exposed_ports` /
+`get_guard_status` / `audit_url_safety` / `audit_secrets` / `audit_security_logs` /
+`get_app_help` / `run_active_vuln_scan` / `run_package_cve_scan` /
+`run_package_cve_scan_languages` / `get_quarantine_status` / `get_canary_status` /
+`get_port_anomaly_incidents` / `get_runtime_threat_status` / `get_notification_history`。加えて `roamswitch://docs/*`
+リソースを 4 種類提供します。インシデント状態系のツールはローカル状態のみを読むため、
+Air‑Gap 隔離中でも応答します。Claude Desktop / Claude Code / Codex CLI / OpenCode /
+Antigravity の設定手順は <https://lafine.net/mcp-setup.html>。
 
 MCP サーバーと、その検知ロジックは **オープンソース**（MIT）です：
 [github.com/lafine1211/roamswitch-mcp](https://github.com/lafine1211/roamswitch-mcp)。
@@ -83,8 +100,15 @@ MCP サーバーと、その検知ロジックは **オープンソース**（MI
 
 **Linux**（systemd + nftables）向けの別エディションが、同じゼロトラスト思想を再現しています。
 ゲートウェイ MAC による `nftables` プロファイルの自律切替、ランサムウェアの挙動検知と
-緊急 Air‑Gap 隔離、不正 USB / BadUSB ガード、20 項目のセキュリティ診断、読み取り専用の
-MCP サーバーを同梱します。
+緊急 Air‑Gap 隔離、不正 USB / BadUSB ガード、VPN トンネル＋nftables キルスイッチ
+（WireGuard / Tailscale）、受動リンクガード、ローカル CVE 照合、24 項目のセキュリティ診断、
+CLI（`roamswitch` / `man roamswitch`）、19 ツールの読み取り専用 MCP サーバーを同梱します。
+
+パッケージは排他の 2 種類です。**Client Edition**（`roamswitch`。トレイアプリ＋Web UI、
+24 項目診断）と、**Server Edition**（`roamswitch-server`。クラウド VPS・データセンター向けの
+完全ヘッドレス版。インバウンド既定拒否＋SSH 締め出し防止、クリティカルパス FIM、
+Falco / Tetragon 連携の eBPF 侵入検知と自律隔離、リソース枯渇ガード、
+Telegram / LINE / Webhook 通知、30 項目診断）。
 
 - **無償「Community Edition」**、全機能開放、ライセンス認証不要。プロプライエタリ・
   フリーウェア（同梱 EULA）。ソースは公開していません。
@@ -92,6 +116,10 @@ MCP サーバーを同梱します。
 - **導入:** APT（`lafine.net/apt`）、DNF / zypper（`lafine.net/rpm`）。Arch は同梱
   PKGBUILD からビルド（AUR `roamswitch-bin` は準備中）。Ubuntu 22.04+ / Debian 12+
   など systemd + nftables のディストロが必要。x86_64 / aarch64（Raspberry Pi 4 / 5 を含む）。
+- **ドキュメント:** [CLI / ヘッドレス運用](https://lafine.net/linux-cli.html) ·
+  [Server Edition 運用マニュアル](https://lafine.net/linux/server-manual) ·
+  [Server Edition セキュリティ設計書](https://lafine.net/linux/server-whitepaper)
+- **Rust SDK（MIT）:** [roamswitch-linux-kit](https://github.com/lafine1211/roamswitch-linux-kit)
 - **セキュリティ設計書:** <https://lafine.net/linux/whitepaper> — 「外部送信データゼロ」の
   コードレベル監査と破壊的セルフテストの結果
   （[audit/RESULTS-LINUX-2026-09-02.ja.md](audit/RESULTS-LINUX-2026-09-02.ja.md)）を収録。

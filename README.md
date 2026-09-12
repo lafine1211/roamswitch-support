@@ -23,7 +23,7 @@ between them.
 **https://lafine.net/**
 
 - Signed & notarized `.dmg`, distributed outside the Mac App Store
-- Requires **macOS 13 Ventura or later** (Apple silicon & Intel)
+- Requires **macOS 13 Ventura or later**, Apple silicon only (M1 / M2 / M3 / M4 and later)
 - Latest version: **1.9.24**
 
 ## What it does
@@ -33,7 +33,7 @@ between them.
 | Wi‑Fi auto‑detection & kernel packet blocking (`pf`) | ✅ | ✅ |
 | Per‑profile security levels (Trusted / Standard / Lockdown) | ✅ | ✅ |
 | Auto stop & restore of SSH / SMB / Screen Sharing / AirDrop | ✅ | ✅ |
-| Mac security health check (FileVault / SIP / Gatekeeper / updates) | ✅ manual | ✅ + autonomous background sweep |
+| 18‑point Mac security health check (FileVault / SIP / Gatekeeper / updates / XProtect / firewall / stealth / Wi‑Fi / ARP / SSH / sudo / ports / download, DNS & link protection / USB & accessory guards) | ✅ manual | ✅ + autonomous background sweep |
 | Malware tooling (XProtect / ClamAV status & scan) | ✅ manual | ✅ + auto virus‑definition updates |
 | Wi‑Fi encryption‑strength warnings, ARP‑spoofing detection, exposed‑port & USB monitoring | ✅ | ✅ |
 | 🚨 Ransomware‑like behavior detection → emergency Air‑Gap isolation (`pf`) | ❌ | 🚀 |
@@ -43,6 +43,16 @@ between them.
 | 🔌 Unauthorized USB / BadUSB storage guard + auto ClamAV scan on mount | ❌ | 🚀 |
 | 🌐 Web/Mail download guard (incl. Pickle AI model detection), DNS threat protection, link‑safety auditor | ❌ | 🚀 |
 | 🔑 API Key & Secret leak prevention checker (Zero Telemetry clipboard protection) | ✅ | ✅ |
+| 🧬 Runtime threat containment — auto Air‑Gap the moment Apple's XProtect convicts a file | ❌ | 🚀 |
+| 🪤 Ransomware canary (decoy bait files) with incident history | ❌ | 🚀 |
+| 🔒 VPN tunnel + kill switch (WireGuard / Tailscale) on untrusted networks | ❌ | 🚀 |
+| 🎣 Link guard — block phishing/scam destinations via `/etc/hosts` sinkhole + content‑filter extension | ❌ | 🚀 |
+| 🧩 Persistence monitoring (new LaunchAgents/Daemons) & ClickFix shell‑history guard | ❌ | 🚀 |
+| 📂 Critical Path FIM — SHA‑256 baseline of root‑only system files, checked in the background | ❌ | 🚀 |
+| 🧾 Security log audit with automatic secret masking + log‑template anomaly detection | ✅ | ✅ |
+| 🧯 Unified containment incident timeline & 7‑day notification history | ✅ | ✅ |
+| 🐞 Local CVE matching for Homebrew formulae and dependency lockfiles (no network) | ✅ | ✅ |
+| 🧪 Active vulnerability verification, `127.0.0.1` only (opt‑in, off by default) | ✅ | ✅ |
 | 📄 Log & diagnostics export (CSV / JSON) | ❌ | 🚀 |
 | Devices | 1 | 2 |
 
@@ -74,8 +84,14 @@ your Mac's security posture. No lockdown/quarantine/eject actions are exposed.
 claude mcp add roamswitch /Applications/RoamSwitch.app/Contents/MacOS/RoamSwitchMCPServer
 ```
 
-Tools: `get_security_report`, `get_exposed_ports`, `get_guard_status`, `audit_url_safety`,
-`get_app_help`.
+15 tools, all read‑only: `get_security_report`, `get_exposed_ports`, `get_guard_status`,
+`audit_url_safety`, `audit_secrets`, `audit_security_logs`, `get_app_help`,
+`run_active_vuln_scan`, `run_package_cve_scan`, `run_package_cve_scan_languages`,
+`get_quarantine_status`, `get_canary_status`, `get_port_anomaly_incidents`,
+`get_runtime_threat_status`, `get_notification_history` — plus four `roamswitch://docs/*` resources. The incident‑state
+tools read only local state, so they still answer while RoamSwitch has air‑gapped the network.
+Setup for Claude Desktop, Claude Code, Codex CLI, OpenCode and Antigravity:
+<https://lafine.net/mcp-setup.html>.
 
 The server and the detection logic behind it are **open source** (MIT):
 [github.com/lafine1211/roamswitch-mcp](https://github.com/lafine1211/roamswitch-mcp) —
@@ -85,8 +101,16 @@ The server and the detection logic behind it are **open source** (MIT):
 
 A separate edition for **Linux** (systemd + nftables) reproduces the same zero‑trust
 model — autonomous `nftables` profile switching by gateway MAC, ransomware behaviour
-detection with emergency Air‑Gap isolation, unauthorized‑USB / BadUSB guard, a 20‑item
-security audit, and a read‑only MCP server.
+detection with emergency Air‑Gap isolation, unauthorized‑USB / BadUSB guard, a VPN tunnel
+with an nftables kill switch (WireGuard / Tailscale), a passive link guard, local CVE
+matching, a 24‑item security audit, a full CLI (`roamswitch`, `man roamswitch`) and a
+read‑only MCP server with 19 tools.
+
+There are two mutually exclusive packages: **Client Edition** (`roamswitch`, tray app +
+web UI, 24‑item audit) and **Server Edition** (`roamswitch-server`, fully headless for
+cloud VPS/data centers — inbound default drop with SSH lockout prevention, Critical Path
+FIM, eBPF intrusion detection via Falco or Tetragon with autonomous containment, a
+resource‑exhaustion guard, Telegram/LINE/webhook alerts, and a 30‑item audit).
 
 - **Free — "Community Edition"**, every feature unlocked, no activation. Proprietary
   freeware (bundled EULA); the source is not published.
@@ -95,6 +119,10 @@ security audit, and a read‑only MCP server.
   build from the bundled PKGBUILD (the AUR package `roamswitch-bin` is pending).
   Requires Ubuntu 22.04+ / Debian 12+ or a compatible systemd + nftables distro;
   x86_64 / aarch64 (incl. Raspberry Pi 4 / 5).
+- **Docs:** [CLI / headless operations](https://lafine.net/linux-cli.html) ·
+  [Server Edition manual](https://lafine.net/linux/server-manual) ·
+  [Server Edition whitepaper](https://lafine.net/linux/server-whitepaper)
+- **Rust SDK (MIT):** [roamswitch-linux-kit](https://github.com/lafine1211/roamswitch-linux-kit)
 - **Security whitepaper:** <https://lafine.net/linux/whitepaper>
   ([EN](https://lafine.net/linux/whitepaper.en)) — includes a code‑level audit of
   "zero data sent off the machine" and the destructive self‑test results
