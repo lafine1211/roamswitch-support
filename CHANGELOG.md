@@ -13,6 +13,43 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.9.32
+
+- **Fixed: there was no way to release a process frozen by a false
+  positive.** When the rapid-encryption detector fires, the suspected
+  process is frozen with SIGSTOP rather than killed — the whole point being
+  that the freeze can be undone if the detection was wrong. In practice it
+  could not be: nothing recorded *which* process had been frozen, and
+  neither the app nor the CLI offered any way to release one. So when a
+  legitimate program tripped the detector (anything that writes a lot of
+  high-entropy files quickly — making a backup, installing packages), it
+  stayed stopped until the user copied the PID out of the notification and
+  ran `kill -CONT` by hand in a terminal. Frozen processes are now recorded;
+  the app's Canary tab lists them with a release button, and the CLI gains
+  `roamswitch frozen [list|resume <PID>|resume all]`. `roamswitch
+  emergency-restore` also used to resume only processes frozen by some of
+  the detection paths — it now covers all of them. **A freeze is not a kill:
+  a released process picks up exactly where it stopped.**
+- **Fixed: every notification appeared twice in the history.** The daemon
+  recorded a detection into the notification history and then asked the app
+  to display the desktop notification; the app recorded the same thing a
+  second time as it displayed it. The result was the same entry listed
+  twice, about half a second apart, in the history view, in `roamswitch
+  notifications` and over MCP. It is now recorded once, by the side that
+  detected it. Duplicates already on disk (up to a week's worth) also stop
+  being shown.
+- **Improved: ransomware alerts no longer describe containment that didn't
+  happen.** If the process had already exited by the time the burst was
+  evaluated, or was a protected process (a container runtime, for example),
+  no freeze took place — but the notification said "frozen instantly with
+  SIGSTOP" regardless. The wording now depends on whether the freeze
+  actually took, and when it did, the alert also carries the command that
+  undoes it. Relatedly, a detection whose process could not be identified
+  (already gone, and therefore never frozen) is now recorded in the
+  notification history without raising a popup: those alerts named a PID the
+  user could neither inspect nor release, and repeated often enough to bury
+  the alerts that did need attention.
+
 ### 1.9.31 (urgent update recommended for Server Edition)
 
 - **Fixed: the Default-Deny firewall policy was blocking 100% of Docker
