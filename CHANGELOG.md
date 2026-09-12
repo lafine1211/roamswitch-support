@@ -15,6 +15,14 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 
 ### 1.9.30
 
+- **Added: newly-detected template anomalies now persist to notification
+  history.** A "template anomaly" gets absorbed into the known-template
+  baseline the instant it's first seen, so re-scanning never flagged the
+  same content as "new" a second time, leaving no way to look it back up
+  later. Now recorded to notification history at the moment a new pattern
+  (`is_new`) is detected (frequency-spike anomalies are excluded by design,
+  since those can legitimately re-trigger on repeated scans). Pairs with
+  the same fix on the macOS edition.
 - **Maintenance: hardened the apt/rpm publish pipeline.** Added a
   concurrency lock so releases can't overlap, and a post-publish
   verification step that hashes the just-built packages against what's
