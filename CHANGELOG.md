@@ -13,6 +13,17 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.9.30
+
+- **Maintenance: hardened the apt/rpm publish pipeline.** Added a
+  concurrency lock so releases can't overlap, and a post-publish
+  verification step that hashes the just-built packages against what's
+  actually served at the published URLs. Also revisited the CDN cache
+  settings for these paths. Prompted by a brief window during this release
+  where CDN mirror-sync timing caused some packages to fail downloading.
+- Experimental: added MITRE ATT&CK mapping to eBPF Guard's ptrace-family
+  alerts (continued, unverified prototype).
+
 ### 1.9.29
 
 - **Improved: Log Audit's anomaly notification was incomprehensible — and
