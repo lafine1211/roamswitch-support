@@ -13,6 +13,28 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.9.31 (urgent update recommended for Server Edition)
+
+- **Fixed: the Default-Deny firewall policy was blocking 100% of Docker
+  containers' outbound API traffic.** The `forward` chain that
+  `roamswitch-server` (re-)applies via nftables on every start/restart was
+  being created with `policy drop` and zero rules in it — no `ct state
+  established,related accept` at all — so every packet a container sent
+  outbound (to an exchange API, an external webhook, anything) and every
+  reply to it was unconditionally dropped at the kernel netfilter layer.
+  Root-caused after two independent live reports of "every Docker
+  container's outbound call times out / 502s." Fixed by adding `ct state
+  established,related accept` to the forward chain, plus a rule accepting
+  forwarded traffic that didn't arrive on the external interface — so
+  container egress and inter-container traffic work again while traffic
+  arriving directly from the external interface (the thing this policy was
+  actually meant to stop) still gets dropped. If the external interface
+  can't be auto-detected, it now fails closed (forwarded traffic stays
+  blocked) with a warning logged, rather than guessing. **If you run
+  Server Edition with the nftables Default-Deny policy enabled and have
+  Docker containers (or anything else) that need outbound network access,
+  update to this version.**
+
 ### 1.9.30
 
 - **Added: newly-detected template anomalies now persist to notification
