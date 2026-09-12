@@ -13,6 +13,27 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.9.29
+
+- **Improved: Log Audit's anomaly notification was incomprehensible — and
+  just anxiety-inducing — to a non-expert user.** Same fix as the Mac
+  edition, applied to the client daemon, Server Edition, the CLI, and the
+  GTK app. Fixed a misleading "still learning frequency" note that was
+  wrongly applied to first-sightings (a "new pattern" hit is a one-shot
+  detection), and added a plain-language line to the notification body.
+  Template anomalies — previously visible only as a bare count on a KPI
+  card — are now shown and searchable in the CLI's `audit-logs` output and
+  the GTK app's own Log Audit tab.
+- **Added: an "Allow" action on the port-anomaly-guard's auto-block
+  notification.** The safe-by-default behavior (block a newly-listening
+  process immediately, even on a trusted network) is unchanged; clicking
+  Allow releases that specific block on the spot for a legitimate dev
+  server, reusing the same path as the GUI's port-audit "allow" button.
+- Several experimental features landed (a unified incident timeline, an
+  XDP boot-time default-deny gate, malicious-IP egress blocking, prioritizing
+  pinpoint isolation in the eBPF Guard's critical-tier response, expanded
+  MITRE ATT&CK mapping, and more) — some as unverified prototypes.
+
 ### 1.9.27
 
 - **Fixed: Log Audit's masking couldn't catch `0x`-prefixed pointer
@@ -443,6 +464,32 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 ---
 
 ## RoamSwitch for Mac
+
+## 1.9.23
+
+- **Improved: Log Audit's anomaly notification was incomprehensible — and
+  just anxiety-inducing — to a non-expert user.** A notification that only
+  showed a raw template string and z-score (e.g. "[new] GetNumberAttribute
+  | CountryCode value is 0") gave no way to tell what happened or whether
+  it needed attention. Fixed a misleading "still learning frequency" note
+  that was wrongly applied to first-sightings (a "new pattern" hit is a
+  one-shot detection — the exact same thing structurally cannot be
+  re-flagged), and added a plain-language line to the notification body
+  along the lines of "this is usually an expected change from a new device
+  or an app/OS update; no action is needed unless it names something you
+  don't recognize." Template anomalies — previously visible only as a bare
+  count on a KPI card — are now shown and searchable in the "Mac Security
+  Log Audit" window's own list.
+- **Fixed: the Wi-Fi radio killed during an automatic Air-Gap didn't come
+  back on its own after an app crash or a Mac restart.** The Wi-Fi
+  radio-kill added around 1.9.22 (ARP-spoof, ransomware, and runtime-threat
+  containment) didn't hook into the pf network air-gap's existing 10-minute
+  bounded auto-release — the only way to restore it was flipping Wi-Fi back
+  on manually from the menu bar. Wi-Fi radio control is now folded into the
+  same pf air-gap state, so the independent AirGapFailsafe watchdog (which
+  restarts on its own after an app or Mac restart) covers restoring Wi-Fi
+  too. Verified live: killed, left untouched, auto-restored within the
+  10-minute bound.
 
 ## 1.9.22
 
