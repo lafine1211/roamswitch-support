@@ -465,6 +465,26 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 
 ## RoamSwitch for Mac
 
+## 1.9.24
+
+- **Fixed: the KPI cards on the Mac Security Log Audit window didn't
+  respond to clicks.** The Sudo Failures / SSH Connections / Gatekeeper
+  Blocks / XProtect Detections / Template Anomalies cards use almost the
+  same pill styling (rounded rect, icon + label) as the filter tab row
+  right below them, but were purely presentational — clicking did
+  nothing. Found from a live report where clicking the "Template
+  Anomalies" card didn't filter the list (the actual filter tabs worked
+  fine). The KPI cards are now tappable and sync with the filter tabs by
+  category.
+- **Added: newly-detected template anomalies are now persisted to
+  notification history.** A "template anomaly" is absorbed into the known
+  baseline the moment it's detected, so re-scanning or reopening the
+  window would never flag the same thing as "new" again — with no way to
+  look back at what it was. New-pattern detections are now recorded to
+  notification history (not Pro-gated). Frequency spikes are deliberately
+  excluded, since the same one can recur across repeated scans and would
+  flood history with near-duplicates.
+
 ## 1.9.23
 
 - **Improved: Log Audit's anomaly notification was incomprehensible — and
