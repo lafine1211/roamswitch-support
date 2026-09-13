@@ -587,6 +587,34 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 
 ## RoamSwitch for Mac
 
+## 1.9.26
+
+- **Fixed: Link Guard's homograph detection was wrongly downgraded to
+  warn-only in every supported language except Japanese, English, and
+  French.** The check compared the translated display string instead of a
+  language-independent value, so a homograph attack (a look-alike spoofed
+  domain) that should have been blocked only got a warning in those other
+  seven languages. Also corrected warn mode's display name to match what
+  it actually does (blocks silently, no response).
+- **Fixed: the Ransomware Canary Guard's MITRE ATT&CK ID always came out
+  as T1565 in every language except Japanese and English.** It matched
+  words in the translated summary text instead of a language-independent
+  value.
+- **Improved: brought the MCP server, SDK, Help & Guide, and built-in
+  knowledge base up to date with current features.** `get_guard_status`
+  grew from 8 to 22 fields; two new MCP tools were added
+  (`get_incident_timeline`, `get_network_history`). The built-in knowledge
+  base (behind `get_app_help`) grew from roughly 60 to 90 entries, adding
+  previously-missing topics (network-history learning / Evil Twin
+  detection, Critical Path FIM, scheduled log auditing, the containment
+  timeline, BadUSB keystroke analysis, Tailscale VPN, ClickFix defense,
+  Docker monitoring, XProtect-triggered Air-Gap, and more), now in all 10
+  languages. The in-app Help & Guide tab was also rewritten, fixing an
+  incorrect diagnostics item count and adding roughly 30 previously
+  undocumented features (translated into 9 languages).
+- **Fixed: some regional locales (e.g. pt-BR) didn't match any supported
+  app language and silently fell back to Japanese.**
+
 ## 1.9.25
 
 - **Improved: EICAR test-signature hits no longer raise a notification.**
