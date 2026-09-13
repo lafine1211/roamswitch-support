@@ -13,6 +13,39 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.9.34
+
+- **Brought the MCP server, SDK, and in-app Help & Guide fully up to date
+  with current features.** The read-only MCP server grew from 19 to 25
+  tools, adding status reads for VPN (WireGuard/Tailscale), the passive
+  Link Guard, emergency network cutoff (Air-Gap, including frozen
+  processes), automatic sharing-service shutdown, the Bluetooth guard, and
+  USB guards. The guard-status listing now also reports more of the
+  settings actually available in the app.
+- URL safety checks, the secret-leak auditor, the security log auditor, and
+  the Ransomware Canary Guard used to always answer in Japanese regardless
+  of the app's language; they now support all 10 UI languages (Japanese,
+  English, Simplified Chinese, Traditional Chinese, Korean, German, French,
+  Spanish, Italian, Portuguese), matching the corresponding app tabs.
+- Fixed the Server Edition diagnostics' item count (it said 28; the real
+  count is 30) and localized its full text into all 10 languages (it was
+  previously Japanese/English only). Also fixed a handful of Client
+  Edition items (Docker socket, privileged containers, runtime isolation,
+  kernel CVE) that stayed in Japanese in every other language.
+- Overhauled the MCP's built-in knowledge base (used by `get_app_help`) for
+  full 10-language coverage, adding previously-missing topics: VPN, the
+  secret-leak auditor, log auditing, notification history, ARP
+  monitoring/gateway pinning, Air-Gap, sharing-service control, the
+  Bluetooth guard, and the active vulnerability scan.
+- Rewrote the app's built-in "Help & Guide" tab to cover features it never
+  mentioned: VPN, ARP monitoring/gateway pinning, the passive Link Guard's
+  fail-closed behavior, the secret-leak auditor, clipboard monitoring,
+  emergency network cutoff, notification history, and the unified incident
+  timeline. The diagnostics item count (24) is now consistent across all
+  10 languages.
+- `server.conf`'s `language` setting now accepts all 10 languages plus the
+  system locale, instead of only Japanese/English.
+
 ### 1.9.33
 
 - **Improved: EICAR test-signature hits no longer raise a notification.**
