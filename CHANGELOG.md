@@ -13,6 +13,17 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.9.33
+
+- **Improved: EICAR test-signature hits no longer raise a notification.**
+  EICAR is the industry-standard string for checking that an antivirus
+  scanner is live — not a real threat. It was already never quarantined or
+  blocked, but every hit still popped a "🧪 EICAR test signature seen
+  (harmless)" desktop notification. Alerts that need no action bury the
+  ones that do, so these are now recorded in notification history only
+  (`roamswitch notifications`, the app's history view, MCP). Applies to both
+  the fanotify guard and the download guard.
+
 ### 1.9.32
 
 - **Fixed: there was no way to release a process frozen by a false
@@ -542,6 +553,19 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 ---
 
 ## RoamSwitch for Mac
+
+## 1.9.25
+
+- **Improved: EICAR test-signature hits no longer raise a notification.**
+  When download-folder monitoring or the scheduled scan found EICAR (the
+  industry-standard string for checking that an antivirus scanner is live),
+  the file was correctly left alone as not a real threat, but a "🧪 EICAR
+  test signature detected (harmless)" notification still fired. So that
+  no-action alerts don't bury the ones that matter, it is now recorded in
+  notification history only (previously it wasn't recorded in history at
+  all). A ClamAV scan you start manually from the menu still shows its usual
+  "scan complete, no threats" notification when EICAR is all it found, and
+  records the EICAR hit in history.
 
 ## 1.9.24
 
