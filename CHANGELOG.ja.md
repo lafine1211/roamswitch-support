@@ -12,6 +12,23 @@ Linux 版（別系列・1.0.x）でバージョン番号は独立しています
 Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）。
 詳しくは <https://lafine.net/linux>。
 
+### 1.9.38
+
+- **追加: npm/pnpm installのライフサイクルスクリプトをサンドボックス内に
+  封じ込める機能を追加しました（Client Edition限定、Pro）**: これまでの
+  3機能が「検知して警告する」機能だったのに対し、本機能は実際に
+  preinstall/install/postinstall/prepareスクリプトの実行をbubblewrap
+  (bwrap)によるファイルシステム制限下に封じ込めます。ダウンロード
+  フェーズは`--ignore-scripts`でネットワーク許可のまま通常通り実行し、
+  スクリプト実行フェーズのみ`~/.ssh`・`~/.aws`・`~/.gnupg`・`~/.netrc`
+  ・`~/.npmrc`等の資格情報パスを空のtmpfs（ファイルは`--ro-bind
+  /dev/null`）で覆い隠します。ネットワークは遮断しません（sharp・
+  esbuild等の正規パッケージがpostinstallでプラットフォーム別バイナリを
+  取得する動作を壊さないため）。`roamswitch install [--pm npm|pnpm]`
+  サブコマンドを新設。npm/pnpm対応、yarnは非対応。bwrapが無い環境では
+  スクリプト実行を拒否し、サンドボックス無しへの暗黙フォールバックは
+  行いません。
+
 ### 1.9.37
 
 - **追加: npm installの供給網リスクに対応する3機能を追加しました（Client
@@ -362,6 +379,22 @@ Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）
 ---
 
 ## RoamSwitch for Mac
+
+## 1.9.29
+
+- **追加: npm/pnpm installのサンドボックス実行 (roamswitch-npm, Pro)**:
+  preinstall/install/postinstall/prepareスクリプトの実行を、ネットワーク
+  接続不可のサンドボックス(`sandbox-exec`, Seatbelt)内に封じ込める
+  コマンドラインラッパー`roamswitch-npm`を追加。これまでの3機能が
+  「検知して警告する」機能だったのに対し、本機能は実際にインストールを
+  代行します。Linux版はbwrapによるファイルシステム制限を採用しますが、
+  macOSには同等技術がないため、実機で動作検証済みのネットワーク遮断
+  (`(allow default)` + `(deny network-outbound)`)を採用しています。
+  「📦 パッケージCVE照合」→「サンドボックス実行 (npm/pnpm) (Pro)」から
+  ラッパーをインストールし、任意でシェルエイリアス(`npm`/`pnpm`)を
+  追加できます。npm/pnpm対応、yarnは非対応。Mac版にはCLIバイナリが
+  無いため、`~/Library/Application Support/RoamSwitch/bin/`に配置する
+  軽量なコマンドラインツールとして実装しました。
 
 ## 1.9.28
 

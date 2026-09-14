@@ -13,6 +13,23 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.9.38
+
+- **Added: sandboxed execution of npm/pnpm install lifecycle scripts
+  (Client Edition only, Pro).** Where the previous three features only
+  detected and warned, this one actually confines the execution of
+  preinstall/install/postinstall/prepare scripts under a bubblewrap
+  (bwrap) filesystem restriction. The download phase runs normally with
+  network access (`--ignore-scripts`); only the subsequent script phase
+  shadows credential paths (`~/.ssh`, `~/.aws`, `~/.gnupg`, `~/.netrc`,
+  `~/.npmrc`, etc.) with an empty tmpfs (files use `--ro-bind /dev/null`
+  instead). Network access itself is not blocked, so legitimate packages
+  like sharp/esbuild that fetch platform-specific binaries in postinstall
+  keep working. Adds a new `roamswitch install [--pm npm|pnpm]`
+  subcommand. Supports npm/pnpm; yarn is not supported. Refuses to run
+  lifecycle scripts if bwrap isn't installed, rather than silently
+  falling back to running unsandboxed.
+
 ### 1.9.37
 
 - **Added: three features addressing npm-install supply-chain risk
@@ -405,6 +422,23 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 ---
 
 ## RoamSwitch for Mac
+
+## 1.9.29
+
+- **Added: sandboxed npm/pnpm install (roamswitch-npm, Pro).** Adds a
+  command-line wrapper, `roamswitch-npm`, that confines the execution of
+  preinstall/install/postinstall/prepare scripts inside a network-denied
+  sandbox (`sandbox-exec`, Seatbelt). Where the previous three features
+  only detected and warned, this one actually runs the install on your
+  behalf. The Linux edition uses bwrap for filesystem restriction, but
+  since macOS has no equivalent technology, this uses network blocking
+  instead, verified to actually work on real hardware
+  (`(allow default)` + `(deny network-outbound)`). Install the wrapper
+  from "📦 Package CVE Scan" → "Sandboxed Install (npm/pnpm) (Pro)", with
+  an optional shell alias for `npm`/`pnpm`. Supports npm/pnpm; yarn is
+  not supported. Since the Mac edition has no CLI binary, this ships as a
+  lightweight command-line tool placed at
+  `~/Library/Application Support/RoamSwitch/bin/`.
 
 ## 1.9.28
 
