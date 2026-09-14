@@ -13,7 +13,21 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
-### 1.9.36
+### 1.9.37
+
+- **Added: three features addressing npm-install supply-chain risk
+  (Client Edition, two of them also on Server Edition).** "Lockfile FIM"
+  continuously watches dependency lockfiles (package-lock.json/yarn.lock/
+  pnpm-lock.yaml/npm-shrinkwrap.json) for external tampering via a SHA-256
+  baseline (Client + Server, `roamswitch lockfile-fim`). "Install Script
+  Inventory" statically lists preinstall/install/postinstall/prepare
+  scripts declared by package.json files under node_modules (Client only,
+  an inventory rather than a threat verdict, `roamswitch scan-scripts`).
+  "npm Signature Verification" contacts the npm registry to verify
+  installed packages' signatures/provenance (Client + Server, opt-in,
+  `roamswitch audit-npm-signatures`) — the only RoamSwitch feature that
+  talks to npmjs.com, disabled by default and requiring a confirmation on
+  every run. All three are Pro-only.
 
 - **Added: the secret & API key leak auditor now also detects cryptocurrency
   wallet seed phrases and private keys.** Prompted by Microsoft's June 2026
@@ -610,6 +624,20 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 ---
 
 ## RoamSwitch for Mac
+
+## 1.9.28
+
+- **Added: three features addressing npm-install supply-chain risk (Pro).**
+  "Dependency Lockfile Tamper Monitoring" continuously watches
+  package-lock.json / yarn.lock / pnpm-lock.yaml / npm-shrinkwrap.json for
+  external tampering via a SHA-256 baseline. "Install Script Inventory"
+  statically lists preinstall/install/postinstall/prepare scripts declared
+  by package.json files under node_modules — an inventory rather than a
+  threat verdict, and nothing is ever executed. "npm Signature / Provenance
+  Verification" contacts the npm registry to verify installed packages'
+  signatures/provenance (opt-in, with a per-run confirmation) — the only
+  RoamSwitch feature that talks to npmjs.com. All three are available from
+  the "📦 Package CVE Scan" window.
 
 ## 1.9.27
 

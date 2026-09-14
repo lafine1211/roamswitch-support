@@ -12,7 +12,20 @@ Linux 版（別系列・1.0.x）でバージョン番号は独立しています
 Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）。
 詳しくは <https://lafine.net/linux>。
 
-### 1.9.36
+### 1.9.37
+
+- **追加: npm installの供給網リスクに対応する3機能を追加しました（Client
+  Edition、一部Server Editionにも対応）**: 依存関係ロックファイル
+  （package-lock.json/yarn.lock/pnpm-lock.yaml/npm-shrinkwrap.json）の
+  外部改ざんをSHA-256ベースラインで常時監視する「Lockfile FIM」
+  （Client/Server両対応、`roamswitch lockfile-fim`）、node_modules配下の
+  package.jsonが宣言するpreinstall/install/postinstall/prepareスクリプトを
+  静的に列挙する「インストールスクリプトの一覧」（Client限定、脅威判定
+  ではなく一覧表示、`roamswitch scan-scripts`）、npmレジストリと通信して
+  インストール済みパッケージの署名/provenanceを検証する「npm署名検証」
+  （Client/Server両対応・オプトイン、`roamswitch audit-npm-signatures`）
+  の3つです。npm署名検証はRoamSwitch全体で唯一npmjs.comと通信する機能で、
+  既定で無効かつ実行毎の確認が必須です。3機能ともPro限定。
 
 - **追加: 機密情報・APIキー漏洩監査が、暗号資産ウォレットのシードフレーズ
   ・秘密鍵も検知できるようになりました**: Microsoftが2026年6月に公表した
@@ -536,6 +549,20 @@ Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）
 ---
 
 ## RoamSwitch for Mac
+
+## 1.9.28
+
+- **追加: npm installの供給網リスクに対応する3機能 (Pro)**: 依存関係
+  ロックファイル(package-lock.json/yarn.lock/pnpm-lock.yaml/
+  npm-shrinkwrap.json)の外部改ざんをSHA-256ベースラインで常時監視する
+  「依存関係ロックファイルの改ざん監視」、node_modules配下の
+  package.jsonが宣言するpreinstall/install/postinstall/prepareスクリプト
+  を静的に列挙する「インストールスクリプトの一覧」(脅威判定ではなく
+  一覧表示、何も実行しない)、npmレジストリと通信してインストール済み
+  パッケージの署名/provenanceを検証する「npm署名/provenance検証」
+  (オプトイン、実行毎の確認あり)の3つ。npm署名検証はRoamSwitch全体で
+  唯一npmjs.comと通信する機能。いずれも「📦 パッケージCVE照合」ウィンドウ
+  から利用できる。
 
 ## 1.9.27
 
