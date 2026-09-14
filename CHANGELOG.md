@@ -29,6 +29,8 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
   talks to npmjs.com, disabled by default and requiring a confirmation on
   every run. All three are Pro-only.
 
+### 1.9.36
+
 - **Added: the secret & API key leak auditor now also detects cryptocurrency
   wallet seed phrases and private keys.** Prompted by Microsoft's June 2026
   writeup on "Crypto Clipper" malware, which watches the clipboard for wallet
@@ -208,265 +210,44 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
   Added a dedicated regex that masks `0x`-prefixed hex first. Ported the
   identical fix to the macOS edition too.
 
-### 1.9.26
+### 1.9.16 - 1.9.26
 
-- **Fixed: `audit-secrets`'s recursive directory scan could recurse forever
-  through a symlink cycle.** Live investigation found `roamswitch
-  audit-secrets .` pinned at ~96% CPU for over 95 minutes with no way to
-  finish. The directory check used `Path::is_dir()`, which follows
-  symlinks, so a self-referencing or cyclic symlink anywhere under the
-  scanned root sent it into unbounded recursion. Switched to the
-  lstat-based `DirEntry::file_type()` (never follows the link) and now
-  skips symlinks unconditionally, matching how ripgrep/fd behave by
-  default. Confirmed the macOS edition's `FileManager.enumerator` already
-  doesn't follow symlinks, so no change was needed there.
-
-### 1.9.25
-
-- **Fixed: Log Audit re-detecting its own past alerts as new patterns,
-  forever.** Dispatching an anomaly notification's (multi-line) body via
-  `sudo`-wrapped `notify-send` makes `sudo` log the entire command line,
-  embedded newlines included; Log Audit split `journalctl`'s raw text on
-  every newline with no regard for whether a line was a genuine new record,
-  so each fragment of a past notification's own body (including quoted
-  fragments of even-earlier alerts) got re-ingested as a fresh "new
-  pattern" on the next run, on a live client machine, without bound. Fixed
-  by folding any line lacking journalctl's real fixed-width record header
-  back into the previous line, and by structurally excluding this daemon's
-  own `-a RoamSwitch` notify-send self-dispatch (which can never converge
-  to a learned baseline on its own, since its body content differs every
-  time by design).
-- **Fixed: the ransomware-entropy allowlist not applying to already-exited
-  short-lived processes.** Even an allowlisted tool like `pip` could get
-  frozen if it had already exited by the time the burst threshold was
-  evaluated (a fresh `/proc/{pid}/comm` read then fails and defaults to
-  "not allowlisted"), which is exactly what was happening during Docker
-  `RUN` steps and apt/dpkg unpacking. Root-caused from a live report that
-  Docker builds were being killed by a false ransomware freeze. Now prefers
-  the process name already cached from its first observation over a live
-  re-read.
-- **Fixed/generalized: Log Audit's AppArmor-profile matching, plus new
-  routine-noise exclusions.** The `ubuntu_pro_esm_cache` AppArmor-denial
-  filter previously matched only one specific capability, missing its
-  `//cloud_id` sub-profile (hat) form; generalized to match the whole
-  profile-name prefix. Also newly excludes NetworkManager state-transition
-  narration, update-notifier's routine chatter, nm-dispatcher completion
-  notices, and the PackageKit/polkitd startup sequence.
-
-### 1.9.24
-
-- **Fixed: ARP-spoofing detection false-flagged Docker bridge-internal
-  IPs.** Live investigation found the normal MAC-address change of a
-  recreated container (on `docker0`'s internal range) being misread as an
-  external gateway-spoofing attack. Now reads `/proc/net/arp`'s device
-  column (kernel-attributed per entry, unforgeable) and structurally
-  excludes entries on `docker0` or `br-<12 hex chars>` (Docker's own fixed
-  naming convention).
-- **Fixed: the GUI's notification-history tab never updated on its own.**
-  Most notifications come from `roamswitch-daemon`, a separate process
-  from the GUI, so a one-time read at tab-build time went stale the moment
-  the daemon appended a new entry, requiring an app restart to see it.
-  Changed to the same refresh pattern every other tab already uses.
-- **Fixed: a false ransomware-encryption detection on `pip`.** Installing
-  packages unpacks many already-compressed wheel files in a burst, the
-  same shape already allowlisted for `npm`/`cargo`; `pip`/`pip3` were the
-  one gap (confirmed live: a real SIGSTOP freeze mid-install).
-  Allowlisted.
-- **Fixed: routine systemd user-session-startup noise in Log Audit.**
-  "Reached target ..." / "Listening on ..." lines emitted every time a
-  user logs in are now excluded via the existing lifecycle-narration
-  filter; a single login had produced 8 "new pattern" hits in one alert.
-
-### 1.9.23
-
-- **Added: a CPU-load-monitoring on/off prompt in the interactive setup
-  wizard.** `resource_guard_load_enabled` was previously only settable by
-  editing `server.conf` directly and had no presence in `roamswitch server
-  setup`. Memory-leak, crash-loop, and zombie-process-count detection stay
-  on by default with no individual toggle.
-
-### 1.9.22
-
-- **Added: Resource Guard now tracks sustained zombie-process-count and
-  system-load growth.** The same trend logic already used for RSS ("flag
-  sustained growth with no recovery, not merely monotonic growth", so a
-  healthy GC-backed runtime's normal sawtooth is never mistaken for a leak)
-  now also applies to zombie (defunct) process count and the CPU-core-
-  normalized 15-minute load average. Prompted by a real incident: a
-  publicly exposed Redis container under load accumulated a large backlog
-  of zombie child processes. Both ride the same sampling tick as RSS, no
-  new polling added. Load-average monitoring specifically can be toggled
-  off on its own via `resource_guard_load_enabled`, for workloads with
-  legitimate long, uninterrupted busy periods.
-- **Fixed: DOCKER-USER chain protection could get permanently stuck
-  reporting "not found" due to a startup-order race with Docker.** Live
-  investigation found `roamswitch-server` starting 53 seconds before
-  `docker.service` became active. Fixed the systemd unit's ordering and
-  added a 5-attempt, 3-second-interval retry.
-- **Fixed: the kernel CVE check now cross-references the package manager
-  for corroborating context.** Distros that backport security fixes
-  without bumping the kernel's version string were a known blind spot;
-  rather than risk silencing a genuinely still-vulnerable system by
-  auto-passing on "no pending update," the check's pass/fail verdict is
-  unchanged; only the message text now notes whether a kernel update is
-  actually pending.
-- **Fixed: 7 false-verdict bugs found in the 28-item security audit.** A
-  core-dump check that always reported "passed" regardless of the actual
-  setting, an overly loose LUKS-encryption fallback, Docker checks that
-  reported "safe" whenever the check itself failed to run, sudoers
-  auditing that never read the main `/etc/sudoers` file, a Default-Deny
-  check pointed at the wrong systemd unit, a false warning on legitimately
-  multihomed hosts (`rp_filter=2`), and a `pacman` exit-code
-  misinterpretation.
-- **Fixed: two more routine Log Audit noise sources excluded**
-  (`whoopsie-upload-all`'s fixed crash-reporter narration, and a read-only
-  `crontab -l` self-listing, scoped to only when the acting and target user
-  match).
-
-### 1.9.21
-
-- **Fixed: Log Audit's own routine housekeeping noise no longer shows up as
-  "new pattern" hits.** Live investigation of a run of frequent alerts
-  traced them to anacron's own fixed job-scheduling narration (start/stop,
-  timestamp bookkeeping), tailscaled's control-plane connection state
-  (long-poll timeouts, disco-key rotation), cups-browsed's wrapper-script
-  trace output, Tor's idle-timeout message, and the `pam_unix(cron:session)`
-  session open/close bookkeeping for cron jobs, all now excluded. The
-  `CRON[pid]: (user) CMD (...)` line itself (the actual configured command,
-  where a newly added malicious crontab entry would first surface) is
-  deliberately left untouched.
-- **Added: a "still learning" note on repeated Log Audit alerts.** The
-  client edition's desktop notification now explains, the same way
-  Server Edition's external alerts already did, that a repeated "new
-  pattern"/frequency-spike hit is expected to stop paging on its own once
-  that template's own baseline has learned enough about it.
-- **Changed: the client edition's Log Audit notification is now
-  10-language**, matching every other client-edition dialog (it had been
-  JA/EN-only). The CLI and Server Edition's external alerts remain
-  JA/EN-only by design.
-
-### 1.9.20
-
+- **Added: Critical Path FIM (tamper detection) now also runs
+  automatically in the background on the client edition** (1.9.17),
+  bringing the same event-driven fanotify watch plus periodic backstop
+  scan that was previously Server Edition-only.
+- **Important: fixed a root-cause bug in Log Audit's template-masking
+  regex** (1.9.18) — digits adjacent to a letter weren't masked at all, so
+  timestamp differences alone kept re-flagging the same line as a "new
+  pattern" forever. Verified against a live production server's 691
+  learned templates collapsing to 285 (58.8%) once fixed.
+- **Important: fixed Client-Edition-only commands returning fabricated
+  information on Server Edition, and several security actions reporting
+  success without confirming anything actually happened** (1.9.19) —
+  `emergency-restore`, kernel/mount hardening, and `roamswitch airgap`
+  among others now wait for and check the real result before claiming
+  success.
 - **Added: Resource Exhaustion / Process Anomaly Guard (Server Edition
-  only).** Both memory-exhaustion DoS attacks and use-after-free exploit
-  crash loops target network-reachable public services, not a consumer
-  desktop's threat model, so this is Server Edition-only. RSS-trend
-  detection flags "sustained growth that never recovers" rather than
-  "monotonic growth," so a healthy GC-backed runtime's (Go, JVM, ...)
-  normal sawtooth memory pattern is never mistaken for a leak. Crash-loop
-  detection adds no new polling; it structurally recognizes systemd's own
-  fixed restart/failure vocabulary (a kernel-verified sender) on the
-  journalctl tail Log Audit already maintains (Docker containers are
-  watched via `docker events`). Since a memory metric alone can never
-  confirm intent, a flagged PID is correlated against the same PID's
-  recent eBPF Runtime Guard / Critical Path FIM events to assign a
-  confidence tier (possible/correlated). Check it with `roamswitch
-  resource-guard` or the `get_resource_guard_incidents` MCP tool.
-- **Fixed: digits embedded in the hostname could cause Log Audit's learned
-  template baseline to "forget" everything at once.** The 1.9.18 digit-
-  masking fix also started masking digits fused inside a hostname (e.g.
-  "SX2BD1TC"), which changed every single template's shape the moment it
-  shipped and made an entire production server's already-learned baseline
-  reappear as "new pattern" all at once. The hostname is now replaced with
-  a fixed placeholder before any other masking runs, since it's a
-  per-host constant that never distinguishes one template from another.
-- **Fixed: false-positive ransomware freeze on a plain `cp`/`mv`.** Live
-  investigation found copying a folder of naturally high-entropy files
-  (photos, videos, zip archives) with `cp -r` triggered the entropy-burst
-  ransomware detector and froze the process (SIGSTOP). `cp`/`mv` can
-  never themselves be a ransomware encryption mechanism (pure byte copy /
-  rename, no data transformation), so both are now allowlisted.
-- **Fixed: most client daemon notifications never appeared in
-  `roamswitch notifications`.** Only 2 of 28 call sites recorded to
-  notification history (ransomware freeze, malware quarantine, ARP-spoof
-  containment, link-guard blocks, and more were silently missing).
-  Recording now happens once, inside the shared notification-send
-  function itself, instead of being repeated (and missed) at each call
-  site.
-- **Fixed: a generated `postinst` script's indentation could corrupt the
-  FIM apt hook's heredoc terminator**, occasionally breaking `dpkg
-  --configure`.
-- Removed the unmaintained Python SDK (`python/roamswitch`).
-
-### 1.9.19
-
-- **Fixed: Client Edition-only commands returned wrong or fabricated
-  information on Server Edition.** `roamswitch guards` always claimed
-  every guard was "ON" without checking any actual setting at all (this
-  was wrong on Client Edition too, not just Server). `roamswitch
-  quarantine list` and plain `roamswitch status` (no `--server` flag)
-  silently defaulted to Client Edition whenever the `isServer` argument
-  was omitted, so running either on a Server Edition host always returned
-  the wrong result; omitting it now auto-detects the edition actually
-  installed instead. The hidden `roamswitch airgap enable/disable`
-  command declared "✓ isolation triggered" even when it failed to reach
-  the client daemon at all (which never runs on Server Edition). `roamswitch
-  guards` and `sharing` now refuse clearly on Server Edition instead of
-  showing Client Edition-only concepts that don't apply there.
-- **Important: fixed several security actions that reported success
-  without confirming anything actually happened.** `emergency-restore`
-  declared success without checking whether the nftables isolation tables
-  it tried to remove were actually gone (the same pattern as the `airgap`
-  fix, in the command operators run specifically to confirm an emergency
-  lockdown is over). Kernel/mount hardening (sysctl writes, the `/dev/shm`
-  remount, USB Zero-Trust) silently discarded every write failure and
-  always reported success regardless. The GUI's "Harden" and "Kernel
-  Hardening" buttons showed "✓ Applied" the instant the request was sent
-  to the daemon, without waiting for its actual reply; fixed to wait for
-  the real result.
-
-### 1.9.18
-
-- **Important: fixed a root-cause bug in the log audit's template-masking
-  regex (the foundation of "new pattern" detection).** Digits directly
-  adjacent to a letter, with no separator, such as an ISO8601 timestamp's
-  `...-10T04:...` or a duration like `wait=3h17m58s`, weren't masked at
-  all, because the masking regex required a word boundary around the
-  digits and none exists there. `roamswitch-server-daemon`'s own self-logs
-  embed exactly this shape (a microsecond-precision timestamp the
-  `tracing` crate adds automatically), so a line like "FIM routine
-  integrity verification passed" could never learn its way into "known" no
-  matter how many times it had genuinely already been seen, since its
-  embedded timestamp made every occurrence's template unique. Verified
-  against this project's own production server: applying the fixed
-  masking to its 691 already-learned templates collapsed them to 285
-  (58.8%). Most of the individual self-log exclusions added earlier this
-  cycle were, in effect, papering over this same bug.
-
-### 1.9.17
-
-- **Added: Critical Path FIM (tamper detection) now runs automatically in
-  the background on the client edition too.** Previously FIM was
-  Server-Edition-only, so a day-to-day client machine had no ongoing
-  integrity monitoring at all if its root account got compromised (only a
-  manual `roamswitch fim verify`). Added the same event-driven fanotify
-  watch plus periodic backstop scan the server daemon already runs, and
-  added the systemd binary itself (`/usr/lib/systemd/systemd`) to the
-  monitored set. A legitimate file replacement during an apt/dnf/zypper
-  package upgrade is now distinguished from real tampering by checking, via
-  a structural lock-file probe, whether a package-manager transaction is
-  actually in progress (not by matching the writing process's name
-  against an enumerated list), so a transient false "tampering" alert
-  mid-upgrade is deferred (the periodic scan still re-verifies regardless,
-  so nothing is ever missed). The tampering warning log now also records
-  the actual writing process's name for context. Packaging (the apt
-  Post-Invoke hook, and the RPM-family path unit) now ships in the client
-  edition's .deb/.rpm too.
-
-### 1.9.16
-
-- **Added: a warmup protection that skips the automatic notification for
-  new-pattern-only anomalies (no genuine frequency spike among them)
-  during a host's first 7 days after baseline capture.** The individual
-  known-noise exclusions and the structural systemd-lifecycle exclusion
-  (1.9.13-1.9.15) are already in place, but a host with many not-yet-seen
-  OS or third-party components still saw a burst of "new pattern"
-  notifications right after its first learning cycle, and that burst had
-  real operational cost (people disabling the feature from alert
-  fatigue). Frequency-spike detection, the USB/port/FIM guards, and
-  viewing the full log-audit results manually or via MCP are all
-  unaffected. Only the automatic notification is gated, and only for a
-  bounded window.
+  only)** (1.9.20 - 1.9.22): detects memory-exhaustion DoS, use-after-free
+  crash loops, sustained zombie-process growth, and system-load growth,
+  correlated against eBPF Runtime Guard / Critical Path FIM events for a
+  confidence tier. The same window also fixed a notification-history gap
+  affecting 26 of 28 client daemon call sites, a DOCKER-USER chain
+  startup-order race, and 7 false-verdict bugs in the 28-item security
+  audit.
+- **Fixed a wide range of Log Audit and ransomware-detection false
+  positives** (1.9.20 - 1.9.25): `cp`/`mv`/`pip` ransomware false-freezes,
+  routine noise from anacron/tailscaled/cron sessions and more,
+  generalized AppArmor-profile matching, Log Audit re-detecting its own
+  past alerts as new patterns forever, and the ransomware allowlist not
+  applying to already-exited short-lived processes.
+- **Fixed: ARP-spoofing detection false-flagging Docker bridge-internal
+  IPs** (1.9.24), plus the GUI's notification-history tab never updating
+  on its own.
+- **Important: fixed `audit-secrets`'s recursive directory scan recursing
+  forever through a symlink cycle**, pinning a live host at ~96% CPU for
+  over 95 minutes (1.9.26). Switched to the lstat-based
+  `DirEntry::file_type()`, which never follows symlinks.
 
 ### 1.9.6 - 1.9.15
 
@@ -657,202 +438,48 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
   hand an attacker a head start on brute-forcing the rest. Uses the same
   algorithm and verified test vectors as the Linux edition.
 
-## 1.9.26
-
-- **Fixed: Link Guard's homograph detection was wrongly downgraded to
-  warn-only in every supported language except Japanese, English, and
-  French.** The check compared the translated display string instead of a
-  language-independent value, so a homograph attack (a look-alike spoofed
-  domain) that should have been blocked only got a warning in those other
-  seven languages. Also corrected warn mode's display name to match what
-  it actually does (blocks silently, no response).
-- **Fixed: the Ransomware Canary Guard's MITRE ATT&CK ID always came out
-  as T1565 in every language except Japanese and English.** It matched
-  words in the translated summary text instead of a language-independent
-  value.
-- **Improved: brought the MCP server, SDK, Help & Guide, and built-in
-  knowledge base up to date with current features.** `get_guard_status`
-  grew from 8 to 22 fields; two new MCP tools were added
-  (`get_incident_timeline`, `get_network_history`). The built-in knowledge
-  base (behind `get_app_help`) grew from roughly 60 to 90 entries, adding
-  previously-missing topics (network-history learning / Evil Twin
-  detection, Critical Path FIM, scheduled log auditing, the containment
-  timeline, BadUSB keystroke analysis, Tailscale VPN, ClickFix defense,
-  Docker monitoring, XProtect-triggered Air-Gap, and more), now in all 10
-  languages. The in-app Help & Guide tab was also rewritten, fixing an
-  incorrect diagnostics item count and adding roughly 30 previously
-  undocumented features (translated into 9 languages).
-- **Fixed: some regional locales (e.g. pt-BR) didn't match any supported
-  app language and silently fell back to Japanese.**
-
-## 1.9.25
-
-- **Improved: EICAR test-signature hits no longer raise a notification.**
-  When download-folder monitoring or the scheduled scan found EICAR (the
-  industry-standard string for checking that an antivirus scanner is live),
-  the file was correctly left alone as not a real threat, but a "🧪 EICAR
-  test signature detected (harmless)" notification still fired. So that
-  no-action alerts don't bury the ones that matter, it is now recorded in
-  notification history only (previously it wasn't recorded in history at
-  all). A ClamAV scan you start manually from the menu still shows its usual
-  "scan complete, no threats" notification when EICAR is all it found, and
-  records the EICAR hit in history.
-
-## 1.9.24
-
-- **Fixed: the KPI cards on the Mac Security Log Audit window didn't
-  respond to clicks.** The Sudo Failures / SSH Connections / Gatekeeper
-  Blocks / XProtect Detections / Template Anomalies cards use almost the
-  same pill styling (rounded rect, icon + label) as the filter tab row
-  right below them, but were purely presentational — clicking did
-  nothing. Found from a live report where clicking the "Template
-  Anomalies" card didn't filter the list (the actual filter tabs worked
-  fine). The KPI cards are now tappable and sync with the filter tabs by
-  category.
-- **Added: newly-detected template anomalies are now persisted to
-  notification history.** A "template anomaly" is absorbed into the known
-  baseline the moment it's detected, so re-scanning or reopening the
-  window would never flag the same thing as "new" again — with no way to
-  look back at what it was. New-pattern detections are now recorded to
-  notification history (not Pro-gated). Frequency spikes are deliberately
-  excluded, since the same one can recur across repeated scans and would
-  flood history with near-duplicates.
-
-## 1.9.23
-
-- **Improved: Log Audit's anomaly notification was incomprehensible — and
-  just anxiety-inducing — to a non-expert user.** A notification that only
-  showed a raw template string and z-score (e.g. "[new] GetNumberAttribute
-  | CountryCode value is 0") gave no way to tell what happened or whether
-  it needed attention. Fixed a misleading "still learning frequency" note
-  that was wrongly applied to first-sightings (a "new pattern" hit is a
-  one-shot detection — the exact same thing structurally cannot be
-  re-flagged), and added a plain-language line to the notification body
-  along the lines of "this is usually an expected change from a new device
-  or an app/OS update; no action is needed unless it names something you
-  don't recognize." Template anomalies — previously visible only as a bare
-  count on a KPI card — are now shown and searchable in the "Mac Security
-  Log Audit" window's own list.
-- **Fixed: the Wi-Fi radio killed during an automatic Air-Gap didn't come
-  back on its own after an app crash or a Mac restart.** The Wi-Fi
-  radio-kill added around 1.9.22 (ARP-spoof, ransomware, and runtime-threat
-  containment) didn't hook into the pf network air-gap's existing 10-minute
-  bounded auto-release — the only way to restore it was flipping Wi-Fi back
-  on manually from the menu bar. Wi-Fi radio control is now folded into the
-  same pf air-gap state, so the independent AirGapFailsafe watchdog (which
-  restarts on its own after an app or Mac restart) covers restoring Wi-Fi
-  too. Verified live: killed, left untouched, auto-restored within the
-  10-minute bound.
-
-## 1.9.22
-
-- **Fixed: Log Audit's masking couldn't catch `0x`-prefixed pointer
-  addresses.** The existing hex regex never fires right after "0x" (no
-  word boundary between the "x" and the hex digits that follow), so
-  XPC connection IDs and similar `0x...` addresses passed through
-  completely unmasked. Lines like `[0xbb38aae40] invalidated because
-  the current process cancelled the connection by calling
-  xpc_connection_cancel()` kept re-triggering as a "new pattern" forever
-  since the address changes on every connection. Added a dedicated regex
-  that masks `0x`-prefixed hex first.
-
-## 1.9.21
-
-- **Fixed: lock-screen sleep/wake and status-widget internal logs were
-  treated as anomalies.** `SleepWakeCallback_block_invoke` and related
-  power-lifecycle narration (scoped to specific function-name prefixes,
-  since its subsystem also carries authentication-domain classes that must
-  stay fully monitored) and the lock screen's Wi-Fi/Battery status-widget
-  internal trace (a numeric-ID-plus-class-name format, e.g. "150766294:
-  Battery pause 0xbb1346120") are now excluded.
-- **Added: a "still learning" note on repeated Log Audit alerts
-  (10 languages).** `ScheduledLogAuditGuard`'s notification now explains
-  that a repeated "new pattern"/frequency-spike hit is expected to stop
-  paging on its own once that template's own baseline has learned enough
-  about it.
-
-## 1.9.20
-
-- **Fixed: lock-screen wallpaper rendering framework logs were treated as
-  anomalies.** Three internal-diagnostic message shapes emitted by
-  `loginwindow`'s own wallpaper crossfade pipeline (`com.apple.wallpaper`'s
-  "Release Assertion N", `com.apple.coreanimation`'s "CAMetalLayer
-  ignoring invalid setDrawableSize ...", and `com.apple.avatarkit`'s
-  "Error while writing subdiv data") were showing up in Log Audit as
-  frequency-spike anomalies. All three are purely graphical Apple
-  framework internals with zero security relevance. Rather than
-  enumerating each message's text, these are now excluded structurally by
-  the unified log's `subsystem` field, set by the logging process
-  itself, so it can't be forged the same way arbitrary message text could.
-
-## 1.9.19
-
-- **Important: fixed four security items that reported success without
-  confirming anything, or never checked their claim at all.** Automatic
-  dev-server port blocking used to declare "blocked" the instant the pf
-  rule request was sent, without waiting for the async helper call that
-  actually applies it (failures now show a message prompting manual
-  action instead). Malware quarantine's file move silently discarded its
-  own errors, so a failed move was still reported as "quarantined" (now
-  only claims success once the move is confirmed). The Security Dashboard's
-  "macOS Accessory Connection Protection" item hardcoded `isPassed: true`
-  and never checked the actual system setting at all; fixed by reading the
-  live value via `ioreg` (no documented API exists for this, so this was
-  implemented only after verifying live, with the user's help, that
-  toggling "Ask Every Time" vs "Always Allow" actually changes the value
-  read). Critical Path FIM now notifies if it fails to reach the
-  privileged helper several times in a row, instead of silently going
-  blind with no visible sign at all.
-
-## 1.9.18
-
-- **Important: fixed a root-cause template-masking bug in the log audit**
-  (paired with the Linux edition). The exact same bug found and verified
-  against the Linux edition's own production server (digits fused directly
-  onto a letter, with no separator, never got masked because the regex
-  required a word boundary that doesn't exist there) turned out to exist
-  in Mac's independent implementation too, so the same fix was ported
-  over. Resolves lines containing a duration string (e.g.
-  `wait=3h17m58s`) being treated as a distinct "new pattern" every single
-  time.
-
-## 1.9.17
-
-- **Improved: replaced yet another one-off log-audit exclusion with a
-  class-level structural rule.** `-[Application setState:]` and
-  `-[ApplicationManager handleCASEvent:withData:] | kLSNotify...` were
-  false-flagged as "new pattern" (5 in one notification) despite being
-  routine internal bookkeeping that fires on every ordinary app
-  launch/quit/focus change. Having added three exclusions of this shape in
-  as many days, a 24-hour, 16,340-line sample of this Mac's own
-  `process == "loginwindow"` stream (the same query the audit itself
-  issues) showed that two generic AppKit/LaunchServices classes,
-  `Application` and `ApplicationManager`, alone accounted for 23% (1,756
-  lines) of loginwindow's entire trace-log volume, none of it containing
-  any authentication-adjacent keyword, while loginwindow's actual
-  authentication-domain classes (`LWScreenLock`, `LWAuthServiceManager`,
-  `LWPAMManager`, ...) share the exact same trace format but stayed clear
-  of the exclusion. Now excludes by class identity instead of selector or
-  message text, so any future selector these two classes log under is
-  covered automatically, no new exclusion needed.
-
-## 1.9.16
+## 1.9.16 - 1.9.26
 
 - **Added: Critical Path FIM, a background tamper-detection guard for
-  critical system files (Pro).** Watches a small, fixed set of low-churn
-  paths that no routine OS update or Homebrew install ever touches:
-  `/etc/sudoers`, `/etc/pam.d/sudo`, `/etc/ssh/sshd_config` (+
-  `sshd_config.d`), `/etc/hosts`, and root's `authorized_keys` (the Mac
-  counterpart to roamswitch-linux's Critical Path FIM). LaunchAgent/Daemon
-  persistence is deliberately excluded here (it churns far too much for a
-  plain hash diff) and stays covered by the existing signature +
-  Homebrew-Cellar-provenance check instead. Combines an FSEvents-based
-  near-real-time trigger with an hourly backstop scan; a genuine violation
-  keeps re-flagging on every scan until a human explicitly re-trusts the
-  current state, rather than silently healing itself.
-- **Fixed: CoreAudio HAL internal trace-log false positive.** Lines like
-  `HALC_ProxyIOContext`, occasionally emitted via loginwindow, were
-  misreported as a log-audit anomaly. Added to the exclusion list.
+  critical system files** (Pro, 1.9.16): SHA-256 baseline monitoring of
+  low-churn paths (`/etc/sudoers`, SSH config, `/etc/hosts`, root's
+  `authorized_keys`) that no routine OS update or Homebrew install ever
+  touches.
+- **Important: fixed four security items that reported success without
+  confirming anything actually happened** (1.9.19): automatic dev-server
+  port blocking, malware-quarantine file moves, the Security Dashboard's
+  "macOS Accessory Connection Protection" check (previously hardcoded
+  `isPassed: true`), and Critical Path FIM's helper-connection failures
+  now all reflect the real outcome instead of an assumed one.
+- **Fixed a wide range of Log Audit false positives** (1.9.16 - 1.9.22):
+  CoreAudio HAL traces, loginwindow's `Application`/`ApplicationManager`
+  bookkeeping (replaced with a class-level structural rule), a root-cause
+  template-masking bug shared with the Linux edition, lock-screen
+  wallpaper-rendering and sleep/wake internals, and `0x`-prefixed pointer
+  addresses that the masking regex couldn't catch.
+- **Improved: Log Audit's anomaly notification, previously just a raw
+  template string and z-score, now explains in plain language whether
+  action is needed** (1.9.23), and template anomalies are now shown and
+  searchable in the Log Audit window itself instead of only a KPI-card
+  count.
+- **Fixed: the Wi-Fi radio killed during an automatic Air-Gap didn't come
+  back on its own after an app crash or Mac restart** (1.9.23) — folded
+  into the same pf air-gap state so the independent AirGapFailsafe
+  watchdog covers restoring Wi-Fi too, verified live within the 10-minute
+  bound.
+- **Added: newly-detected template anomalies are now persisted to
+  notification history** (1.9.24), and the KPI cards on the Log Audit
+  window became clickable (previously purely decorative).
+- **Improved: EICAR test-signature hits no longer raise a notification**
+  (1.9.25) — recorded to history only, so a real threat alert isn't
+  buried among no-action ones.
+- **Fixed: Link Guard's homograph detection and the Ransomware Canary
+  Guard's MITRE ATT&CK ID were both comparing translated display strings
+  instead of a language-independent value, silently breaking in most
+  non-JA/EN/FR languages** (1.9.26). Also brought the MCP server, SDK,
+  Help & Guide, and built-in knowledge base up to date with current
+  features across all 10 languages, and fixed some regional locales
+  (e.g. pt-BR) falling back to Japanese.
 
 ## 1.9.13 - 1.9.15
 
