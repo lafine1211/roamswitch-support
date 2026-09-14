@@ -13,6 +13,16 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.9.35
+
+- **Fixed: the EULA's description of network communication no longer
+  matched reality.** EULA §5 said update checks happen only via apt, which
+  contradicted the receive-only traffic that already occurs for the
+  threat-feed fetch and ClamAV definition updates.
+- **Added third-party license notices to the in-app Help screen**
+  (ClamAV (GPLv2), Tailscale (BSD-3-Clause), GTK3 (LGPL-2.1)), localized
+  into all 10 languages.
+
 ### 1.9.34
 
 - **Brought the MCP server, SDK, and in-app Help & Guide fully up to date
