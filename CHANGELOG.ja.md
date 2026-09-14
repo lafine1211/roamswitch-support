@@ -395,6 +395,23 @@ Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）
 
 ## RoamSwitch for Mac
 
+## 1.9.30
+
+- **追加: タイポスクワッティング検知（npm/pnpm package.json、Pro）**:
+  package.jsonのdependencies/devDependencies/optionalDependenciesを、
+  有名なnpmパッケージ名リストと編集距離（レーベンシュタイン距離1〜2）
+  で突き合わせ、`expres`→`express`・`loadash`→`lodash`のようなタイポ
+  スクワッティング（似た名前で偽装した悪意あるパッケージ）の可能性を
+  検出します。アプリ自体は判定にネットワーク接続を一切行いません。
+  判定に使う人気パッケージ名リストは、既存のCVEマップ群と同じ「1日1回・
+  受信専用・Ed25519署名検証済み」のPackageCveMapUpdaterパイプライン
+  経由で配信され、アプリのリリースを待たずにリストを更新できます。
+  参考情報であり断定ではなく、正規の類似パッケージ（`preact`等）は
+  許可リストで一部除外しています。「📦 パッケージCVE照合」→
+  「タイポスクワッティング検知 (Pro)」タブから利用でき、MCPツール
+  `run_typosquat_scan`も追加しました（Pro限定）。Linux版1.9.39の
+  同機能と同じ更新パイプライン・判定ロジックです。
+
 ## 1.9.29
 
 - **追加: npm/pnpm installのサンドボックス実行 (roamswitch-npm, Pro)**:

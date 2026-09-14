@@ -438,6 +438,24 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 
 ## RoamSwitch for Mac
 
+## 1.9.30
+
+- **Added: typosquat detection (npm/pnpm package.json, Pro).** Checks
+  package.json's dependencies/devDependencies/optionalDependencies
+  against a list of popular npm package names by edit distance
+  (Levenshtein 1-2), flagging possible typosquatting — a malicious
+  package deceptively disguised under a similar name, such as
+  `expres`→`express` or `loadash`→`lodash`. The app itself makes no
+  network connections to perform this check. The popular-package list it
+  checks against is distributed via the same once-a-day, receive-only,
+  Ed25519-signed `PackageCveMapUpdater` pipeline as the existing CVE
+  maps, so the list can be refreshed without waiting for an app release.
+  Reference information, not a verdict — a known allowlist suppresses
+  some legitimate look-alike packages (e.g. `preact`). Available from
+  "📦 Package CVE Scan" → "Typosquat Detection (Pro)", with a new MCP
+  tool, `run_typosquat_scan` (Pro only). Same update pipeline and
+  matching logic as the Linux edition's 1.9.39 release of this feature.
+
 ## 1.9.29
 
 - **Added: sandboxed npm/pnpm install (roamswitch-npm, Pro).** Adds a
