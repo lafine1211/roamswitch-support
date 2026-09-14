@@ -13,6 +13,20 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.9.36
+
+- **Added: the secret & API key leak auditor now also detects cryptocurrency
+  wallet seed phrases and private keys.** Prompted by Microsoft's June 2026
+  writeup on "Crypto Clipper" malware, which watches the clipboard for wallet
+  seed phrases and private keys and swaps in the attacker's own address when
+  you paste a payment destination. BIP39 mnemonic seed phrases (12–24 words)
+  are verified against their real SHA-256-based checksum, so ordinary prose
+  that happens to contain a few of the same words is never mistaken for one.
+  Bitcoin private keys (WIF format) and extended private keys
+  (xprv/yprv/zprv/tprv) are also detected, checksum-verified. Unlike an API
+  key, a detected value is never shown at all — not even partially — and the
+  advice is to move funds to a brand-new wallet rather than "revoke" it.
+
 ### 1.9.35
 
 - **Fixed: the EULA's description of network communication no longer
