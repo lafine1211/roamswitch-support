@@ -12,6 +12,21 @@ Linux 版（別系列・1.0.x）でバージョン番号は独立しています
 Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）。
 詳しくは <https://lafine.net/linux>。
 
+### 1.9.39
+
+- **追加: タイポスクワッティング検知（npm/pnpm package.json、静的検知、
+  Pro）**: package.jsonのdependencies/devDependencies/optionalDependencies
+  を、有名なnpmパッケージ名リストと編集距離（レーベンシュタイン距離1〜2）
+  で突き合わせ、`expres`→`express`・`loadash`→`lodash`のようなタイポ
+  スクワッティング（似た名前で偽装した悪意あるパッケージ）の可能性を
+  検出します。アプリ自体は判定にネットワーク接続を一切行いません。
+  判定に使う人気パッケージ名リストは、CVEマップ群と同じ「1日1回・
+  受信専用・署名検証済み」のupdaterパイプライン経由で配信され、
+  アプリのリリースを待たずにリストを更新できます。参考情報であり
+  断定ではなく、正規の類似パッケージ（`preact`等）は許可リストで
+  一部除外しています。`roamswitch scan-typosquat <フォルダ...>`。
+  Client Edition限定。
+
 ### 1.9.38
 
 - **追加: npm/pnpm installのライフサイクルスクリプトをサンドボックス内に

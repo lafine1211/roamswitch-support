@@ -13,6 +13,21 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.9.39
+
+- **Added: typosquat detection (npm/pnpm package.json, static, Pro).**
+  Checks dependency names in package.json (dependencies/devDependencies/
+  optionalDependencies) against a list of popular npm package names by
+  edit distance (Levenshtein 1-2), flagging possible typosquatting such
+  as `expres`→`express` or `loadash`→`lodash`. The app itself makes no
+  network connections to do this. The popular-package list it checks
+  against is distributed via the same "once-a-day, receive-only, signed"
+  updater pipeline as the CVE maps, so the list can be refreshed without
+  waiting for an app release. Reference information, not a verdict — a
+  small allowlist suppresses common legitimate look-alikes (e.g.
+  `preact`). `roamswitch scan-typosquat <folder...>`. Client Edition
+  only.
+
 ### 1.9.38
 
 - **Added: sandboxed execution of npm/pnpm install lifecycle scripts
