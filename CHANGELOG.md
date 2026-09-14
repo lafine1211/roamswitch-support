@@ -597,6 +597,24 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 
 ## RoamSwitch for Mac
 
+## 1.9.27
+
+- **Added: detection of leaked crypto-wallet seed phrases and private keys
+  (BIP39/WIF/BIP32).** The secret-leak auditor only recognized API keys and
+  SSH private keys, with no detection at all for wallet recovery material —
+  a gap prompted by Microsoft's June 2026 report on "Crypto Clipper"
+  malware, which steals seed phrases and private keys via clipboard
+  monitoring and swaps in attacker-controlled payout addresses. BIP39
+  mnemonics (12/15/18/21/24 words) are verified against their actual
+  SHA-256-based checksum rather than matched as a plain word list, so
+  ordinary prose that happens to contain BIP39 words doesn't false-positive
+  unless the checksum genuinely validates. Bitcoin WIF private keys and
+  BIP32 extended private keys (xprv/yprv/zprv/tprv) are detected with
+  Base58Check checksum verification. Unlike an API key, a detected value is
+  fully hidden rather than partially masked — showing even part of it would
+  hand an attacker a head start on brute-forcing the rest. Uses the same
+  algorithm and verified test vectors as the Linux edition.
+
 ## 1.9.26
 
 - **Fixed: Link Guard's homograph detection was wrongly downgraded to
