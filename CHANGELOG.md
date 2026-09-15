@@ -13,6 +13,46 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.9.43 (update recommended for Server Edition)
+
+- **Added: Container Exec Guard (Server Edition only, new).** Prompted by
+  a real intrusion (a Dockerized Next.js app compromised via RCE, then
+  used to download a cryptominer into the container, execute it, and
+  immediately delete the file) that exposed a structural gap: Server
+  Edition had no visibility at all into what ran inside a container's own
+  filesystem. This tracks container start/stop via `docker events` and
+  dynamically marks each running container's rootfs mount with fanotify's
+  `FAN_OPEN_EXEC` (notify-only — it cannot block an exec). The executed
+  file's content is read from the fanotify event's own file descriptor,
+  not by re-opening the reported path, so an attacker deleting the file
+  immediately after exec doesn't lose the sample. Scanned against the
+  embedded YARA engine; logged and notified, never auto-blocked.
+- **Fixed: the Egress Guard (malicious-IP blocklist) let container-
+  originated traffic straight through.** It previously only hooked the
+  `output` chain, which a Docker container's outbound traffic (routed via
+  `forward`) never touches. Now applies the same rule to `forward` too,
+  and a match — previously completely silent — is now logged and raises a
+  notification.
+- **Added: a per-process CPU-saturation detector in the Resource
+  Exhaustion Guard.** Every existing signal (RSS trend, zombie count,
+  system load) was either scoped to externally-exposed services or a
+  system-wide average — an outbound-only process like a cryptominer was
+  invisible to all of them. Flags a process that stays pegged near 100%
+  CPU for a sustained period; a live connection to a known mining-pool
+  port raises confidence further.
+- **Fixed: the eBPF Runtime Guard (Falco/Tetragon) liveness check reported
+  "active" even when nothing was actually installed.** It used to fall
+  back to checking whether the event-listener socket *file* existed — a
+  file RoamSwitch itself creates unconditionally at startup, Falco or not
+  — so a host with no Falco/Tetragon unit at all still passed the
+  diagnostic. Now tracks whether a Falco/Tetragon client is actually
+  connected, and pushes a Telegram/LINE/Webhook alert (at most once a day)
+  when it isn't.
+- **Fixed: RoamSwitch's own scheduled FIM scan was flagged by Falco as an
+  untrusted process reading sensitive files, re-triggering a notification
+  every scan interval (5 minutes by default).** Added RoamSwitch's own
+  binaries to Falco's sensitive-file-read exception list.
+
 ### 1.9.42
 
 - **Fixed: the running-kernel CVE check false-flagged distro-specific
@@ -75,219 +115,27 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
   `preact`). `roamswitch scan-typosquat <folder...>`. Client Edition
   only.
 
-### 1.9.38
+### 1.9.27 - 1.9.38
 
-- **Added: sandboxed execution of npm/pnpm install lifecycle scripts
-  (Client Edition only, Pro).** Where the previous three features only
-  detected and warned, this one actually confines the execution of
-  preinstall/install/postinstall/prepare scripts under a bubblewrap
-  (bwrap) filesystem restriction. The download phase runs normally with
-  network access (`--ignore-scripts`); only the subsequent script phase
-  shadows credential paths (`~/.ssh`, `~/.aws`, `~/.gnupg`, `~/.netrc`,
-  `~/.npmrc`, etc.) with an empty tmpfs (files use `--ro-bind /dev/null`
-  instead). Network access itself is not blocked, so legitimate packages
-  like sharp/esbuild that fetch platform-specific binaries in postinstall
-  keep working. Adds a new `roamswitch install [--pm npm|pnpm]`
-  subcommand. Supports npm/pnpm; yarn is not supported. Refuses to run
-  lifecycle scripts if bwrap isn't installed, rather than silently
-  falling back to running unsandboxed.
-
-### 1.9.37
-
-- **Added: three features addressing npm-install supply-chain risk
-  (Client Edition, two of them also on Server Edition).** "Lockfile FIM"
-  continuously watches dependency lockfiles (package-lock.json/yarn.lock/
-  pnpm-lock.yaml/npm-shrinkwrap.json) for external tampering via a SHA-256
-  baseline (Client + Server, `roamswitch lockfile-fim`). "Install Script
-  Inventory" statically lists preinstall/install/postinstall/prepare
-  scripts declared by package.json files under node_modules (Client only,
-  an inventory rather than a threat verdict, `roamswitch scan-scripts`).
-  "npm Signature Verification" contacts the npm registry to verify
-  installed packages' signatures/provenance (Client + Server, opt-in,
-  `roamswitch audit-npm-signatures`) — the only RoamSwitch feature that
-  talks to npmjs.com, disabled by default and requiring a confirmation on
-  every run. All three are Pro-only.
-
-### 1.9.36
-
-- **Added: the secret & API key leak auditor now also detects cryptocurrency
-  wallet seed phrases and private keys.** Prompted by Microsoft's June 2026
-  writeup on "Crypto Clipper" malware, which watches the clipboard for wallet
-  seed phrases and private keys and swaps in the attacker's own address when
-  you paste a payment destination. BIP39 mnemonic seed phrases (12–24 words)
-  are verified against their real SHA-256-based checksum, so ordinary prose
-  that happens to contain a few of the same words is never mistaken for one.
-  Bitcoin private keys (WIF format) and extended private keys
-  (xprv/yprv/zprv/tprv) are also detected, checksum-verified. Unlike an API
-  key, a detected value is never shown at all — not even partially — and the
-  advice is to move funds to a brand-new wallet rather than "revoke" it.
-
-### 1.9.35
-
-- **Fixed: the EULA's description of network communication no longer
-  matched reality.** EULA §5 said update checks happen only via apt, which
-  contradicted the receive-only traffic that already occurs for the
-  threat-feed fetch and ClamAV definition updates.
-- **Added third-party license notices to the in-app Help screen**
-  (ClamAV (GPLv2), Tailscale (BSD-3-Clause), GTK3 (LGPL-2.1)), localized
-  into all 10 languages.
-
-### 1.9.34
-
-- **Brought the MCP server, SDK, and in-app Help & Guide fully up to date
-  with current features.** The read-only MCP server grew from 19 to 25
-  tools, adding status reads for VPN (WireGuard/Tailscale), the passive
-  Link Guard, emergency network cutoff (Air-Gap, including frozen
-  processes), automatic sharing-service shutdown, the Bluetooth guard, and
-  USB guards. The guard-status listing now also reports more of the
-  settings actually available in the app.
-- URL safety checks, the secret-leak auditor, the security log auditor, and
-  the Ransomware Canary Guard used to always answer in Japanese regardless
-  of the app's language; they now support all 10 UI languages (Japanese,
-  English, Simplified Chinese, Traditional Chinese, Korean, German, French,
-  Spanish, Italian, Portuguese), matching the corresponding app tabs.
-- Fixed the Server Edition diagnostics' item count (it said 28; the real
-  count is 30) and localized its full text into all 10 languages (it was
-  previously Japanese/English only). Also fixed a handful of Client
-  Edition items (Docker socket, privileged containers, runtime isolation,
-  kernel CVE) that stayed in Japanese in every other language.
-- Overhauled the MCP's built-in knowledge base (used by `get_app_help`) for
-  full 10-language coverage, adding previously-missing topics: VPN, the
-  secret-leak auditor, log auditing, notification history, ARP
-  monitoring/gateway pinning, Air-Gap, sharing-service control, the
-  Bluetooth guard, and the active vulnerability scan.
-- Rewrote the app's built-in "Help & Guide" tab to cover features it never
-  mentioned: VPN, ARP monitoring/gateway pinning, the passive Link Guard's
-  fail-closed behavior, the secret-leak auditor, clipboard monitoring,
-  emergency network cutoff, notification history, and the unified incident
-  timeline. The diagnostics item count (24) is now consistent across all
-  10 languages.
-- `server.conf`'s `language` setting now accepts all 10 languages plus the
-  system locale, instead of only Japanese/English.
-
-### 1.9.33
-
-- **Improved: EICAR test-signature hits no longer raise a notification.**
-  EICAR is the industry-standard string for checking that an antivirus
-  scanner is live — not a real threat. It was already never quarantined or
-  blocked, but every hit still popped a "🧪 EICAR test signature seen
-  (harmless)" desktop notification. Alerts that need no action bury the
-  ones that do, so these are now recorded in notification history only
-  (`roamswitch notifications`, the app's history view, MCP). Applies to both
-  the fanotify guard and the download guard.
-
-### 1.9.32
-
-- **Fixed: there was no way to release a process frozen by a false
-  positive.** When the rapid-encryption detector fires, the suspected
-  process is frozen with SIGSTOP rather than killed — the whole point being
-  that the freeze can be undone if the detection was wrong. In practice it
-  could not be: nothing recorded *which* process had been frozen, and
-  neither the app nor the CLI offered any way to release one. So when a
-  legitimate program tripped the detector (anything that writes a lot of
-  high-entropy files quickly — making a backup, installing packages), it
-  stayed stopped until the user copied the PID out of the notification and
-  ran `kill -CONT` by hand in a terminal. Frozen processes are now recorded;
-  the app's Canary tab lists them with a release button, and the CLI gains
-  `roamswitch frozen [list|resume <PID>|resume all]`. `roamswitch
-  emergency-restore` also used to resume only processes frozen by some of
-  the detection paths — it now covers all of them. **A freeze is not a kill:
-  a released process picks up exactly where it stopped.**
-- **Fixed: every notification appeared twice in the history.** The daemon
-  recorded a detection into the notification history and then asked the app
-  to display the desktop notification; the app recorded the same thing a
-  second time as it displayed it. The result was the same entry listed
-  twice, about half a second apart, in the history view, in `roamswitch
-  notifications` and over MCP. It is now recorded once, by the side that
-  detected it. Duplicates already on disk (up to a week's worth) also stop
-  being shown.
-- **Improved: ransomware alerts no longer describe containment that didn't
-  happen.** If the process had already exited by the time the burst was
-  evaluated, or was a protected process (a container runtime, for example),
-  no freeze took place — but the notification said "frozen instantly with
-  SIGSTOP" regardless. The wording now depends on whether the freeze
-  actually took, and when it did, the alert also carries the command that
-  undoes it. Relatedly, a detection whose process could not be identified
-  (already gone, and therefore never frozen) is now recorded in the
-  notification history without raising a popup: those alerts named a PID the
-  user could neither inspect nor release, and repeated often enough to bury
-  the alerts that did need attention.
-
-### 1.9.31 (urgent update recommended for Server Edition)
-
-- **Fixed: the Default-Deny firewall policy was blocking 100% of Docker
-  containers' outbound API traffic.** The `forward` chain that
-  `roamswitch-server` (re-)applies via nftables on every start/restart was
-  being created with `policy drop` and zero rules in it — no `ct state
-  established,related accept` at all — so every packet a container sent
-  outbound (to an exchange API, an external webhook, anything) and every
-  reply to it was unconditionally dropped at the kernel netfilter layer.
-  Root-caused after two independent live reports of "every Docker
-  container's outbound call times out / 502s." Fixed by adding `ct state
-  established,related accept` to the forward chain, plus a rule accepting
-  forwarded traffic that didn't arrive on the external interface — so
-  container egress and inter-container traffic work again while traffic
-  arriving directly from the external interface (the thing this policy was
-  actually meant to stop) still gets dropped. If the external interface
-  can't be auto-detected, it now fails closed (forwarded traffic stays
-  blocked) with a warning logged, rather than guessing. **If you run
-  Server Edition with the nftables Default-Deny policy enabled and have
-  Docker containers (or anything else) that need outbound network access,
-  update to this version.**
-
-### 1.9.30
-
-- **Added: newly-detected template anomalies now persist to notification
-  history.** A "template anomaly" gets absorbed into the known-template
-  baseline the instant it's first seen, so re-scanning never flagged the
-  same content as "new" a second time, leaving no way to look it back up
-  later. Now recorded to notification history at the moment a new pattern
-  (`is_new`) is detected (frequency-spike anomalies are excluded by design,
-  since those can legitimately re-trigger on repeated scans). Pairs with
-  the same fix on the macOS edition.
-- **Maintenance: hardened the apt/rpm publish pipeline.** Added a
-  concurrency lock so releases can't overlap, and a post-publish
-  verification step that hashes the just-built packages against what's
-  actually served at the published URLs. Also revisited the CDN cache
-  settings for these paths. Prompted by a brief window during this release
-  where CDN mirror-sync timing caused some packages to fail downloading.
-- Experimental: added MITRE ATT&CK mapping to eBPF Guard's ptrace-family
-  alerts (continued, unverified prototype).
-
-### 1.9.29
-
-- **Improved: Log Audit's anomaly notification was incomprehensible — and
-  just anxiety-inducing — to a non-expert user.** Same fix as the Mac
-  edition, applied to the client daemon, Server Edition, the CLI, and the
-  GTK app. Fixed a misleading "still learning frequency" note that was
-  wrongly applied to first-sightings (a "new pattern" hit is a one-shot
-  detection), and added a plain-language line to the notification body.
-  Template anomalies — previously visible only as a bare count on a KPI
-  card — are now shown and searchable in the CLI's `audit-logs` output and
-  the GTK app's own Log Audit tab.
-- **Added: an "Allow" action on the port-anomaly-guard's auto-block
-  notification.** The safe-by-default behavior (block a newly-listening
-  process immediately, even on a trusted network) is unchanged; clicking
-  Allow releases that specific block on the spot for a legitimate dev
-  server, reusing the same path as the GUI's port-audit "allow" button.
-- Several experimental features landed (a unified incident timeline, an
-  XDP boot-time default-deny gate, malicious-IP egress blocking, prioritizing
-  pinpoint isolation in the eBPF Guard's critical-tier response, expanded
-  MITRE ATT&CK mapping, and more) — some as unverified prototypes.
-
-### 1.9.27
-
-- **Fixed: Log Audit's masking couldn't catch `0x`-prefixed pointer
-  addresses.** The existing hex regex (`\b[0-9a-fA-F]{8,}\b`) never fires
-  right after "0x" (no word boundary between the "x" and the hex digits
-  that follow), so XPC connection IDs and similar `0x...` addresses passed
-  through completely unmasked, the same root cause as the digit/hostname
-  fusion bug in a different shape. Found live on the macOS edition: lines
-  like `[0xbb38aae40] invalidated because the current process cancelled
-  the connection by calling xpc_connection_cancel()` kept re-triggering as
-  a "new pattern" forever since the address changes on every connection.
-  Added a dedicated regex that masks `0x`-prefixed hex first. Ported the
-  identical fix to the macOS edition too.
+- **Critical fix (1.9.31, Server Edition):** the Default-Deny firewall
+  policy was blocking 100% of Docker containers' outbound traffic (the
+  `forward` chain had no accept rule at all).
+- **Added (1.9.37-1.9.38):** four features addressing npm-install
+  supply-chain risk — Lockfile FIM, an install-script inventory, npm
+  signature verification, and bubblewrap-sandboxed lifecycle-script
+  execution. Pro-only.
+- **Added (1.9.36):** the secret-leak auditor now detects cryptocurrency
+  wallet seed phrases and private keys (checksum-verified, values never
+  shown).
+- **Added (1.9.34):** brought MCP/SDK/in-app Help fully up to date with
+  current features, and localized URL-safety/secret-leak/log-audit
+  results into all 10 languages (previously Japanese-only).
+- **Fixed (1.9.32):** no way existed to release a process frozen by a
+  false positive; duplicate notifications (every entry shown twice).
+- **Improved (1.9.29-1.9.33):** clearer Log Audit anomaly notifications,
+  an "Allow" action on port-anomaly-guard blocks, EICAR hits no longer
+  raise a notification.
+- **Fixed (1.9.27):** Log Audit's masking missed `0x`-prefixed addresses.
 
 ### 1.9.16 - 1.9.26
 
