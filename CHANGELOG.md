@@ -13,6 +13,25 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.9.42
+
+- **Fixed: the running-kernel CVE check false-flagged distro-specific
+  security backports.** Distro kernels (Ubuntu and others) commonly
+  backport CVE fixes without ever advancing the upstream major/minor
+  version — only the ABI build number changes (e.g. `7.0.0-31` →
+  `7.0.0-32`). The check previously ignored that build number and
+  compared only major.minor.patch, so a kernel that was fully up to date
+  per the package manager would stay flagged "action needed" forever
+  whenever the CVE map's fix version happened to fall on a different
+  major.minor line. The verdict is now softened from "action needed" to
+  "unconfirmed — likely already patched" (a distinct yellow badge) only
+  when every matched CVE's fix version is on the *same* major.minor line
+  as the running kernel *and* the package manager reports no pending
+  kernel update. When the fix version is clearly on a different
+  major/minor line, it still fails hard regardless of package-manager
+  status — that gap is a real, unaddressed exposure, not just a
+  same-line backport this check can't see.
+
 ### 1.9.41
 
 - **Fixed: a layout bug in the Comprehensive Security Diagnostic tab
