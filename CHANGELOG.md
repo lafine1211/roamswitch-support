@@ -13,6 +13,21 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.9.41
+
+- **Fixed: a layout bug in the Comprehensive Security Diagnostic tab
+  collapsed the kernel-CVE row's detail text into a vertical column of
+  single characters.** When multiple known kernel CVEs matched the
+  running kernel, the long CVE list was packed into the right-hand
+  status badge with no line wrap, forcing the neighboring detail column
+  down to a 1-character-wide minimum. Long badge text now falls back to
+  a short verdict ("OK" / "Action needed") and the full CVE list moves
+  to the wrapping detail line instead.
+- **Improved: added section headers to the Network Management tab**
+  above the Home/Work/Tethering registration row and the
+  Lockdown/Balanced/Open/Auto-detect override row, which were
+  previously unlabeled and hard to tell apart (all 10 languages).
+
 ### 1.9.40
 
 - **Fixed: a log-audit frequency-spike notification could never be
