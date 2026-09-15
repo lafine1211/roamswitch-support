@@ -13,6 +13,19 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.9.40
+
+- **Fixed: a log-audit frequency-spike notification could never be
+  corroborated right after it fired.** The log-template anomaly detector
+  consumes the log lines that caused a spike (advancing the persisted
+  cursor past them) as soon as it detects one, so checking the GTK app's
+  Logs tab, `roamswitch audit-logs`, or MCP right after the daemon's
+  scheduled scan fired a spike notification showed "no anomalies" with
+  no way to look back at what had been flagged. Frequency-spike
+  detections are now recorded into notification history
+  (`roamswitch notifications`) the same way new-pattern detections
+  already were. Same design fix as the Mac edition's 1.9.31 release.
+
 ### 1.9.39
 
 - **Added: typosquat detection (npm/pnpm package.json, static, Pro).**
