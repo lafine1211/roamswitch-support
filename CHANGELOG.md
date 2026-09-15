@@ -438,6 +438,19 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 
 ## RoamSwitch for Mac
 
+## 1.9.31
+
+- **Fixed: a log-audit frequency-spike notification could never be
+  corroborated in the detail view right after it fired.** The
+  "Mac Security Log Audit" frequency-spike detector consumes the log
+  lines that caused a spike as soon as it detects it, so opening the
+  audit detail view or notification history right after a spike alert
+  fired showed "no anomalies" with no way to look back at what had
+  actually been flagged. Frequency-spike detections are now recorded
+  into notification history the same way new-pattern detections already
+  were, so the details remain reviewable after the fact. Same design fix
+  as the Linux edition's 1.9.40 release.
+
 ## 1.9.30
 
 - **Added: typosquat detection (npm/pnpm package.json, Pro).** Checks
