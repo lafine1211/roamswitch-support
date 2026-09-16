@@ -13,6 +13,45 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.9.45
+
+- **Added: automated first-pass triage for eBPF alerts (false-positive
+  likelihood assessment).** A local, network-free heuristic now assesses
+  each detected event's false-positive likelihood (Low/Medium/High) with
+  reasons and suggested next-check commands, appends a summary to the
+  notification, and saves a full Markdown report (auto-pruned after 30
+  days). Applies to both Server Edition (notify-only tier events) and the
+  Linux client (which previously ignored — and never even recorded — any
+  event below Critical severity). JA/EN.
+- **Added: optional handoff to an agentic CLI for deeper investigation
+  (Server Edition, off by default).** A new `investigation` section in
+  `guard.yaml` lets you hand an incident to an already-installed and
+  authenticated agentic CLI (Claude Code, Codex CLI, etc.) for a deeper
+  investigation than the first-pass heuristic, but only when network is
+  reachable. Never attempted right before a host Air-Gap isolation, since
+  connectivity is about to be cut — the local heuristic always applies there.
+- **Fixed: the Linux client's FIM/Lockfile FIM kept re-sending the same
+  notification every check interval for a still-unresolved violation.**
+  1.9.44 fixed this for Server Edition, but the client had its own separate
+  implementation with the identical gap. Both now share the same dedup
+  logic. The lockfile-tampering notification's guidance was also corrected
+  from a single (`verify`-only) step to the correct two-step "run `verify`
+  to inspect, then `update` to re-baseline once confirmed legitimate" flow.
+- **Fixed: `sudo roamswitch lockfile-fim verify`** (the exact command the
+  notification itself recommends) **couldn't find already-configured
+  watched folders.** Under `sudo`, `$HOME` resets to `/root`, so it was
+  reading a different location than the GUI's
+  `~/.config/roamswitch/config.json`. Now correctly resolves the invoking
+  user's real home directory.
+- **Added: detection of secret exfiltration via environment variables and
+  `.env` files (custom Falco rule).** Addresses a technique seen in an
+  actual incident — running `env` inside a container, or reading
+  `/proc/<pid>/environ`, to bulk-harvest DB/API keys injected in plaintext
+  by `docker-compose`'s `env_file` — which the stock Falco ruleset had no
+  coverage for. Adds rules for bare `env`/`printenv` execution and
+  shell-tool reads of `.env` files (an app's own dotenv library load is not
+  flagged).
+
 ### 1.9.44 (update recommended for Server Edition)
 
 - **Fixed: the FIM / Lockfile FIM periodic backstop scan re-sent the same
