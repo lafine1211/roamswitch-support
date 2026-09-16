@@ -12,6 +12,16 @@ Linux 版（別系列・1.0.x）でバージョン番号は独立しています
 Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）。
 詳しくは <https://lafine.net/linux>。
 
+### 1.9.46
+
+- **追加: セットアップウィザード(`roamswitch server setup`)にeBPF調査
+  エージェント連携（`investigation`）の対話設定を追加**。従来ウィザード
+  は`server.conf`のみを対象とし、1.9.45で追加した`guard.yaml`の
+  `investigation`セクションは手動編集が必要でした。Claude Code / agy /
+  Codex CLI / OpenCode / カスタムのプリセットメニューから選ぶだけで
+  推奨引数が自動設定されるようにし、既存の`guard.yaml`のコメントや
+  他の設定を壊さないよう対象セクションのみを差し替えます。
+
 ### 1.9.45
 
 - **追加: eBPFアラートの一次自動調査（誤検知可能性の判定）**。ネットワーク

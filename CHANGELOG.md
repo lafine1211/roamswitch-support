@@ -13,6 +13,16 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.9.46
+
+- **Added: interactive setup for the eBPF investigation agent handoff
+  (`investigation`) in `roamswitch server setup`.** The wizard previously
+  only touched `server.conf`; 1.9.45's new `guard.yaml` `investigation`
+  section required manual editing. Now a preset menu (Claude Code / agy /
+  Codex CLI / OpenCode / custom) fills in the recommended command and args
+  automatically, and only the `investigation:` block is replaced — an
+  existing `guard.yaml`'s comments and other settings are left untouched.
+
 ### 1.9.45
 
 - **Added: automated first-pass triage for eBPF alerts (false-positive
