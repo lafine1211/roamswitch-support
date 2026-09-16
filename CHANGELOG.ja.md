@@ -12,6 +12,18 @@ Linux 版（別系列・1.0.x）でバージョン番号は独立しています
 Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）。
 詳しくは <https://lafine.net/linux>。
 
+### 1.9.47
+
+- **修正: `lockfile-fim`をsudoなしで実行すると、意味の分からない
+  「Permission denied」で落ちる不具合**。`fim update`や
+  `emergency-restore`等の他コマンドには既にroot権限チェックがありました
+  が、`lockfile-fim`(`verify`・`update`とも監視フォルダの増減をつど
+  ベースラインへ反映するため常に書き込みが発生し、root権限が必要)には
+  このチェックが抜けていました。明確なエラーメッセージを表示するよう
+  修正しています。あわせて、案内文中の`lockfile-fim update`/
+  `fim update`のsudo抜けや、AIアシスタント/MCPが参照するナレッジベース
+  内の実在しないコマンド・設定キーの案内も修正しました。
+
 ### 1.9.46
 
 - **追加: セットアップウィザード(`roamswitch server setup`)にeBPF調査

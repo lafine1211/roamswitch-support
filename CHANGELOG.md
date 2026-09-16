@@ -13,6 +13,18 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.9.47
+
+- **Fixed: running `lockfile-fim` without `sudo` failed with a bare,
+  confusing "Permission denied".** Other commands like `fim update` and
+  `emergency-restore` already had a root check, but `lockfile-fim` (both
+  `verify` and `update` always write, since they reconcile the baseline
+  against the watched-folder list first) was missing it. Now shows a clear
+  error message instead. Also fixed missing `sudo` in the `lockfile-fim
+  update`/`fim update` guidance text, and corrected the AI-assistant/MCP
+  knowledge base's references to a command and a config key that don't
+  actually exist.
+
 ### 1.9.46
 
 - **Added: interactive setup for the eBPF investigation agent handoff
