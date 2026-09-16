@@ -13,6 +13,33 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.9.44 (update recommended for Server Edition)
+
+- **Fixed: the FIM / Lockfile FIM periodic backstop scan re-sent the same
+  tampering notification on every check interval** for as long as a
+  violation stayed unresolved, instead of only once. Added dedup state that
+  only re-notifies once the violation is fixed (a rebaseline) or changes
+  again — Critical Path FIM had the same gap and got the same fix.
+- **Fixed: the lockfile-tampering notification's recommended action only
+  told you to run `lockfile-fim verify`**, which shows the diff but never
+  clears the alert — only `lockfile-fim update` rebaselines. Both languages
+  now guide the correct two-step flow.
+- **Fixed: the eBPF Runtime Guard showed "PID: none" in alerts even when
+  Falco did report a PID**, if that PID arrived as a JSON string rather
+  than a number. Brought `proc.pid` parsing in line with the existing
+  numeric-or-string handling already used for `fd.sport`/`fd.dport`.
+- **Added a Falco exception for `/usr/lib/systemd/systemd-executor`.** On
+  systemd ≥255 (e.g. Ubuntu 24.04), every SSH login's PAM session spawns
+  this helper, observed with a placeholder process name/PID (the literal
+  inherited file-descriptor number) until it execs its real target,
+  triggering a false-positive "Read sensitive file untrusted" alert on
+  every login.
+- **Fixed: an updater data-integrity failure (SHA-256/signature mismatch)
+  was reported as "check your network connection"**, which is misleading
+  since the download actually succeeded — the payload just didn't verify.
+  Now uses a dedicated message so a real tampering/corruption signal isn't
+  mistaken for a connectivity issue.
+
 ### 1.9.43 (update recommended for Server Edition)
 
 - **Added: Container Exec Guard (Server Edition only, new).** Prompted by
