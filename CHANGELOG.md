@@ -61,195 +61,51 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
   this endpoint) needed this information available from the CLI. Requires
   root.
 
-### 1.9.47
+### 1.9.39 - 1.9.47
 
-- **Fixed: running `lockfile-fim` without `sudo` failed with a bare,
-  confusing "Permission denied".** Other commands like `fim update` and
-  `emergency-restore` already had a root check, but `lockfile-fim` (both
-  `verify` and `update` always write, since they reconcile the baseline
-  against the watched-folder list first) was missing it. Now shows a clear
-  error message instead. Also fixed missing `sudo` in the `lockfile-fim
-  update`/`fim update` guidance text, and corrected the AI-assistant/MCP
-  knowledge base's references to a command and a config key that don't
-  actually exist.
-
-### 1.9.46
-
-- **Added: interactive setup for the eBPF investigation agent handoff
-  (`investigation`) in `roamswitch server setup`.** The wizard previously
-  only touched `server.conf`; 1.9.45's new `guard.yaml` `investigation`
-  section required manual editing. Now a preset menu (Claude Code / agy /
-  Codex CLI / OpenCode / custom) fills in the recommended command and args
-  automatically, and only the `investigation:` block is replaced — an
-  existing `guard.yaml`'s comments and other settings are left untouched.
-
-### 1.9.45
-
-- **Added: automated first-pass triage for eBPF alerts (false-positive
-  likelihood assessment).** A local, network-free heuristic now assesses
-  each detected event's false-positive likelihood (Low/Medium/High) with
-  reasons and suggested next-check commands, appends a summary to the
-  notification, and saves a full Markdown report (auto-pruned after 30
-  days). Applies to both Server Edition (notify-only tier events) and the
-  Linux client (which previously ignored — and never even recorded — any
-  event below Critical severity). JA/EN.
-- **Added: optional handoff to an agentic CLI for deeper investigation
-  (Server Edition, off by default).** A new `investigation` section in
-  `guard.yaml` lets you hand an incident to an already-installed and
-  authenticated agentic CLI (Claude Code, Codex CLI, etc.) for a deeper
-  investigation than the first-pass heuristic, but only when network is
-  reachable. Never attempted right before a host Air-Gap isolation, since
-  connectivity is about to be cut — the local heuristic always applies there.
-- **Fixed: the Linux client's FIM/Lockfile FIM kept re-sending the same
-  notification every check interval for a still-unresolved violation.**
-  1.9.44 fixed this for Server Edition, but the client had its own separate
-  implementation with the identical gap. Both now share the same dedup
-  logic. The lockfile-tampering notification's guidance was also corrected
-  from a single (`verify`-only) step to the correct two-step "run `verify`
-  to inspect, then `update` to re-baseline once confirmed legitimate" flow.
-- **Fixed: `sudo roamswitch lockfile-fim verify`** (the exact command the
-  notification itself recommends) **couldn't find already-configured
-  watched folders.** Under `sudo`, `$HOME` resets to `/root`, so it was
-  reading a different location than the GUI's
-  `~/.config/roamswitch/config.json`. Now correctly resolves the invoking
-  user's real home directory.
-- **Added: detection of secret exfiltration via environment variables and
-  `.env` files (custom Falco rule).** Addresses a technique seen in an
-  actual incident — running `env` inside a container, or reading
-  `/proc/<pid>/environ`, to bulk-harvest DB/API keys injected in plaintext
-  by `docker-compose`'s `env_file` — which the stock Falco ruleset had no
-  coverage for. Adds rules for bare `env`/`printenv` execution and
-  shell-tool reads of `.env` files (an app's own dotenv library load is not
-  flagged).
-
-### 1.9.44 (update recommended for Server Edition)
-
-- **Fixed: the FIM / Lockfile FIM periodic backstop scan re-sent the same
-  tampering notification on every check interval** for as long as a
-  violation stayed unresolved, instead of only once. Added dedup state that
-  only re-notifies once the violation is fixed (a rebaseline) or changes
-  again — Critical Path FIM had the same gap and got the same fix.
-- **Fixed: the lockfile-tampering notification's recommended action only
-  told you to run `lockfile-fim verify`**, which shows the diff but never
-  clears the alert — only `lockfile-fim update` rebaselines. Both languages
-  now guide the correct two-step flow.
-- **Fixed: the eBPF Runtime Guard showed "PID: none" in alerts even when
-  Falco did report a PID**, if that PID arrived as a JSON string rather
-  than a number. Brought `proc.pid` parsing in line with the existing
-  numeric-or-string handling already used for `fd.sport`/`fd.dport`.
-- **Added a Falco exception for `/usr/lib/systemd/systemd-executor`.** On
-  systemd ≥255 (e.g. Ubuntu 24.04), every SSH login's PAM session spawns
-  this helper, observed with a placeholder process name/PID (the literal
-  inherited file-descriptor number) until it execs its real target,
-  triggering a false-positive "Read sensitive file untrusted" alert on
-  every login.
-- **Fixed: an updater data-integrity failure (SHA-256/signature mismatch)
-  was reported as "check your network connection"**, which is misleading
-  since the download actually succeeded — the payload just didn't verify.
-  Now uses a dedicated message so a real tampering/corruption signal isn't
-  mistaken for a connectivity issue.
-
-### 1.9.43 (update recommended for Server Edition)
-
-- **Added: Container Exec Guard (Server Edition only, new).** Prompted by
-  a real intrusion (a Dockerized Next.js app compromised via RCE, then
-  used to download a cryptominer into the container, execute it, and
-  immediately delete the file) that exposed a structural gap: Server
-  Edition had no visibility at all into what ran inside a container's own
-  filesystem. This tracks container start/stop via `docker events` and
-  dynamically marks each running container's rootfs mount with fanotify's
-  `FAN_OPEN_EXEC` (notify-only — it cannot block an exec). The executed
-  file's content is read from the fanotify event's own file descriptor,
-  not by re-opening the reported path, so an attacker deleting the file
-  immediately after exec doesn't lose the sample. Scanned against the
-  embedded YARA engine; logged and notified, never auto-blocked.
-- **Fixed: the Egress Guard (malicious-IP blocklist) let container-
-  originated traffic straight through.** It previously only hooked the
-  `output` chain, which a Docker container's outbound traffic (routed via
-  `forward`) never touches. Now applies the same rule to `forward` too,
-  and a match — previously completely silent — is now logged and raises a
-  notification.
-- **Added: a per-process CPU-saturation detector in the Resource
-  Exhaustion Guard.** Every existing signal (RSS trend, zombie count,
-  system load) was either scoped to externally-exposed services or a
-  system-wide average — an outbound-only process like a cryptominer was
-  invisible to all of them. Flags a process that stays pegged near 100%
-  CPU for a sustained period; a live connection to a known mining-pool
-  port raises confidence further.
-- **Fixed: the eBPF Runtime Guard (Falco/Tetragon) liveness check reported
-  "active" even when nothing was actually installed.** It used to fall
-  back to checking whether the event-listener socket *file* existed — a
-  file RoamSwitch itself creates unconditionally at startup, Falco or not
-  — so a host with no Falco/Tetragon unit at all still passed the
-  diagnostic. Now tracks whether a Falco/Tetragon client is actually
-  connected, and pushes a Telegram/LINE/Webhook alert (at most once a day)
-  when it isn't.
-- **Fixed: RoamSwitch's own scheduled FIM scan was flagged by Falco as an
-  untrusted process reading sensitive files, re-triggering a notification
-  every scan interval (5 minutes by default).** Added RoamSwitch's own
-  binaries to Falco's sensitive-file-read exception list.
-
-### 1.9.42
-
-- **Fixed: the running-kernel CVE check false-flagged distro-specific
-  security backports.** Distro kernels (Ubuntu and others) commonly
-  backport CVE fixes without ever advancing the upstream major/minor
-  version — only the ABI build number changes (e.g. `7.0.0-31` →
-  `7.0.0-32`). The check previously ignored that build number and
-  compared only major.minor.patch, so a kernel that was fully up to date
-  per the package manager would stay flagged "action needed" forever
-  whenever the CVE map's fix version happened to fall on a different
-  major.minor line. The verdict is now softened from "action needed" to
-  "unconfirmed — likely already patched" (a distinct yellow badge) only
-  when every matched CVE's fix version is on the *same* major.minor line
-  as the running kernel *and* the package manager reports no pending
-  kernel update. When the fix version is clearly on a different
-  major/minor line, it still fails hard regardless of package-manager
-  status — that gap is a real, unaddressed exposure, not just a
-  same-line backport this check can't see.
-
-### 1.9.41
-
-- **Fixed: a layout bug in the Comprehensive Security Diagnostic tab
-  collapsed the kernel-CVE row's detail text into a vertical column of
-  single characters.** When multiple known kernel CVEs matched the
-  running kernel, the long CVE list was packed into the right-hand
-  status badge with no line wrap, forcing the neighboring detail column
-  down to a 1-character-wide minimum. Long badge text now falls back to
-  a short verdict ("OK" / "Action needed") and the full CVE list moves
-  to the wrapping detail line instead.
-- **Improved: added section headers to the Network Management tab**
-  above the Home/Work/Tethering registration row and the
-  Lockdown/Balanced/Open/Auto-detect override row, which were
-  previously unlabeled and hard to tell apart (all 10 languages).
-
-### 1.9.40
-
-- **Fixed: a log-audit frequency-spike notification could never be
-  corroborated right after it fired.** The log-template anomaly detector
-  consumes the log lines that caused a spike (advancing the persisted
-  cursor past them) as soon as it detects one, so checking the GTK app's
-  Logs tab, `roamswitch audit-logs`, or MCP right after the daemon's
-  scheduled scan fired a spike notification showed "no anomalies" with
-  no way to look back at what had been flagged. Frequency-spike
-  detections are now recorded into notification history
-  (`roamswitch notifications`) the same way new-pattern detections
-  already were. Same design fix as the Mac edition's 1.9.31 release.
-
-### 1.9.39
-
-- **Added: typosquat detection (npm/pnpm package.json, static, Pro).**
-  Checks dependency names in package.json (dependencies/devDependencies/
-  optionalDependencies) against a list of popular npm package names by
-  edit distance (Levenshtein 1-2), flagging possible typosquatting such
-  as `expres`→`express` or `loadash`→`lodash`. The app itself makes no
-  network connections to do this. The popular-package list it checks
-  against is distributed via the same "once-a-day, receive-only, signed"
-  updater pipeline as the CVE maps, so the list can be refreshed without
-  waiting for an app release. Reference information, not a verdict — a
-  small allowlist suppresses common legitimate look-alikes (e.g.
-  `preact`). `roamswitch scan-typosquat <folder...>`. Client Edition
-  only.
+- **Added (1.9.39):** typosquat detection (npm/pnpm package.json, static,
+  Pro) — flags dependency names close to popular npm packages by edit
+  distance (e.g. `expres`→`express`), no network access, list distributed
+  via the daily signed updater pipeline.
+- **Fixed (1.9.40):** a log-audit frequency-spike notification couldn't be
+  corroborated right after it fired (the causing log lines were already
+  consumed) — now recorded into notification history like new-pattern
+  detections.
+- **Fixed (1.9.41):** a layout bug collapsed the kernel-CVE detail column
+  into single characters when many CVEs matched. **Improved:** added
+  section headers to the Network Management tab.
+- **Fixed (1.9.42):** the running-kernel CVE check false-flagged
+  distro-specific security backports that only bump the ABI build number,
+  not the upstream major/minor version.
+- **Added (1.9.43, Server Edition):** Container Exec Guard — tracks
+  container start/stop and marks each container's rootfs with fanotify's
+  notify-only `FAN_OPEN_EXEC`, reading the executed file from the event's
+  own file descriptor so a self-deleting attacker binary is still
+  captured. Prompted by a real intrusion (RCE → in-container cryptominer
+  → self-delete). Also: Egress Guard now covers container-originated
+  (`forward`-chain) traffic, added per-process CPU-saturation detection,
+  and fixed a false "eBPF Runtime Guard active" health-check result when
+  Falco/Tetragon wasn't actually installed.
+- **Fixed (1.9.44, Server Edition):** FIM/Lockfile FIM re-sent the same
+  tampering notification every check interval instead of once; corrected
+  the lockfile-tampering guidance to the proper two-step verify→update
+  flow; fixed eBPF alerts showing "PID: none" when Falco reported the PID
+  as a JSON string; added a Falco exception for `systemd-executor`
+  (false-positived on every SSH login on systemd ≥255); separated
+  updater integrity-failure messaging from generic connectivity errors.
+- **Added (1.9.45):** automated local first-pass triage for eBPF alerts
+  (false-positive likelihood + reasons + next-check commands, Markdown
+  report saved) and an optional handoff to an agentic CLI (`guard.yaml`
+  `investigation`, Server Edition, off by default, skipped right before
+  host Air-Gap isolation); detection of secret exfiltration via `env`/
+  `.env` reads (custom Falco rule); fixed the Linux client's own
+  FIM/Lockfile FIM re-notify loop and `lockfile-fim verify`'s `$HOME`
+  resolution under `sudo`.
+- **Added (1.9.46):** interactive setup for the investigation-agent
+  handoff in `roamswitch server setup` (preset menu: Claude Code / agy /
+  Codex CLI / OpenCode / custom).
+- **Fixed (1.9.47):** running `lockfile-fim` without `sudo` failed with a
+  confusing bare "Permission denied" instead of a clear error.
 
 ### 1.9.27 - 1.9.38
 
