@@ -13,6 +13,54 @@ independently.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.9.53
+
+- **Added: automated first-pass triage reports for FIM tampering
+  detections too.** Critical-Path FIM and lockfile FIM tampering now get
+  the same local, network-free heuristic report as eBPF alerts (e.g. a
+  high-value path like `sudoers` always scores "Low" false-positive
+  likelihood regardless of other signals), saved as Markdown (auto-pruned
+  after 30 days) and included in the investigation-agent handoff.
+
+### 1.9.52
+
+- **Added: extended the investigation-agent handoff beyond eBPF to FIM
+  tampering detections.** Previously only wired into the eBPF guard's
+  notify-only-tier events; Critical-Path FIM and lockfile FIM tampering
+  detections never triggered it. The same `guard.yaml` `investigation`
+  config now covers both.
+
+### 1.9.51
+
+- **Fixed: the investigation-agent setup wizard's tool-choice prompt
+  didn't remember the previous selection.** On a re-run, enable/disable,
+  custom command/args, and timeout all correctly re-used the existing
+  config as their default — but the preset menu's own "enter number"
+  prompt always defaulted to "1" regardless of a previously-saved
+  "2) agy" (or any other preset).
+
+### 1.9.50
+
+- **Fixed: the GUI's own public key couldn't actually be copied via label
+  selection alone.** A `set_selectable`-only label turned out unreliable
+  for getting the value onto the clipboard; switched to a value label
+  paired with an explicit "Copy" button.
+
+### 1.9.49
+
+- **Added: this endpoint's own public key/address display in the GUI's
+  Sensor pairing card.** Mutual pairing with RoamSwitch Sensor (a
+  separate product, a dedicated active-audit hub) requires the Sensor to
+  trust this endpoint back too — its public key/address is now visible
+  directly in the GUI. 10-language.
+
+### 1.9.48
+
+- **Added: `roamswitch sensor key` (shows this endpoint's own public
+  key/address).** The other half of mutual pairing (the Sensor trusting
+  this endpoint) needed this information available from the CLI. Requires
+  root.
+
 ### 1.9.47
 
 - **Fixed: running `lockfile-fim` without `sudo` failed with a bare,
