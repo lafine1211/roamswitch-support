@@ -40,6 +40,19 @@ setup instructions.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.9.56
+
+- **Added: guard against the investigation agent recursively triggering
+  itself.** The agent's own research activity (e.g. `grep`/`cat` scanning
+  logs and config files) could itself get flagged as a new eBPF/FIM
+  incident, spawning another investigation agent to look into the first
+  agent's own activity, and so on — reproduced live (a `grep` run while
+  investigating a `pkexec` alert triggered a fresh "Read sensitive file
+  untrusted" detection against `/etc/pam.conf`). Now tracks the PID of any
+  currently-running investigation-agent process; a new detection whose
+  target process is a descendant of one skips spawning a second agent
+  (the first-pass triage and its notification are unaffected).
+
 ### 1.9.55
 
 - **Fixed: redesigned the investigation-agent handoff's `sudo` wrap.** The
