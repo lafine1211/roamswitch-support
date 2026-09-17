@@ -325,6 +325,51 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 
 ## RoamSwitch for Mac
 
+## 1.9.32
+
+- **Added: RoamSwitch Sensor pairing (mDNS mutual trust, Pro).** Adds
+  mutual-trust pairing with a separate product, "RoamSwitch Sensor" (a
+  dedicated active-audit hub), on the same LAN. Announces itself over
+  mDNS while discovering Sensors, but discovery alone establishes no
+  trust — pairing requires an explicit operator action (the same model
+  as Bluetooth pairing). For networks where mutual mDNS discovery isn't
+  reliable (asymmetric multicast forwarding on some Wi-Fi access
+  points), manual pairing by entering the Sensor's public key/address
+  directly is also available. Verified end-to-end against a real
+  RoamSwitch Sensor (Docker container): mDNS discovery, manual pairing,
+  mutual trust, and an actual active vulnerability scan all worked.
+  Available from "Ports & Devices Monitor" → "🔍 RoamSwitch Sensor
+  Pairing…" (off by default). The wire protocol matches the Linux
+  edition's (`roamswitch-core::sensor_pairing`) exactly.
+- **Added: incoming port scan detection (auto-block, Pro).** Detects
+  and notifies about a source IP that has connected to many different
+  ports (15 or more) in a short time (5 minutes) — the classic
+  signature of reconnaissance tools like nmap/masscan. Detection works
+  purely from pf (packet filter) log records; it never modifies the
+  traffic itself. A detected scan source is automatically blocked for
+  10 minutes by default (auto-block can be toggled independently of
+  detection). Enable it from "Ports & Devices Monitor" → "🔍 Incoming
+  Port Scan Detection (Pro)" (off by default). Corresponds to the Linux
+  edition's `port_scan_detect.rs`.
+- **Added: CSV export for notification history, package CVE scan, and
+  active vulnerability scan logs.** Added a CSV export button to each
+  section of notification history and package CVE scan (Homebrew /
+  language ecosystems / lifecycle scripts / typosquat detection /
+  sandboxed install), and to the active vulnerability scan's persisted
+  log (recorded on every probe run, up to 500 entries).
+- **Fixed: the secret & API key leak auditor missed Google AI Studio's
+  new API key format (`AQ.` prefix).** The previous regex only matched
+  the older `AIzaSy…` format, missing Google's newer key format
+  entirely (confirmed against a real, obtained key). Now matches both
+  formats.
+- **Improved: the automatic log audit's "new pattern" detection no
+  longer pops a Notification Center alert every time.** A batch that
+  includes a frequency spike still shows a Notification Center alert;
+  a batch of new patterns only is now recorded to notification history
+  without a popup. Since a new pattern is, by design, never detected
+  again for the same content, history-only recording still leaves a
+  way to review it later.
+
 ## 1.9.31
 
 - **Fixed: a log-audit frequency-spike notification could never be
