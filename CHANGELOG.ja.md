@@ -7,6 +7,31 @@ Linux 版（別系列・1.0.x）でバージョン番号は独立しています
 
 ---
 
+## RoamSwitch Sensor
+
+LAN に設置する専用ノード。RoamSwitch 導入済み端末（Mac / Linux Client /
+Server Edition）との mDNS 相互信頼ペアリングによる能動的な脆弱性監査、
+LAN 上の新規機器出現・なりすまし検知を行います。現在も開発中です。
+現状の実装状況・動作確認方法は
+<https://lafine.net/roamswitch-sensor-manual.html> を参照してください。
+
+### 0.1.0（初版）
+
+- **追加: deb/rpmパッケージ配布**。従来の検証専用Dockerビルドではなく、
+  systemdサービス（`roamswitch-sensor.service`）として常駐します。
+- **追加: 受動的LAN可視化の拡張（オプトイン）**。
+  `ROAMSWITCH_SENSOR_PASSIVE_CAPTURE_IFACE`環境変数で対象インター
+  フェースを指定すると、そのインターフェース上でEthernet/IPv4ヘッダー
+  のみを観測（ペイロードは見ません）し、Sensor自身が直接通信していない
+  機器の新規出現、既知の悪性IPとの通信を検知します。NIC 1枚でも
+  ブロードキャスト/マルチキャストの範囲で動作しますが、他2台間の一般
+  ユニキャスト通信まで見るにはスイッチのミラーポート(SPAN)受信または
+  インライン透過ブリッジが必要です。
+- **修正: TUIの探索（'d'）キーを押しても無反応に見える**。IPC呼び出しが
+  UIスレッド上で同期的に実行されており、処理中は画面が再描画されません
+  でした。バックグラウンドスレッド化し、経過秒数を表示するようにした
+  うえ、起動時に自動で1回探索するようにしました。
+
 ## RoamSwitch for Linux
 
 Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）。

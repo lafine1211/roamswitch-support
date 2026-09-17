@@ -8,6 +8,33 @@ independently.
 
 ---
 
+## RoamSwitch Sensor
+
+A dedicated node placed on the LAN: mDNS mutual-trust pairing with
+RoamSwitch-equipped endpoints (Mac / Linux Client / Server Edition) for
+active vulnerability audits, plus detection of new devices and spoofing on
+the LAN. Still under development — see
+<https://lafine.net/roamswitch-sensor-manual.html> for current status and
+setup instructions.
+
+### 0.1.0 (initial release)
+
+- **Added: deb/rpm package distribution.** Runs as a systemd service
+  (`roamswitch-sensor.service`) instead of the earlier verification-only
+  Docker build.
+- **Added: passive LAN visibility extension (opt-in).** When
+  `ROAMSWITCH_SENSOR_PASSIVE_CAPTURE_IFACE` names an interface, Sensor
+  observes raw Ethernet/IPv4 headers on it (no payload inspection) to
+  detect new devices it has never directly communicated with, and flag
+  contact with known-malicious IPs from the local threat feed. Works on a
+  single NIC for broadcast/multicast-visible traffic; a switch mirror
+  (SPAN) port or inline transparent bridge is needed to see general
+  unicast traffic between two other hosts.
+- **Fixed: the TUI's discover ('d') key looked unresponsive.** The IPC
+  call ran synchronously on the UI thread, so nothing redrew while it was
+  in flight. Moved to a background thread with a live elapsed-time status
+  line, and the TUI now also auto-discovers once on launch.
+
 ## RoamSwitch for Linux
 
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
