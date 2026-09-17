@@ -40,6 +40,22 @@ setup instructions.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.9.54
+
+- **Fixed: the investigation-agent handoff (`guard.yaml`'s
+  `investigation:`) never actually worked in practice.** Two compounding
+  bugs: the configured command (e.g. `~/.local/bin/agy`) wasn't on the
+  root-run daemon's `PATH`, so it failed to even launch; and once
+  launched, its session credentials lived in the operator's own keyring
+  and were inaccessible to root, so it failed to authenticate either way.
+  The setup wizard now resolves the chosen command to an absolute path
+  using the operator's own login-shell `PATH`, and runs it via `sudo -u
+  <operator> -i` so it executes (and authenticates) as the operator, not
+  root. Startup failure, a non-zero exit, and a timeout now all also send
+  a lightweight failure notification (previously silent, log-only).
+- **Fixed: the `agy` preset's argument order was wrong, making it fail
+  every time it was selected.**
+
 ### 1.9.53
 
 - **Added: automated first-pass triage reports for FIM tampering
