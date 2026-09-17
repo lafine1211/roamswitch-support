@@ -40,69 +40,38 @@ setup instructions.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
-### 1.9.54
+### 1.9.55
 
-- **Fixed: the investigation-agent handoff (`guard.yaml`'s
-  `investigation:`) never actually worked in practice.** Two compounding
-  bugs: the configured command (e.g. `~/.local/bin/agy`) wasn't on the
-  root-run daemon's `PATH`, so it failed to even launch; and once
-  launched, its session credentials lived in the operator's own keyring
-  and were inaccessible to root, so it failed to authenticate either way.
-  The setup wizard now resolves the chosen command to an absolute path
-  using the operator's own login-shell `PATH`, and runs it via `sudo -u
-  <operator> -i` so it executes (and authenticates) as the operator, not
-  root. Startup failure, a non-zero exit, and a timeout now all also send
-  a lightweight failure notification (previously silent, log-only).
-- **Fixed: the `agy` preset's argument order was wrong, making it fail
-  every time it was selected.**
+- **Fixed: redesigned the investigation-agent handoff's `sudo` wrap.** The
+  previous fix (1.9.54) baked both the PATH resolution and the `sudo`
+  delegation directly into the `command`/`args` fields, which meant
+  re-running the wizard could no longer recognize a saved preset
+  (claude/agy/codex/opencode), always fell back to the custom-entry
+  path, and — if confirmed as-is — wrapped an already-wrapped command a
+  second time, breaking it (reproduced live). A new `run_as` field now
+  holds the operator's username, and the `sudo` wrap is applied by the
+  daemon at spawn time instead; `command`/`args` stay the tool's own
+  clean invocation.
+- **Added: extended the investigation-agent handoff to the Resource
+  Exhaustion / Process Anomaly Guard too.** Previously wired into eBPF,
+  Critical-Path FIM, and lockfile FIM only; now also covers sustained
+  memory growth, sustained high CPU usage, crash loops, zombie-process
+  growth, and rising system load.
 
-### 1.9.53
+### 1.9.48 - 1.9.54
 
-- **Added: automated first-pass triage reports for FIM tampering
-  detections too.** Critical-Path FIM and lockfile FIM tampering now get
-  the same local, network-free heuristic report as eBPF alerts (e.g. a
-  high-value path like `sudoers` always scores "Low" false-positive
-  likelihood regardless of other signals), saved as Markdown (auto-pruned
-  after 30 days) and included in the investigation-agent handoff.
-
-### 1.9.52
-
-- **Added: extended the investigation-agent handoff beyond eBPF to FIM
-  tampering detections.** Previously only wired into the eBPF guard's
-  notify-only-tier events; Critical-Path FIM and lockfile FIM tampering
-  detections never triggered it. The same `guard.yaml` `investigation`
-  config now covers both.
-
-### 1.9.51
-
-- **Fixed: the investigation-agent setup wizard's tool-choice prompt
-  didn't remember the previous selection.** On a re-run, enable/disable,
-  custom command/args, and timeout all correctly re-used the existing
-  config as their default — but the preset menu's own "enter number"
-  prompt always defaulted to "1" regardless of a previously-saved
-  "2) agy" (or any other preset).
-
-### 1.9.50
-
-- **Fixed: the GUI's own public key couldn't actually be copied via label
-  selection alone.** A `set_selectable`-only label turned out unreliable
-  for getting the value onto the clipboard; switched to a value label
-  paired with an explicit "Copy" button.
-
-### 1.9.49
-
-- **Added: this endpoint's own public key/address display in the GUI's
-  Sensor pairing card.** Mutual pairing with RoamSwitch Sensor (a
-  separate product, a dedicated active-audit hub) requires the Sensor to
-  trust this endpoint back too — its public key/address is now visible
-  directly in the GUI. 10-language.
-
-### 1.9.48
-
-- **Added: `roamswitch sensor key` (shows this endpoint's own public
-  key/address).** The other half of mutual pairing (the Sensor trusting
-  this endpoint) needed this information available from the CLI. Requires
-  root.
+- **Added: this endpoint's own public key/address display, needed for
+  mutual pairing with RoamSwitch Sensor** (1.9.48–1.9.50): both a CLI
+  command (`roamswitch sensor key`) and a GUI display in the Sensor
+  pairing card. Also fixed the GUI's own public key not actually being
+  copyable via label selection alone.
+- **Expanded the investigation-agent handoff** (eBPF/FIM deep-dive
+  investigation, Server Edition only) (1.9.51–1.9.54): fixed the setup
+  wizard's tool-choice prompt not remembering the previous selection,
+  extended it beyond eBPF to Critical-Path FIM and lockfile FIM tampering
+  detections, added the same first-pass triage report to FIM detections,
+  and fixed it never actually working in practice under root (unresolved
+  `PATH`, inaccessible keyring credentials).
 
 ### 1.9.39 - 1.9.47
 
@@ -368,130 +337,28 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 
 ## RoamSwitch for Mac
 
-## 1.9.32
+## 1.9.27 - 1.9.32
 
-- **Added: RoamSwitch Sensor pairing (mDNS mutual trust, Pro).** Adds
-  mutual-trust pairing with a separate product, "RoamSwitch Sensor" (a
-  dedicated active-audit hub), on the same LAN. Announces itself over
-  mDNS while discovering Sensors, but discovery alone establishes no
-  trust — pairing requires an explicit operator action (the same model
-  as Bluetooth pairing). For networks where mutual mDNS discovery isn't
-  reliable (asymmetric multicast forwarding on some Wi-Fi access
-  points), manual pairing by entering the Sensor's public key/address
-  directly is also available. Verified end-to-end against a real
-  RoamSwitch Sensor (Docker container): mDNS discovery, manual pairing,
-  mutual trust, and an actual active vulnerability scan all worked.
-  Available from "Ports & Devices Monitor" → "🔍 RoamSwitch Sensor
-  Pairing…" (off by default). The wire protocol matches the Linux
-  edition's (`roamswitch-core::sensor_pairing`) exactly.
-- **Added: incoming port scan detection (auto-block, Pro).** Detects
-  and notifies about a source IP that has connected to many different
-  ports (15 or more) in a short time (5 minutes) — the classic
-  signature of reconnaissance tools like nmap/masscan. Detection works
-  purely from pf (packet filter) log records; it never modifies the
-  traffic itself. A detected scan source is automatically blocked for
-  10 minutes by default (auto-block can be toggled independently of
-  detection). Enable it from "Ports & Devices Monitor" → "🔍 Incoming
-  Port Scan Detection (Pro)" (off by default). Corresponds to the Linux
-  edition's `port_scan_detect.rs`.
-- **Added: CSV export for notification history, package CVE scan, and
-  active vulnerability scan logs.** Added a CSV export button to each
-  section of notification history and package CVE scan (Homebrew /
-  language ecosystems / lifecycle scripts / typosquat detection /
-  sandboxed install), and to the active vulnerability scan's persisted
-  log (recorded on every probe run, up to 500 entries).
-- **Fixed: the secret & API key leak auditor missed Google AI Studio's
-  new API key format (`AQ.` prefix).** The previous regex only matched
-  the older `AIzaSy…` format, missing Google's newer key format
-  entirely (confirmed against a real, obtained key). Now matches both
-  formats.
-- **Improved: the automatic log audit's "new pattern" detection no
-  longer pops a Notification Center alert every time.** A batch that
-  includes a frequency spike still shows a Notification Center alert;
-  a batch of new patterns only is now recorded to notification history
-  without a popup. Since a new pattern is, by design, never detected
-  again for the same content, history-only recording still leaves a
-  way to review it later.
-
-## 1.9.31
-
-- **Fixed: a log-audit frequency-spike notification could never be
-  corroborated in the detail view right after it fired.** The
-  "Mac Security Log Audit" frequency-spike detector consumes the log
-  lines that caused a spike as soon as it detects it, so opening the
-  audit detail view or notification history right after a spike alert
-  fired showed "no anomalies" with no way to look back at what had
-  actually been flagged. Frequency-spike detections are now recorded
-  into notification history the same way new-pattern detections already
-  were, so the details remain reviewable after the fact. Same design fix
-  as the Linux edition's 1.9.40 release.
-
-## 1.9.30
-
-- **Added: typosquat detection (npm/pnpm package.json, Pro).** Checks
-  package.json's dependencies/devDependencies/optionalDependencies
-  against a list of popular npm package names by edit distance
-  (Levenshtein 1-2), flagging possible typosquatting — a malicious
-  package deceptively disguised under a similar name, such as
-  `expres`→`express` or `loadash`→`lodash`. The app itself makes no
-  network connections to perform this check. The popular-package list it
-  checks against is distributed via the same once-a-day, receive-only,
-  Ed25519-signed `PackageCveMapUpdater` pipeline as the existing CVE
-  maps, so the list can be refreshed without waiting for an app release.
-  Reference information, not a verdict — a known allowlist suppresses
-  some legitimate look-alike packages (e.g. `preact`). Available from
-  "📦 Package CVE Scan" → "Typosquat Detection (Pro)", with a new MCP
-  tool, `run_typosquat_scan` (Pro only). Same update pipeline and
-  matching logic as the Linux edition's 1.9.39 release of this feature.
-
-## 1.9.29
-
-- **Added: sandboxed npm/pnpm install (roamswitch-npm, Pro).** Adds a
-  command-line wrapper, `roamswitch-npm`, that confines the execution of
-  preinstall/install/postinstall/prepare scripts inside a network-denied
-  sandbox (`sandbox-exec`, Seatbelt). Where the previous three features
-  only detected and warned, this one actually runs the install on your
-  behalf. The Linux edition uses bwrap for filesystem restriction, but
-  since macOS has no equivalent technology, this uses network blocking
-  instead, verified to actually work on real hardware
-  (`(allow default)` + `(deny network-outbound)`). Install the wrapper
-  from "📦 Package CVE Scan" → "Sandboxed Install (npm/pnpm) (Pro)", with
-  an optional shell alias for `npm`/`pnpm`. Supports npm/pnpm; yarn is
-  not supported. Since the Mac edition has no CLI binary, this ships as a
-  lightweight command-line tool placed at
-  `~/Library/Application Support/RoamSwitch/bin/`.
-
-## 1.9.28
-
-- **Added: three features addressing npm-install supply-chain risk (Pro).**
-  "Dependency Lockfile Tamper Monitoring" continuously watches
-  package-lock.json / yarn.lock / pnpm-lock.yaml / npm-shrinkwrap.json for
-  external tampering via a SHA-256 baseline. "Install Script Inventory"
-  statically lists preinstall/install/postinstall/prepare scripts declared
-  by package.json files under node_modules — an inventory rather than a
-  threat verdict, and nothing is ever executed. "npm Signature / Provenance
-  Verification" contacts the npm registry to verify installed packages'
-  signatures/provenance (opt-in, with a per-run confirmation) — the only
-  RoamSwitch feature that talks to npmjs.com. All three are available from
-  the "📦 Package CVE Scan" window.
-
-## 1.9.27
-
-- **Added: detection of leaked crypto-wallet seed phrases and private keys
-  (BIP39/WIF/BIP32).** The secret-leak auditor only recognized API keys and
-  SSH private keys, with no detection at all for wallet recovery material —
-  a gap prompted by Microsoft's June 2026 report on "Crypto Clipper"
-  malware, which steals seed phrases and private keys via clipboard
-  monitoring and swaps in attacker-controlled payout addresses. BIP39
-  mnemonics (12/15/18/21/24 words) are verified against their actual
-  SHA-256-based checksum rather than matched as a plain word list, so
-  ordinary prose that happens to contain BIP39 words doesn't false-positive
-  unless the checksum genuinely validates. Bitcoin WIF private keys and
-  BIP32 extended private keys (xprv/yprv/zprv/tprv) are detected with
-  Base58Check checksum verification. Unlike an API key, a detected value is
-  fully hidden rather than partially masked — showing even part of it would
-  hand an attacker a head start on brute-forcing the rest. Uses the same
-  algorithm and verified test vectors as the Linux edition.
+- **Expanded npm/pnpm-install supply-chain risk coverage** (1.9.28–1.9.30,
+  Pro): following dependency-lockfile tamper monitoring, install-script
+  inventory, and npm signature/provenance verification, added a
+  `roamswitch-npm` wrapper that actually runs installs inside a
+  network-denied sandbox, plus edit-distance typosquat detection (e.g.
+  `expres`→`express`). Detection of leaked crypto-wallet seed phrases and
+  private keys (BIP39/WIF/BIP32, checksum-verified) also shipped in 1.9.27.
+- **Added: RoamSwitch Sensor pairing and incoming port scan detection**
+  (1.9.32, Pro): mDNS mutual-trust pairing with the separate RoamSwitch
+  Sensor product for active vulnerability audits, plus automatic
+  detection and 10-minute blocking of nmap/masscan-style reconnaissance.
+  Also added CSV export for notification history, package CVE scan, and
+  active vulnerability scan logs.
+- **Fixed:** a log-audit frequency-spike notification couldn't be
+  corroborated right after it fired (1.9.31); the secret leak auditor
+  missed Google AI Studio's new API key format (1.9.32).
+- **Improved:** the automatic log audit's "new pattern" detection no
+  longer pops a Notification Center alert every time (1.9.32) — a batch
+  with a frequency spike still alerts, new-patterns-only batches are
+  recorded to history without a popup.
 
 ## 1.9.16 - 1.9.26
 
