@@ -85,6 +85,14 @@ setup instructions.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.9.68
+
+- **Fixed: Sensor audit results and the probe log lacked enough
+  information to actually act on.** Same fix as the macOS client (open
+  ports, NSE results, and confirmed-safe checks now shown/exportable;
+  the probe-log CSV export now includes the service name, vulnerability
+  description, and recommendation).
+
 ### 1.9.67
 
 - **Fixed: the Sensor manual pairing form's fields and button never
