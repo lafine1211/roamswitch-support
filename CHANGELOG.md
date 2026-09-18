@@ -19,6 +19,23 @@ development — see
 <https://lafine.net/roamswitch-sensor-manual.html> for current status and
 setup instructions.
 
+### 0.1.3
+
+- **Added: removed the `--nse` flag for the nmap NSE supplementary scan —
+  it now always runs.** There was no real reason to disable it, so an
+  active-audit run now always includes NSE.
+- **Added: replaced mDNS auto-discovery pairing with a pairing-code
+  scheme.** mDNS only works within a single LAN segment (useless once a
+  Sensor sits behind a router), constantly broadcasts (network noise +
+  always-visible), and has no real authentication of its own — all three
+  problems are gone now. The Sensor runs at a fixed IP; clients pair using
+  a short-lived pairing code (8 characters, expires in 10 minutes) the
+  operator issues (a TCP control API, Ed25519-signature authenticated).
+- **Added: accepting audit requests from clients.** A RoamSwitch client
+  can now request an active vulnerability audit from a paired Sensor; the
+  result is recorded in the scan history along with how it was triggered
+  (manual vs. client-requested).
+
 ### 0.1.0 (initial release)
 
 - **Added: deb/rpm package distribution.** Runs as a systemd service
@@ -41,6 +58,22 @@ setup instructions.
 
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
+
+### 1.9.64
+
+- **Added: removed the nmap NSE supplementary scan's on/off toggle — it
+  now always runs.** There was no real reason to disable it, so an active
+  audit now always includes NSE when it's enabled.
+- **Added: replaced mDNS auto-discovery pairing with RoamSwitch Sensor
+  with a pairing-code scheme.** mDNS only works within a single LAN
+  segment (useless once a Sensor sits behind a router), constantly
+  broadcasts (network noise + always-visible), and has no real
+  authentication of its own — all three problems are gone now. The Sensor
+  runs at a fixed IP; pairing now uses an issued pairing code. Also added
+  requesting an active audit from a paired Sensor and later retrieving
+  and storing the result.
+- **Added the `get_sensor_audit_results` MCP tool**, so an AI agent can use
+  a Sensor's outside-in findings as input for remediation planning.
 
 ### 1.9.56
 
@@ -168,6 +201,23 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 ---
 
 ## RoamSwitch for Mac
+
+## 1.9.33
+
+- **Added: removed the nmap NSE supplementary scan's on/off toggle — it
+  now always runs.** Root-caused a bug where the toggle showed "on" but
+  an MCP-triggered audit never actually ran NSE: `RoamSwitchMCPServer`
+  runs as a separate process from the main app, so its direct
+  `UserDefaults` read always saw an empty domain. Removing the toggle
+  entirely resolves this along with the underlying cross-process bug.
+- **Added: replaced mDNS auto-discovery pairing with RoamSwitch Sensor
+  with a pairing-code scheme.** mDNS only works within a single LAN
+  segment (useless once a Sensor sits behind a router), constantly
+  broadcasts (network noise + always-visible), and has no real
+  authentication of its own — all three problems are gone now. The Sensor
+  runs at a fixed IP; pairing now uses an issued pairing code. Also added
+  requesting an active audit from a paired Sensor and later retrieving
+  and storing the result, plus the `get_sensor_audit_results` MCP tool.
 
 ## 1.9.27 - 1.9.32
 
