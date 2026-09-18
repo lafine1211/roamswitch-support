@@ -254,6 +254,17 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 
 ## RoamSwitch for Mac
 
+## 1.9.36
+
+- **Fixed: Sensor audit results and the Active Vulnerability Scan log
+  lacked enough information to actually act on.** A Sensor audit result
+  only ever showed the flagged findings — the open-port list, NSE safe-
+  script results, and confirmed-safe checks the same scan produced
+  weren't displayed or exportable. The Active Vulnerability Scan log's
+  CSV export only had an internal probe id, with no indication of which
+  port, which service, or what the actual issue was. Both now show which
+  port, which service, what was found, and what to do about it.
+
 ## 1.9.35
 
 - **Fixed: the helper crashed on every successful Sensor pairing.** A
