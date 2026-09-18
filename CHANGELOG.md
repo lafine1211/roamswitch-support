@@ -78,6 +78,14 @@ setup instructions.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.9.67
+
+- **Fixed: the Sensor manual pairing form's fields and button never
+  actually appeared.** 1.9.66 made the form's container itself
+  reappear, but the entries/button inside it had never been shown by
+  GTK in the first place and stayed empty. Now shows the container's
+  contents recursively.
+
 ### 1.9.66
 
 - **Fixed: the Sensor pairing screen's manual pairing form always failed —
