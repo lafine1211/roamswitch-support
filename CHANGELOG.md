@@ -351,6 +351,17 @@ A batch of fixes from a full audit of the network-control subsystem.
 
 ## RoamSwitch for Mac
 
+## 1.9.39
+
+- **Fixed: the "Package CVE Scan" window's tab switcher could overflow
+  the window width as sections were added, making the last tab
+  ("Sandboxed Install") completely unreachable.** A segmented control
+  just clips whatever doesn't fit, with no way to reach it — and the
+  window itself wasn't even resizable, so there was no user-side
+  workaround either. Switched the tab switcher to a dropdown (always
+  fits, regardless of section count or label length/language) and made
+  the window resizable.
+
 ## 1.9.38
 
 A batch of fixes from a full audit of the network-control subsystem.
