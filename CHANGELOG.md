@@ -19,6 +19,14 @@ development — see
 <https://lafine.net/roamswitch-sensor-manual.html> for current status and
 setup instructions.
 
+### 0.1.5
+
+- **Fixed: firing off several audit requests in quick succession spawned
+  that many concurrent audits (nmap, etc.) against the same endpoint.**
+  Only one audit per endpoint can be in flight now — a repeat request
+  while one is already running gets handed the existing request's id
+  instead of starting another.
+
 ### 0.1.4
 
 - **Added: paired-endpoint status badges, and a full audit report on
