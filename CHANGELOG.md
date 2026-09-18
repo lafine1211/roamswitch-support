@@ -70,6 +70,15 @@ setup instructions.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.9.66
+
+- **Fixed: the Sensor pairing screen's manual pairing form always failed —
+  it was calling an old IPC path that required the Sensor's public key up
+  front.** Under the pairing-code scheme there's no way for the operator
+  to know that key in advance, so this path could never succeed. Now uses
+  the same correct path the CLI already used, and dropped the now-unneeded
+  public-key field from the form.
+
 ### 1.9.65
 
 - **Changed: removed the own-endpoint public-key display from the Sensor
@@ -221,6 +230,23 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 ---
 
 ## RoamSwitch for Mac
+
+## 1.9.35
+
+- **Fixed: the helper crashed on every successful Sensor pairing.** A
+  reentrant lock in the pairing-completion path triggered libdispatch's
+  deadlock detection, killing the helper process — the Sensor correctly
+  recorded the pairing while the Mac side always lost it. Found and fixed
+  via a real crash report.
+- **Fixed: incoming port-scan detection's logging silently stopped working
+  in the common case (no other firewall tier engaged) because reloading
+  pf's own stock ruleset right afterward wiped the rules it had just
+  loaded.** `tcpdump` kept failing to start and retrying forever, burning
+  helper resources; retries are now capped at 5 in a row.
+- **Fixed: the update-available alert was easy to miss on this
+  Dock-icon-less, menu-bar-only app.** Implemented Sparkle's gentle
+  reminders so a background update check brings the app forward when it
+  finds one.
 
 ## 1.9.34
 
