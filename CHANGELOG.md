@@ -92,6 +92,34 @@ setup instructions.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.9.71
+
+A batch of fixes from a full audit of the network-control subsystem.
+
+- **Fixed: right after a daemon restart, if the freshly-computed target
+  level for the current network happened to match the internal
+  "currently applied level" guess, the firewall/sharing-services
+  re-apply was skipped entirely.** The guess defaulted to a real level
+  name ("balanced"), so a match read as "nothing changed" and skipped
+  verification — meaning a restart after a crash, a package upgrade, or
+  a reboot could leave stale/missing rules in place with no self-heal
+  until the network later changed to a genuinely different level.
+- **Fixed: turning off sharing-service auto-control while it had SSH/
+  SMB/etc. stopped left them stopped forever**, with no automatic path
+  back. Now restores once on that OFF transition.
+- **Fixed: the Updates tab's "Upgrade Now" button and spinner could fail
+  to appear** (same `no_show_all` misuse pattern as the Sensor pairing
+  form and Air-Gap card).
+- **Fixed: VPN "Forget config," auto-VPN toggle, Tailscale exit-node
+  change, and the Canary "Reset Baseline" button could briefly show
+  stale state** — each refreshed its panel before the daemon had
+  actually finished applying the change (same race class as the dev-
+  server-isolation fix).
+- Also fixed the same `no_show_all` pattern in the OS Hardening
+  integration (not shipped in the standard edition): TPM2 Timeline Seal
+  actions, the chkrootkit full-report panel, and the Lockdown report
+  panel.
+
 ### 1.9.70
 
 - **Fixed: the Sensor pairing form's fields and button could still fail to
@@ -292,6 +320,23 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 ---
 
 ## RoamSwitch for Mac
+
+## 1.9.38
+
+A batch of fixes from a full audit of the network-control subsystem.
+
+- **Fixed: stopping/restoring sharing services never checked launchctl's
+  exit code and always reported "success" regardless.** Away from
+  home, the app could claim sharing services were stopped while SSH
+  etc. was actually still running. Now verifies against actual service
+  state (`isServiceLoaded`) and notifies on failure.
+- **Fixed: clicking "Release isolation" in the port audit sheet looked
+  like it did nothing.** The underlying release genuinely worked; the
+  sheet itself just had no SwiftUI observation wired up, so it never
+  re-rendered to show it.
+- **Fixed: a helper-side failure to enable incoming port-scan detection
+  was only logged, never surfaced to the user** — the toggle could read
+  "on" while detection silently wasn't running.
 
 ## 1.9.37
 
