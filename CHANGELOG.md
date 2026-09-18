@@ -116,9 +116,7 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 - **Fixed: the Secret Leak Audit "Audit Text" button** is also now
   disabled until there's text to audit, matching Mac.
 
-Found during a GTK/Mac UX-parity audit. 1.9.73 failed to publish due to
-a GitHub Actions budget limit, so this is republished as 1.9.74 with
-everything included.
+Found during a GTK/Mac UX-parity audit.
 
 ### 1.9.72
 
