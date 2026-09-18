@@ -19,6 +19,13 @@ development — see
 <https://lafine.net/roamswitch-sensor-manual.html> for current status and
 setup instructions.
 
+### 0.1.6
+
+- **Fixed: the daemon could crash with "Too many open files," losing any
+  in-flight audit requests.** The full-port scan (up to 512 concurrent
+  connections) left little headroom against systemd's default
+  file-descriptor limit (1024). Raised to 65536.
+
 ### 0.1.5
 
 - **Fixed: firing off several audit requests in quick succession spawned
