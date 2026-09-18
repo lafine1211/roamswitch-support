@@ -92,6 +92,20 @@ setup instructions.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.9.72
+
+- **Fixed a structural race: manually switching security level (the
+  Networks tab's Open/Balanced/Lockdown buttons, etc.) while the
+  daemon's own 3-second autonomous reconciliation cycle was
+  independently re-evaluating the network could apply nftables changes
+  from both at once, with no serialization between them** — leaving the
+  live ruleset and what the app believed was applied out of sync. The
+  same failure pattern (two independent appliers fighting and
+  "flapping") had already been observed and fixed for Air-Gap
+  specifically; this closes the same gap in the ordinary profile-switch
+  path by applying it inside the same lock the reconciliation cycle
+  holds, so the two can never run concurrently.
+
 ### 1.9.71
 
 A batch of fixes from a full audit of the network-control subsystem.
