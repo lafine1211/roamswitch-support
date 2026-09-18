@@ -92,6 +92,22 @@ setup instructions.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.9.73
+
+- **Fixed: the Sensor pairing form's field order didn't match the Mac
+  client or the Sensor's own code-issuance screen** — it was IP address
+  → name → code instead of code → IP address → name (optional). Typing
+  top-to-bottom out of habit landed the pairing code in the IP field,
+  producing an "invalid IP address" error that pointed at the wrong
+  cause.
+- **Fixed: the "Pair" button was clickable even with the required code/
+  IP fields empty.** The Mac client disables it proactively until both
+  are filled; Linux now matches.
+- **Renamed "Pair Manually" to "Pair"** — mDNS auto-discovery was
+  already removed in favor of the pairing-code flow, so there's no
+  longer a non-manual alternative to contrast against (fixed across all
+  10 languages).
+
 ### 1.9.72
 
 - **Fixed a structural race: manually switching security level (the
