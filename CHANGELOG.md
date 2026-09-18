@@ -92,6 +92,17 @@ setup instructions.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.9.70
+
+- **Fixed: the Sensor pairing form's fields and button could still fail to
+  appear even with no Sensor paired.** 1.9.67's fix assumed calling
+  `show_all()` directly on a widget sidesteps that widget's own
+  `no_show_all` flag — it doesn't. GTK's `show_all()` checks the *target*
+  widget's own `no_show_all` first and returns immediately, showing
+  nothing, if it's still set. Now clears the flag before calling
+  `show_all()`. Found and fixed the same bug pattern in the Air-Gap
+  emergency-isolation card while at it.
+
 ### 1.9.69
 
 - **Fixed: a Sensor audit finding's "description" text was always

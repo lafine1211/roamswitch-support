@@ -86,6 +86,17 @@ Client / Server Edition）とのペアリングコード方式(固定IP+短命�
 Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）。
 詳しくは <https://lafine.net/linux>。
 
+### 1.9.70
+
+- **修正: Sensorペアリングフォームの入力欄・ボタンが、ペアリング済み
+  Sensorが無い状態でも表示されないことがあった不具合**。1.9.67で
+  「`show_all()`を直接呼べば自身の`no_show_all`には影響されない」という
+  誤った前提で修正していたが、実際にはGTKの`show_all()`は呼び出し対象の
+  ウィジェット自身の`no_show_all`もチェックしており、trueのままだと
+  何も表示しないまま即座に返っていた（`no_show_all`を明示的にfalseへ
+  戻してから`show_all()`を呼ぶよう修正）。同じ不具合パターンを
+  Air-Gap緊急遮断カードでも発見し、あわせて修正しました。
+
 ### 1.9.69
 
 - **修正: Sensor監査結果の指摘事項から「詳細説明」が常に欠落していた
