@@ -92,7 +92,7 @@ setup instructions.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
-### 1.9.73
+### 1.9.74
 
 - **Fixed: the Sensor pairing form's field order didn't match the Mac
   client or the Sensor's own code-issuance screen** — it was IP address
@@ -107,6 +107,18 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
   already removed in favor of the pairing-code flow, so there's no
   longer a non-manual alternative to contrast against (fixed across all
   10 languages).
+- **Fixed: the Link Audit "Verify Safety" button did nothing at all
+  when clicked with an empty field.** Now disabled proactively until a
+  URL is entered, matching Mac.
+- **Fixed: the onboarding wizard registered the current network at the
+  least-protected "Open" level by default.** Now defaults to "Balanced,"
+  matching Mac's onboarding.
+- **Fixed: the Secret Leak Audit "Audit Text" button** is also now
+  disabled until there's text to audit, matching Mac.
+
+Found during a GTK/Mac UX-parity audit. 1.9.73 failed to publish due to
+a GitHub Actions budget limit, so this is republished as 1.9.74 with
+everything included.
 
 ### 1.9.72
 
