@@ -19,6 +19,17 @@ development — see
 <https://lafine.net/roamswitch-sensor-manual.html> for current status and
 setup instructions.
 
+### 0.1.4
+
+- **Added: paired-endpoint status badges, and a full audit report on
+  Enter.** The trusted-endpoint list now shows at a glance which
+  endpoints are unaudited, clean, or have findings.
+- **Changed: removed manual pairing.** The old flow of entering a public
+  key directly is gone; pairing-code is now the only path.
+- **Changed: removed the "this Sensor's info" screen and show the IP
+  address in the title bar at all times instead.** Also added the IP
+  address to the pairing-code screen.
+
 ### 0.1.3
 
 - **Added: removed the `--nse` flag for the nmap NSE supplementary scan —
@@ -58,6 +69,15 @@ setup instructions.
 
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
+
+### 1.9.65
+
+- **Changed: removed the own-endpoint public-key display from the Sensor
+  pairing screen.** No longer needed under the pairing-code scheme; the
+  manual pairing form is now hidden once at least one Sensor is paired.
+- **Changed: CVE-map components (kernel CVE map, all package-CVE maps)
+  now check for updates once a month instead of daily.** The
+  cloud-side republish cadence also moved from daily to weekly.
 
 ### 1.9.64
 
@@ -201,6 +221,20 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 ---
 
 ## RoamSwitch for Mac
+
+## 1.9.34
+
+- **Fixed: the helper now reliably restarts on app update.** Its version
+  string was a hand-maintained literal that fell out of sync with each
+  update, so a stale pre-update helper process kept running after an
+  update and failed to communicate over XPC (interface mismatch). It now
+  reads the real version from the app bundle at runtime instead.
+- **Changed: removed the own-endpoint public-key display from the Sensor
+  pairing screen.** No longer needed under the pairing-code scheme; the
+  manual pairing form is now hidden once at least one Sensor is paired.
+- **Changed: the CVE map now checks for updates once a month instead of
+  daily.** The cloud-side republish cadence also moved from daily to
+  weekly.
 
 ## 1.9.33
 
