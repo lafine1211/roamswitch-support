@@ -19,6 +19,31 @@ development — see
 <https://lafine.net/roamswitch-sensor-manual.html> for current status and
 setup instructions.
 
+### 0.2.0
+
+- **Added: IoT-device-security-focused ARP events, in four tiers.**
+  Previously an ARP event was just a bare MAC/IP diff with nothing
+  actionable in it.
+  - Tier 1: MAC-vendor classification against a curated, verified subset
+    of the IEEE OUI registry (camera/smart-plug/etc. categories), a
+    persistent per-device inventory (`sensor-cli device-inventory`), and
+    detection of a single MAC issuing ARP requests for an unusual number
+    of distinct IPs (possible LAN-internal reconnaissance).
+  - Tier 2: reads self-announced mDNS/SSDP/DHCP identifiers (extends the
+    existing passive packet-capture path) for more precise, model-level
+    device identification than the OUI alone.
+  - Tier 3: cross-references classified IoT devices' traffic against
+    known-malicious destinations and admin-port contact on other LAN
+    devices, with device context attached (`sensor-cli iot-events`,
+    requires passive-capture to be configured).
+  - Tier 4: a small, hand-verified reference table of real public CVEs
+    for a handful of IoT vendors (e.g. Hikvision camera auth-bypass/RCE
+    flaws) via `sensor-cli iot-advisories` — static, not a
+    network-refreshed feed; that's out of scope for this release.
+  - All four tiers are detection/reference only — Sensor never blocks
+    traffic. Device classification is also shown inline in the
+    `sensor-tui` ARP events tab.
+
 ### 0.1.7
 
 - **Fixed: an audit finding's "description" text was always missing.**
