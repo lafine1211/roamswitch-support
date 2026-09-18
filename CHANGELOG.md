@@ -19,6 +19,13 @@ development — see
 <https://lafine.net/roamswitch-sensor-manual.html> for current status and
 setup instructions.
 
+### 0.1.7
+
+- **Fixed: an audit finding's "description" text was always missing.**
+  The Sensor's internal `ScanFinding` struct had no description field at
+  all — only the title and recommendation were ever recorded/sent. Added
+  the field and threaded it through end-to-end to the client (Mac/Linux).
+
 ### 0.1.6
 
 - **Fixed: the daemon could crash with "Too many open files," losing any
@@ -84,6 +91,19 @@ setup instructions.
 
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
+
+### 1.9.69
+
+- **Fixed: a Sensor audit finding's "description" text was always
+  missing.** The Sensor's own internal struct had no description field —
+  only the title and recommendation ever made it through (fixed
+  upstream in Sensor 0.1.7).
+- **Fixed: the npm lifecycle-script CSV export's "Danger" column was a
+  bare true/false**, with no indication of which pattern (`curl | sh`,
+  etc.) actually matched. Now shows the matched pattern's name.
+- **Fixed: every CSV export's column headers were always in English.**
+  The data rows already followed the app's language setting; the header
+  row didn't. Now localized across all 10 languages.
 
 ### 1.9.68
 
@@ -261,6 +281,23 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 ---
 
 ## RoamSwitch for Mac
+
+## 1.9.37
+
+- **Fixed: a Sensor audit finding's "description" text was always
+  missing.** The Sensor's own internal struct had no description field —
+  only the title and recommendation ever made it through (fixed
+  upstream in Sensor 0.1.7).
+- **Fixed: the npm lifecycle-script CSV export's "Danger Pattern" column
+  was a bare true/false**, with no indication of which pattern
+  (`curl | sh`, etc.) actually matched. Now shows the matched pattern's
+  name.
+- **Fixed: every CSV export's column headers were always in English.**
+  The data rows already followed the app's language setting; the header
+  row didn't. Now localized across all 10 languages.
+- **Fixed: the "Recommendation" label in a Sensor audit's Markdown
+  export never translated outside Japanese**, due to a mismatched
+  catalog key.
 
 ## 1.9.36
 
