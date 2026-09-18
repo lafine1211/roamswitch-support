@@ -351,6 +351,16 @@ A batch of fixes from a full audit of the network-control subsystem.
 
 ## RoamSwitch for Mac
 
+## 1.9.40
+
+- **Fixed: the Mac Security Log Audit window's category-filter button
+  row was horizontally scrollable to handle its 7 categories not
+  fitting the window width, but had no scroll indicator at all** —
+  with truncated fragments visible at both edges and nothing showing
+  it could scroll, it read as broken rather than "swipe for more."
+  This happened routinely even in a wide window, since the row
+  competes with a fixed-width search field. Now shows the scrollbar.
+
 ## 1.9.39
 
 - **Fixed: the "Package CVE Scan" window's tab switcher could overflow
