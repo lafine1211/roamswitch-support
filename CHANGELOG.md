@@ -386,6 +386,14 @@ A batch of fixes from a full audit of the network-control subsystem.
 
 ## RoamSwitch for Mac
 
+## 1.9.44
+
+- **Added: broader active vulnerability checks.** The manual active scan now
+  also detects unauthenticated Elasticsearch, CouchDB, Jenkins and VNC
+  services, plus SMBv1 being enabled and SMB signing not being required on
+  `smbd`. Each check is a single read-only connection with no login attempt and
+  no writes. Translations for all 10 languages are included.
+
 ## 1.9.43
 
 - **Fixed: a "Critical system file tampering detected (/etc/hosts: modified)"
