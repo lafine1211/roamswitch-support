@@ -107,7 +107,7 @@ Client / Server Edition）とのペアリングコード方式(固定IP+短命�
 Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）。
 詳しくは <https://lafine.net/linux>。
 
-### 1.9.85
+### 1.9.87
 
 - **修正: 偽装SYNの洪水で、ポートスキャンのログが押し流され得た問題**。検知ルールの
   ログ制限が、ログの後ろに書かれていて効いていませんでした。制限をログの前に置き

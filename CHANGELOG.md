@@ -117,7 +117,7 @@ setup instructions.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
-### 1.9.85
+### 1.9.87
 
 - **Fix: a flood of forged SYNs could push port-scan records out of the log.** The
   detection rule's log limit was written after the log statement and limited nothing.
