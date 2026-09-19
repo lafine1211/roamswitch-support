@@ -19,7 +19,7 @@ development — see
 <https://lafine.net/roamswitch-sensor-manual.html> for current status and
 setup instructions.
 
-### 0.3.6
+### 0.3.7
 
 - **Change: the apt and rpm repositories now hold only the latest version.** Every past
   version had been kept, which bloated the repository. Older versions can no longer be
