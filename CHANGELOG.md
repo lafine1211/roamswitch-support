@@ -3,8 +3,8 @@
 **English** | [日本語](CHANGELOG.ja.md)
 
 All notable user‑facing changes to RoamSwitch. The Mac
-edition (1.x) and the Linux edition (a separate 1.0.x series) are versioned
-independently.
+edition (1.x) and the Linux edition (a separate 1.9.x series) are versioned
+independently. Older releases are summarized in ranges.
 
 ---
 
@@ -18,6 +18,24 @@ plus detection of new devices and spoofing on the LAN. Still under
 development — see
 <https://lafine.net/roamswitch-sensor-manual.html> for current status and
 setup instructions.
+
+### 0.2.1 - 0.3.5
+
+- **Better network inventory** (0.2.1 to 0.2.7): always-on tracking of the network
+  layout, plus extended detection (botnet/DDoS participation, DNS tunneling). An active
+  ARP sweep equivalent to `nmap -sn` closed detection gaps (and a bug that dropped the
+  Sensor itself from the list was fixed), and the network layout and ARP events were
+  reworked to carry enough information to act on (refreshed hourly). Device notes were
+  added, and TUI display bugs were fixed.
+- **Audit operations features for security teams at larger organizations** (0.3.0):
+  scheduled audits, diffs against the previous run, notifications (webhook and syslog),
+  a tamper-evident operation log, export, retention, and a central collector that
+  aggregates several Sensors. Everything is opt-in, and nothing is sent anywhere by
+  default.
+- **Fixed automatic updates of the CVE maps and the NSE script DB failing silently**
+  under systemd's write restrictions (0.3.1 to 0.3.2).
+- **Added a diff tab, an operation-log tab and export to the TUI** (0.3.4).
+- **Broader active audits** (0.3.5): Elasticsearch, CouchDB, VNC, RDP and SMB added.
 
 ### 0.2.0
 
@@ -44,73 +62,23 @@ setup instructions.
     traffic. Device classification is also shown inline in the
     `sensor-tui` ARP events tab.
 
-### 0.1.7
+### 0.1.0 - 0.1.7
 
-- **Fixed: an audit finding's "description" text was always missing.**
-  The Sensor's internal `ScanFinding` struct had no description field at
-  all — only the title and recommendation were ever recorded/sent. Added
-  the field and threaded it through end-to-end to the client (Mac/Linux).
-
-### 0.1.6
-
-- **Fixed: the daemon could crash with "Too many open files," losing any
-  in-flight audit requests.** The full-port scan (up to 512 concurrent
-  connections) left little headroom against systemd's default
-  file-descriptor limit (1024). Raised to 65536.
-
-### 0.1.5
-
-- **Fixed: firing off several audit requests in quick succession spawned
-  that many concurrent audits (nmap, etc.) against the same endpoint.**
-  Only one audit per endpoint can be in flight now — a repeat request
-  while one is already running gets handed the existing request's id
-  instead of starting another.
-
-### 0.1.4
-
-- **Added: paired-endpoint status badges, and a full audit report on
-  Enter.** The trusted-endpoint list now shows at a glance which
-  endpoints are unaudited, clean, or have findings.
-- **Changed: removed manual pairing.** The old flow of entering a public
-  key directly is gone; pairing-code is now the only path.
-- **Changed: removed the "this Sensor's info" screen and show the IP
-  address in the title bar at all times instead.** Also added the IP
-  address to the pairing-code screen.
-
-### 0.1.3
-
-- **Added: removed the `--nse` flag for the nmap NSE supplementary scan —
-  it now always runs.** There was no real reason to disable it, so an
-  active-audit run now always includes NSE.
-- **Added: replaced mDNS auto-discovery pairing with a pairing-code
-  scheme.** mDNS only works within a single LAN segment (useless once a
-  Sensor sits behind a router), constantly broadcasts (network noise +
-  always-visible), and has no real authentication of its own — all three
-  problems are gone now. The Sensor runs at a fixed IP; clients pair using
-  a short-lived pairing code (8 characters, expires in 10 minutes) the
-  operator issues (a TCP control API, Ed25519-signature authenticated).
-- **Added: accepting audit requests from clients.** A RoamSwitch client
-  can now request an active vulnerability audit from a paired Sensor; the
-  result is recorded in the scan history along with how it was triggered
-  (manual vs. client-requested).
-
-### 0.1.0 (initial release)
-
-- **Added: deb/rpm package distribution.** Runs as a systemd service
-  (`roamswitch-sensor.service`) instead of the earlier verification-only
-  Docker build.
-- **Added: passive LAN visibility extension (opt-in).** When
-  `ROAMSWITCH_SENSOR_PASSIVE_CAPTURE_IFACE` names an interface, Sensor
-  observes raw Ethernet/IPv4 headers on it (no payload inspection) to
-  detect new devices it has never directly communicated with, and flag
-  contact with known-malicious IPs from the local threat feed. Works on a
-  single NIC for broadcast/multicast-visible traffic; a switch mirror
-  (SPAN) port or inline transparent bridge is needed to see general
-  unicast traffic between two other hosts.
-- **Fixed: the TUI's discover ('d') key looked unresponsive.** The IPC
-  call ran synchronously on the UI thread, so nothing redrew while it was
-  in flight. Moved to a background thread with a live elapsed-time status
-  line, and the TUI now also auto-discovers once on launch.
+- **Distributed as deb/rpm packages** (0.1.0), running as a systemd service. Extended
+  passive LAN visibility (opt-in) was added too.
+- **Pairing moved from mDNS discovery to a pairing code** (0.1.3). mDNS works only
+  within one LAN segment, broadcasts constantly, and has no strong authentication by
+  default. The Sensor sits at a fixed IP and issues a one-time code (8 characters,
+  expires in 10 minutes), authenticated with Ed25519 signatures. Accepting audit
+  requests from clients and making the nmap NSE supplementary scan always-on came in
+  the same release.
+- **Audit status badges for paired endpoints, and viewing the latest report** (0.1.4).
+  Manual pairing was removed in favor of the code method, and the IP address is always
+  shown.
+- **Fixes** (0.1.5 to 0.1.7): several audits running in parallel against the same
+  endpoint; the daemon crashing on `Too many open files` and losing in-flight audits
+  (the file descriptor limit is now 65536); the detailed description missing from
+  audit findings.
 
 ## RoamSwitch for Linux
 
@@ -135,6 +103,19 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
   behind a router, the address and a check that it is not forged still apply).
 - **Fix: the block notification text.** It said all traffic was blocked, but only new
   connections are. The text is corrected in 10 languages.
+- **Fix: on the client edition, the Frag Gap mitigation (denying user namespaces) was
+  always applied and made the desktop unstable.**
+- **Fix: the root daemon created directories under `~/.local` owned by root, making the
+  desktop unstable.**
+
+### 1.9.85 - 1.9.86
+
+- **Fix** (1.9.85): the client edition's diagnostics recommended
+  `max_user_namespaces=0` on desktops.
+- **Fixes** (1.9.86): ARP false positives triggering Air-Gap again under VirtualBox NAT
+  (DHCP-lease infrastructure IPs are now excluded); RoamSwitch not starting at boot and
+  missing from the taskbar; the health check advising apt on Arch-based systems; and
+  an administrator password being requested every time Air-Gap was released.
 
 ### 1.9.84
 
@@ -155,178 +136,47 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
   Auto-block stays on by default. Applies to both Client and Server
   Editions.
 
-### 1.9.74
+### 1.9.75 - 1.9.83
 
-- **Fixed: the Sensor pairing form's field order didn't match the Mac
-  client or the Sensor's own code-issuance screen** — it was IP address
-  → name → code instead of code → IP address → name (optional). Typing
-  top-to-bottom out of habit landed the pairing code in the IP field,
-  producing an "invalid IP address" error that pointed at the wrong
-  cause.
-- **Fixed: the "Pair" button was clickable even with the required code/
-  IP fields empty.** The Mac client disables it proactively until both
-  are filled; Linux now matches.
-- **Renamed "Pair Manually" to "Pair"** — mDNS auto-discovery was
-  already removed in favor of the pairing-code flow, so there's no
-  longer a non-manual alternative to contrast against (fixed across all
-  10 languages).
-- **Fixed: the Link Audit "Verify Safety" button did nothing at all
-  when clicked with an empty field.** Now disabled proactively until a
-  URL is entered, matching Mac.
-- **Fixed: the onboarding wizard registered the current network at the
-  least-protected "Open" level by default.** Now defaults to "Balanced,"
-  matching Mac's onboarding.
-- **Fixed: the Secret Leak Audit "Audit Text" button** is also now
-  disabled until there's text to audit, matching Mac.
+- **Broader active vulnerability checks** (1.9.82): probes for Elasticsearch, CouchDB,
+  Jenkins, VNC, RDP (NLA) and SMB (SMBv1, signing) were added (10 languages).
+- **Running alongside a Sensor** (1.9.78 to 1.9.79): the Server setup wizard checks for
+  a RoamSwitch Sensor on the same host and offers a preset, and nmap was added to the
+  eBPF guard's allowlist.
+- **Automatic-update fixes** (1.9.80 to 1.9.81): the periodic nmap NSE script DB update
+  was failing silently in systemd's sandbox, and CVE map updates were held back a
+  month by a shared marker. The boilerplate in generated CVE maps is now translated
+  into 10 languages.
+- **Other fixes** (1.9.75 to 1.9.77, 1.9.83): the notification history tab being
+  squeezed to a fixed height; the active-scan tests polluting the real probe log; FIM
+  (critical-path tamper detection) warning after every update; the first-run setup's
+  "Done" button jumping to the last page, "Apply" freezing, and ARP false positives
+  triggering Air-Gap in NAT environments.
 
-Found during a GTK/Mac UX-parity audit.
+### 1.9.55 - 1.9.74
 
-### 1.9.72
-
-- **Fixed a structural race: manually switching security level (the
-  Networks tab's Open/Balanced/Lockdown buttons, etc.) while the
-  daemon's own 3-second autonomous reconciliation cycle was
-  independently re-evaluating the network could apply nftables changes
-  from both at once, with no serialization between them** — leaving the
-  live ruleset and what the app believed was applied out of sync. The
-  same failure pattern (two independent appliers fighting and
-  "flapping") had already been observed and fixed for Air-Gap
-  specifically; this closes the same gap in the ordinary profile-switch
-  path by applying it inside the same lock the reconciliation cycle
-  holds, so the two can never run concurrently.
-
-### 1.9.71
-
-A batch of fixes from a full audit of the network-control subsystem.
-
-- **Fixed: right after a daemon restart, if the freshly-computed target
-  level for the current network happened to match the internal
-  "currently applied level" guess, the firewall/sharing-services
-  re-apply was skipped entirely.** The guess defaulted to a real level
-  name ("balanced"), so a match read as "nothing changed" and skipped
-  verification — meaning a restart after a crash, a package upgrade, or
-  a reboot could leave stale/missing rules in place with no self-heal
-  until the network later changed to a genuinely different level.
-- **Fixed: turning off sharing-service auto-control while it had SSH/
-  SMB/etc. stopped left them stopped forever**, with no automatic path
-  back. Now restores once on that OFF transition.
-- **Fixed: the Updates tab's "Upgrade Now" button and spinner could fail
-  to appear** (same `no_show_all` misuse pattern as the Sensor pairing
-  form and Air-Gap card).
-- **Fixed: VPN "Forget config," auto-VPN toggle, Tailscale exit-node
-  change, and the Canary "Reset Baseline" button could briefly show
-  stale state** — each refreshed its panel before the daemon had
-  actually finished applying the change (same race class as the dev-
-  server-isolation fix).
-- Also fixed the same `no_show_all` pattern in the OS Hardening
-  integration (not shipped in the standard edition): TPM2 Timeline Seal
-  actions, the chkrootkit full-report panel, and the Lockdown report
-  panel.
-
-### 1.9.70
-
-- **Fixed: the Sensor pairing form's fields and button could still fail to
-  appear even with no Sensor paired.** 1.9.67's fix assumed calling
-  `show_all()` directly on a widget sidesteps that widget's own
-  `no_show_all` flag — it doesn't. GTK's `show_all()` checks the *target*
-  widget's own `no_show_all` first and returns immediately, showing
-  nothing, if it's still set. Now clears the flag before calling
-  `show_all()`. Found and fixed the same bug pattern in the Air-Gap
-  emergency-isolation card while at it.
-
-### 1.9.69
-
-- **Fixed: a Sensor audit finding's "description" text was always
-  missing.** The Sensor's own internal struct had no description field —
-  only the title and recommendation ever made it through (fixed
-  upstream in Sensor 0.1.7).
-- **Fixed: the npm lifecycle-script CSV export's "Danger" column was a
-  bare true/false**, with no indication of which pattern (`curl | sh`,
-  etc.) actually matched. Now shows the matched pattern's name.
-- **Fixed: every CSV export's column headers were always in English.**
-  The data rows already followed the app's language setting; the header
-  row didn't. Now localized across all 10 languages.
-
-### 1.9.68
-
-- **Fixed: Sensor audit results and the probe log lacked enough
-  information to actually act on.** Same fix as the macOS client (open
-  ports, NSE results, and confirmed-safe checks now shown/exportable;
-  the probe-log CSV export now includes the service name, vulnerability
-  description, and recommendation).
-
-### 1.9.67
-
-- **Fixed: the Sensor manual pairing form's fields and button never
-  actually appeared.** 1.9.66 made the form's container itself
-  reappear, but the entries/button inside it had never been shown by
-  GTK in the first place and stayed empty. Now shows the container's
-  contents recursively.
-
-### 1.9.66
-
-- **Fixed: the Sensor pairing screen's manual pairing form always failed —
-  it was calling an old IPC path that required the Sensor's public key up
-  front.** Under the pairing-code scheme there's no way for the operator
-  to know that key in advance, so this path could never succeed. Now uses
-  the same correct path the CLI already used, and dropped the now-unneeded
-  public-key field from the form.
-
-### 1.9.65
-
-- **Changed: removed the own-endpoint public-key display from the Sensor
-  pairing screen.** No longer needed under the pairing-code scheme; the
-  manual pairing form is now hidden once at least one Sensor is paired.
-- **Changed: CVE-map components (kernel CVE map, all package-CVE maps)
-  now check for updates once a month instead of daily.** The
-  cloud-side republish cadence also moved from daily to weekly.
-
-### 1.9.64
-
-- **Added: removed the nmap NSE supplementary scan's on/off toggle — it
-  now always runs.** There was no real reason to disable it, so an active
-  audit now always includes NSE when it's enabled.
-- **Added: replaced mDNS auto-discovery pairing with RoamSwitch Sensor
-  with a pairing-code scheme.** mDNS only works within a single LAN
-  segment (useless once a Sensor sits behind a router), constantly
-  broadcasts (network noise + always-visible), and has no real
-  authentication of its own — all three problems are gone now. The Sensor
-  runs at a fixed IP; pairing now uses an issued pairing code. Also added
-  requesting an active audit from a paired Sensor and later retrieving
-  and storing the result.
-- **Added the `get_sensor_audit_results` MCP tool**, so an AI agent can use
-  a Sensor's outside-in findings as input for remediation planning.
-
-### 1.9.56
-
-- **Added: guard against the investigation agent recursively triggering
-  itself.** The agent's own research activity (e.g. `grep`/`cat` scanning
-  logs and config files) could itself get flagged as a new eBPF/FIM
-  incident, spawning another investigation agent to look into the first
-  agent's own activity, and so on — reproduced live (a `grep` run while
-  investigating a `pkexec` alert triggered a fresh "Read sensitive file
-  untrusted" detection against `/etc/pam.conf`). Now tracks the PID of any
-  currently-running investigation-agent process; a new detection whose
-  target process is a descendant of one skips spawning a second agent
-  (the first-pass triage and its notification are unaffected).
-
-### 1.9.55
-
-- **Fixed: redesigned the investigation-agent handoff's `sudo` wrap.** The
-  previous fix (1.9.54) baked both the PATH resolution and the `sudo`
-  delegation directly into the `command`/`args` fields, which meant
-  re-running the wizard could no longer recognize a saved preset
-  (claude/agy/codex/opencode), always fell back to the custom-entry
-  path, and — if confirmed as-is — wrapped an already-wrapped command a
-  second time, breaking it (reproduced live). A new `run_as` field now
-  holds the operator's username, and the `sudo` wrap is applied by the
-  daemon at spawn time instead; `command`/`args` stay the tool's own
-  clean invocation.
-- **Added: extended the investigation-agent handoff to the Resource
-  Exhaustion / Process Anomaly Guard too.** Previously wired into eBPF,
-  Critical-Path FIM, and lockfile FIM only; now also covers sustained
-  memory growth, sustained high CPU usage, crash loops, zombie-process
-  growth, and rising system load.
+- **RoamSwitch Sensor integration reworked** (1.9.64 to 1.9.70, 1.9.74): pairing moved
+  from mDNS to a pairing code (mDNS works only within one LAN, advertises constantly,
+  and is weakly authenticated). You can now request an active vulnerability audit from
+  a Sensor and fetch and store the result later, and the MCP tool
+  `get_sensor_audit_results` was added. Results can be shown and exported down to open
+  ports, NSE output and confirmed-safe checks. The pairing screen's field order, the
+  button being disabled while required fields were empty, the form not appearing at
+  all, and the confusing "manual pairing" label were fixed.
+- **The nmap NSE supplementary scan is always on** (1.9.64). Automatic update checks
+  for the CVE maps run monthly (1.9.65).
+- **Investigation agent integration extended** (1.9.55 to 1.9.56): a redesign of the
+  sudo wrapping, support for notifications about sustained memory growth, high CPU, crash
+  loops, zombie processes and rising system load, and a fix for the recursion where an
+  agent's own investigation was detected as a new incident.
+- **A full review of network control** (1.9.71 to 1.9.72): firewall settings not being
+  re-applied right after a daemon restart; services stopped at the time shared-service
+  control was turned off never being restored; and a manual security-level change
+  racing the daemon's 3-second autonomous patrol over nftables.
+- **UI fixes** (1.9.69 to 1.9.74): CSV column headers in 10 languages, input fields and
+  buttons not showing in GTK (a `no_show_all` misuse), the URL safety button doing
+  nothing, and the onboarding wizard defaulting to the most permissive "open" level
+  (now "standard protection").
 
 ### 1.9.48 - 1.9.54
 
@@ -472,158 +322,31 @@ A batch of fixes from a full audit of the network-control subsystem.
   `smbd`. Each check is a single read-only connection with no login attempt and
   no writes. Translations for all 10 languages are included.
 
-## 1.9.43
+## 1.9.33 - 1.9.43
 
-- **Fixed: a "Critical system file tampering detected (/etc/hosts: modified)"
-  warning appeared right after every update.** Link Guard's hosts fallback
-  rewrites its managed section of `/etc/hosts` (the `0.0.0.0 <domain>` lines
-  RoamSwitch itself writes) on launch and on every feed refresh. Critical Path
-  FIM hashed the whole file, so it flagged the app's own routine edits as
-  tampering. The routine contents of the managed section (`0.0.0.0 <domain>`
-  lines and comments) are now excluded from the comparison; every other change
-  is still detected — including an entry written outside the section (for
-  example one redirecting a site to another IP) and any non-`0.0.0.0` line
-  hidden inside it. Because the comparison changed, the `/etc/hosts` baseline is
-  re-captured once, on the first check after this update (baselines for the other
-  files are unchanged).
-
-## 1.9.42
-
-- **Fixed: every app update showed a burst of "Failed to toggle sharing
-  services" / "Failed to enable incoming port-scan detection" warning
-  notifications.** Right after an update the privileged helper is replaced
-  and relaunched, so for a few seconds calls to it fail even though nothing
-  is wrong. Those transient failures were reported immediately as warnings,
-  and because the security level is applied several times around launch, the
-  same notification appeared repeatedly. Transient connection drops are now
-  retried automatically (up to ~7 seconds), and if a call still fails the
-  same warning is shown at most once per 10 minutes. Operations that must
-  not run twice (such as redeeming a single-use pairing code) are never
-  retried.
-
-## 1.9.41
-
-- **Fixed: the active-verification unit tests wrote their fake results into
-  the real diagnostic log (`active_vuln_scan_log.json`).** Tests that probe a
-  local stub server (a fake redis-server on an ephemeral port) recorded
-  their results to the production log location, so exporting that log on a
-  development machine showed findings that never existed. Tests now write to
-  a temporary file, and no longer depend on whether `nmap` is installed.
-  There is no change to the app's behavior and no impact on normal use.
-
-## 1.9.40
-
-- **Fixed: the Mac Security Log Audit window's category-filter button
-  row was horizontally scrollable to handle its 7 categories not
-  fitting the window width, but had no scroll indicator at all** —
-  with truncated fragments visible at both edges and nothing showing
-  it could scroll, it read as broken rather than "swipe for more."
-  This happened routinely even in a wide window, since the row
-  competes with a fixed-width search field. Now shows the scrollbar.
-
-## 1.9.39
-
-- **Fixed: the "Package CVE Scan" window's tab switcher could overflow
-  the window width as sections were added, making the last tab
-  ("Sandboxed Install") completely unreachable.** A segmented control
-  just clips whatever doesn't fit, with no way to reach it — and the
-  window itself wasn't even resizable, so there was no user-side
-  workaround either. Switched the tab switcher to a dropdown (always
-  fits, regardless of section count or label length/language) and made
-  the window resizable.
-
-## 1.9.38
-
-A batch of fixes from a full audit of the network-control subsystem.
-
-- **Fixed: stopping/restoring sharing services never checked launchctl's
-  exit code and always reported "success" regardless.** Away from
-  home, the app could claim sharing services were stopped while SSH
-  etc. was actually still running. Now verifies against actual service
-  state (`isServiceLoaded`) and notifies on failure.
-- **Fixed: clicking "Release isolation" in the port audit sheet looked
-  like it did nothing.** The underlying release genuinely worked; the
-  sheet itself just had no SwiftUI observation wired up, so it never
-  re-rendered to show it.
-- **Fixed: a helper-side failure to enable incoming port-scan detection
-  was only logged, never surfaced to the user** — the toggle could read
-  "on" while detection silently wasn't running.
-
-## 1.9.37
-
-- **Fixed: a Sensor audit finding's "description" text was always
-  missing.** The Sensor's own internal struct had no description field —
-  only the title and recommendation ever made it through (fixed
-  upstream in Sensor 0.1.7).
-- **Fixed: the npm lifecycle-script CSV export's "Danger Pattern" column
-  was a bare true/false**, with no indication of which pattern
-  (`curl | sh`, etc.) actually matched. Now shows the matched pattern's
-  name.
-- **Fixed: every CSV export's column headers were always in English.**
-  The data rows already followed the app's language setting; the header
-  row didn't. Now localized across all 10 languages.
-- **Fixed: the "Recommendation" label in a Sensor audit's Markdown
-  export never translated outside Japanese**, due to a mismatched
-  catalog key.
-
-## 1.9.36
-
-- **Fixed: Sensor audit results and the Active Vulnerability Scan log
-  lacked enough information to actually act on.** A Sensor audit result
-  only ever showed the flagged findings — the open-port list, NSE safe-
-  script results, and confirmed-safe checks the same scan produced
-  weren't displayed or exportable. The Active Vulnerability Scan log's
-  CSV export only had an internal probe id, with no indication of which
-  port, which service, or what the actual issue was. Both now show which
-  port, which service, what was found, and what to do about it.
-
-## 1.9.35
-
-- **Fixed: the helper crashed on every successful Sensor pairing.** A
-  reentrant lock in the pairing-completion path triggered libdispatch's
-  deadlock detection, killing the helper process — the Sensor correctly
-  recorded the pairing while the Mac side always lost it. Found and fixed
-  via a real crash report.
-- **Fixed: incoming port-scan detection's logging silently stopped working
-  in the common case (no other firewall tier engaged) because reloading
-  pf's own stock ruleset right afterward wiped the rules it had just
-  loaded.** `tcpdump` kept failing to start and retrying forever, burning
-  helper resources; retries are now capped at 5 in a row.
-- **Fixed: the update-available alert was easy to miss on this
-  Dock-icon-less, menu-bar-only app.** Implemented Sparkle's gentle
-  reminders so a background update check brings the app forward when it
-  finds one.
-
-## 1.9.34
-
-- **Fixed: the helper now reliably restarts on app update.** Its version
-  string was a hand-maintained literal that fell out of sync with each
-  update, so a stale pre-update helper process kept running after an
-  update and failed to communicate over XPC (interface mismatch). It now
-  reads the real version from the app bundle at runtime instead.
-- **Changed: removed the own-endpoint public-key display from the Sensor
-  pairing screen.** No longer needed under the pairing-code scheme; the
-  manual pairing form is now hidden once at least one Sensor is paired.
-- **Changed: the CVE map now checks for updates once a month instead of
-  daily.** The cloud-side republish cadence also moved from daily to
-  weekly.
-
-## 1.9.33
-
-- **Added: removed the nmap NSE supplementary scan's on/off toggle — it
-  now always runs.** Root-caused a bug where the toggle showed "on" but
-  an MCP-triggered audit never actually ran NSE: `RoamSwitchMCPServer`
-  runs as a separate process from the main app, so its direct
-  `UserDefaults` read always saw an empty domain. Removing the toggle
-  entirely resolves this along with the underlying cross-process bug.
-- **Added: replaced mDNS auto-discovery pairing with RoamSwitch Sensor
-  with a pairing-code scheme.** mDNS only works within a single LAN
-  segment (useless once a Sensor sits behind a router), constantly
-  broadcasts (network noise + always-visible), and has no real
-  authentication of its own — all three problems are gone now. The Sensor
-  runs at a fixed IP; pairing now uses an issued pairing code. Also added
-  requesting an active audit from a paired Sensor and later retrieving
-  and storing the result, plus the `get_sensor_audit_results` MCP tool.
+- **RoamSwitch Sensor integration reworked** (1.9.33 to 1.9.37): pairing moved from
+  mDNS to a pairing code. You can request an active vulnerability audit from a Sensor
+  and fetch the result later, and the MCP tool `get_sensor_audit_results` was added. A
+  serious bug that crashed the privileged helper on every successful pairing (a
+  deadlock from a re-entrant lock) was fixed. Results can be shown and exported down
+  to open ports, NSE output, confirmed-safe checks and detailed descriptions.
+- **The nmap NSE supplementary scan is always on** (1.9.33). Automatic update checks
+  for the CVE maps run monthly (1.9.34).
+- **Update-related fixes** (1.9.34, 1.9.35, 1.9.42, 1.9.43): the privileged helper is
+  now reliably restarted on update. The burst of warning notifications right after an
+  update was fixed with automatic retries of transient connection drops and throttling
+  of same-kind warnings, and a false "/etc/hosts tampered" warning right after an
+  update was fixed. Update prompts that were easy to miss in a menu-bar app now bring
+  the app to the front.
+- **Incoming port-scan detection fixes** (1.9.35, 1.9.38): the log feature being
+  disabled by a pf reload while `tcpdump` retried forever and burned helper resources,
+  and a failure to enable detection never reaching the user.
+- **Shared-service stop/restore fix** (1.9.38): `launchctl` exit codes were never
+  checked, so failures were reported as success.
+- **UI fixes** (1.9.37, 1.9.39 to 1.9.41): CSV column headers in 10 languages, the
+  package CVE tabs overflowing so the last tab couldn't be opened, the security-log
+  filter not looking scrollable, and the active-scan tests writing fake results into
+  the real scan log.
 
 ## 1.9.27 - 1.9.32
 
