@@ -386,6 +386,16 @@ A batch of fixes from a full audit of the network-control subsystem.
 
 ## RoamSwitch for Mac
 
+## 1.9.41
+
+- **Fixed: the active-verification unit tests wrote their fake results into
+  the real diagnostic log (`active_vuln_scan_log.json`).** Tests that probe a
+  local stub server (a fake redis-server on an ephemeral port) recorded
+  their results to the production log location, so exporting that log on a
+  development machine showed findings that never existed. Tests now write to
+  a temporary file, and no longer depend on whether `nmap` is installed.
+  There is no change to the app's behavior and no impact on normal use.
+
 ## 1.9.40
 
 - **Fixed: the Mac Security Log Audit window's category-filter button
