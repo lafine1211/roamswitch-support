@@ -117,6 +117,25 @@ setup instructions.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.9.85
+
+- **Fix: a flood of forged SYNs could push port-scan records out of the log.** The
+  detection rule's log limit was written after the log statement and limited nothing.
+  The limit now comes first (200 per second) and anything above it is counted. In an
+  isolated lab, a flood of about 70,000 forged SYNs per second now produces about 900
+  log lines. Detection of ordinary scans, and of fast scans without a flood, is unchanged.
+- **Added: a notification when detection is saturated.** When SYNs arrive above 2,000
+  per second and use up the log budget, you are told that port scans in that window may
+  have been missed (at most once per 6 hours, in 10 languages). A flood can hide a real
+  scan, which no finite budget can prevent, so the notification tells you when it may
+  have happened.
+- **Fix: the paired-Sensor exemption.** A scan that merely claimed the Sensor's address
+  escaped both the block and the strong warning. The Sensor's MAC is now recorded at
+  pairing, and only SYNs from that MAC are exempt (for a Sensor on the same segment;
+  behind a router, the address and a check that it is not forged still apply).
+- **Fix: the block notification text.** It said all traffic was blocked, but only new
+  connections are. The text is corrected in 10 languages.
+
 ### 1.9.84
 
 - **Fix: the port-scan guard's auto-block could be abused with a forged
@@ -404,6 +423,25 @@ A batch of fixes from a full audit of the network-control subsystem.
 ---
 
 ## RoamSwitch for Mac
+
+## 1.9.47
+
+- **Fix: a flood of forged SYNs could fill pf's state table.** The log rule used by
+  port-scan detection left a state entry for every SYN it passed. On a real Mac
+  (macOS 27) we confirmed that 24 of 100 forged SYNs left states that were still
+  there 3 seconds later. pf's state limit is 10,000, and a flood with many different
+  sources is never blocked, so states could pile up. The log rule no longer creates
+  states. We confirmed on the real Mac that SYNs are still logged and that detection
+  and blocking still work.
+- **Added: a notification when detection is saturated.** When SYNs arrive above about
+  2,000 per second and exceed what detection processes, you are told that port scans
+  in that window may have been missed (at most once per 6 hours, in 10 languages).
+- **Fix: a paired Sensor's audit was being auto-blocked.** Scans from a paired Sensor's
+  address are no longer blocked. Because pf's log carries no MAC on the Mac, the warning
+  for a forged claim of the Sensor's address is not softened.
+- **Fix: which gateways are protected.** Gateways of every default route are now
+  exempt from the block, not just the primary one (for Wi-Fi plus Ethernet setups),
+  and only valid IP addresses can enter the block rule.
 
 ## 1.9.46
 
