@@ -19,6 +19,12 @@ development — see
 <https://lafine.net/roamswitch-sensor-manual.html> for current status and
 setup instructions.
 
+### 0.3.6
+
+- **Change: the apt and rpm repositories now hold only the latest version.** Every past
+  version had been kept, which bloated the repository. Older versions can no longer be
+  fetched from the repository.
+
 ### 0.2.1 - 0.3.5
 
 - **Better network inventory** (0.2.1 to 0.2.7): always-on tracking of the network
@@ -84,6 +90,13 @@ setup instructions.
 
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
+
+### 1.9.88
+
+- **Change: the apt and rpm repositories now hold only the latest version.** The
+  publishing job rebuilt and kept every past version, which bloated the repository until
+  the job failed partway. As a result, the changes in 1.9.86 and 1.9.87 reach apt and rpm
+  with this version. Older versions can no longer be fetched from the repository.
 
 ### 1.9.87
 
