@@ -117,6 +117,25 @@ setup instructions.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.9.84
+
+- **Fix: the port-scan guard's auto-block could be abused with a forged
+  source address.** A SYN scan's source address is unauthenticated, so an
+  attacker on the same network could send SYNs to many ports with the
+  gateway's address as the source and make this host block its own gateway
+  (in an isolated lab, 20 forged SYNs cut the host off from its gateway for
+  10 minutes). Three changes:
+  - The block now refuses only new inbound connections. Replies to your own
+    connections and established flows keep working.
+  - The gateway, DNS resolvers and the host's own addresses are never
+    blocked.
+  - The SYNs' source MAC is checked against the neighbor table, and the
+    block is withheld when the source looks forged (the alert and the
+    incident record are still produced).
+
+  Auto-block stays on by default. Applies to both Client and Server
+  Editions.
+
 ### 1.9.74
 
 - **Fixed: the Sensor pairing form's field order didn't match the Mac
@@ -385,6 +404,18 @@ A batch of fixes from a full audit of the network-control subsystem.
 ---
 
 ## RoamSwitch for Mac
+
+## 1.9.45
+
+- **Fix: the port-scan guard's auto-block could be abused with a forged
+  source address.** A SYN scan's source address is unauthenticated, so an
+  attacker on the same network could send SYNs "from" the gateway and make
+  the Mac block its own gateway (the same structure was reproduced in the
+  Linux edition's isolated lab). The block now refuses only new TCP
+  connections, and the gateway, DNS resolvers and the Mac's own addresses
+  are never blocked. Auto-block stays on by default. Unlike the Linux
+  edition, source-MAC verification is not done here because pf's log
+  carries no Ethernet header.
 
 ## 1.9.44
 
