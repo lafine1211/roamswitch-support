@@ -117,7 +117,10 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 - **Fix: the block notification text.** It said all traffic was blocked, but only new
   connections are. The text is corrected in 10 languages.
 - **Fix: on the client edition, the Frag Gap mitigation (denying user namespaces) was
-  always applied and made the desktop unstable.**
+  applied on every network except "open", which broke apps that build their sandbox
+  from user namespaces, such as browsers, Flatpak, Electron and rootless containers.**
+  The mitigation is now opt-in (setting `auto_enable_userns_restriction`) instead of on
+  by default. The Server edition's permanent disabling is unchanged.
 - **Fix: the root daemon created directories under `~/.local` owned by root, making the
   desktop unstable.**
 
