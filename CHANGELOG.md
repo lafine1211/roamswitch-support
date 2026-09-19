@@ -405,6 +405,15 @@ A batch of fixes from a full audit of the network-control subsystem.
 
 ## RoamSwitch for Mac
 
+## 1.9.46
+
+- **Fix: incoming port-scan detection was not running (confirmed on macOS 27).**
+  `pflog0`, the interface pf writes its log to, was not created automatically,
+  so the detector stopped right after starting. The helper now creates `pflog0`
+  when it is needed. We also confirmed on a real Mac that a forged scan claiming
+  the gateway's address is not blocked, and that the block stops only new TCP
+  connections while replies keep working.
+
 ## 1.9.45
 
 - **Fix: the port-scan guard's auto-block could be abused with a forged
