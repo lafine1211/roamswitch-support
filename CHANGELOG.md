@@ -386,6 +386,20 @@ A batch of fixes from a full audit of the network-control subsystem.
 
 ## RoamSwitch for Mac
 
+## 1.9.42
+
+- **Fixed: every app update showed a burst of "Failed to toggle sharing
+  services" / "Failed to enable incoming port-scan detection" warning
+  notifications.** Right after an update the privileged helper is replaced
+  and relaunched, so for a few seconds calls to it fail even though nothing
+  is wrong. Those transient failures were reported immediately as warnings,
+  and because the security level is applied several times around launch, the
+  same notification appeared repeatedly. Transient connection drops are now
+  retried automatically (up to ~7 seconds), and if a call still fails the
+  same warning is shown at most once per 10 minutes. Operations that must
+  not run twice (such as redeeming a single-use pairing code) are never
+  retried.
+
 ## 1.9.41
 
 - **Fixed: the active-verification unit tests wrote their fake results into
