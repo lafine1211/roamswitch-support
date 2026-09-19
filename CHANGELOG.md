@@ -386,6 +386,21 @@ A batch of fixes from a full audit of the network-control subsystem.
 
 ## RoamSwitch for Mac
 
+## 1.9.43
+
+- **Fixed: a "Critical system file tampering detected (/etc/hosts: modified)"
+  warning appeared right after every update.** Link Guard's hosts fallback
+  rewrites its managed section of `/etc/hosts` (the `0.0.0.0 <domain>` lines
+  RoamSwitch itself writes) on launch and on every feed refresh. Critical Path
+  FIM hashed the whole file, so it flagged the app's own routine edits as
+  tampering. The routine contents of the managed section (`0.0.0.0 <domain>`
+  lines and comments) are now excluded from the comparison; every other change
+  is still detected — including an entry written outside the section (for
+  example one redirecting a site to another IP) and any non-`0.0.0.0` line
+  hidden inside it. Because the comparison changed, the `/etc/hosts` baseline is
+  re-captured once, on the first check after this update (baselines for the other
+  files are unchanged).
+
 ## 1.9.42
 
 - **Fixed: every app update showed a burst of "Failed to toggle sharing
