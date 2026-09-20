@@ -19,6 +19,21 @@ development — see
 <https://lafine.net/roamswitch-sensor-manual.html> for current status and
 setup instructions.
 
+### 0.3.8
+
+- **Fix: slow ARP sweeps went undetected.** The short window (15 targets in 30 seconds)
+  missed a scanner that probes one address every few seconds (24 addresses at 2.5 s each
+  never fired). A long window now notifies once 64 distinct targets are reached within
+  24 hours (a 2.5 s-per-address sweep fired at the 64th target, after 158 seconds on a
+  real clock).
+- **Change: requests for live hosts don't count toward the long window.** A gateway or
+  DHCP server legitimately asks for many real clients. Requests for hosts known to be
+  alive (from ARP senders and the device inventory) are ignored, so only sweeps that
+  spend most requests on empty address space count. A sweep aimed only at inventoried live
+  hosts can't be told apart.
+- **Fix: a flood of spoofed sources can no longer grow memory without bound.** The number
+  of tracked MAC addresses, targets per MAC, and the live-host table are capped.
+
 ### 0.3.7
 
 - **Change: the apt and rpm repositories now hold only the latest version.** Every past
@@ -90,6 +105,34 @@ setup instructions.
 
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
+
+### 1.9.89
+
+- **Fix: unknown-listening-port detection could be evaded with a system daemon's name.**
+  A backdoor named like a daemon (`/tmp/sshd`, `/tmp/named`) was excluded from detection
+  entirely. A listener is now trusted only if its executable sits in a system directory
+  and its file name is that daemon. When the executable path is briefly unreadable, the
+  listener is skipped for up to three scans so a restarting legitimate daemon isn't
+  falsely flagged.
+- **Fix: a listener started through an interpreter from a temporary directory looked like
+  an ordinary dev server.** `python3 /tmp/x/evil.py` runs `/usr/bin/python3`, so the path
+  alone didn't distinguish them. When the script lives in a temporary location it is
+  always flagged and never absorbed into the baseline.
+- **Fix: the dev-server block rules were briefly lifted while being re-applied.** Deleting
+  and recreating the rules were separate operations, leaving about 16 ms unfiltered
+  (7557 of 8112 connection attempts got through while re-applying in a loop). It is now
+  one operation; the same test lets 0 through.
+- **Fix: log-frequency anomaly detection went blind after one large burst.** After a
+  10,000-line burst on a template that normally logs 35 lines, a later 200-line spike went
+  unflagged. The value fed into the baseline is now capped. A lasting rise (35 to 50 lines)
+  is still learned as normal within about four runs.
+- **Change: stronger port-scan detection.** Memory no longer grows under a flood of spoofed
+  sources; listening ports count 1/8 as much as closed ones, cutting false positives from
+  ordinary clients; a 24-hour window catches slow scans; IPv6 is aggregated per /64.
+- **Change: unknown-listening-port detection covers more.** Binds to a non-wildcard LAN
+  address and listeners from temporary, in-memory or deleted binaries are flagged. New UDP
+  listeners from interpreters or non-packaged binaries are reported (notification only).
+  Scans run every 5 seconds.
 
 ### 1.9.88
 
@@ -289,6 +332,26 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 ---
 
 ## RoamSwitch for Mac
+
+## 1.9.48
+
+- **Fix: automatic blocking of unknown ports couldn't see ports opened by root
+  programs.** The app runs as the logged-in user, so root-owned listeners (the daemons a
+  remote exploit tends to land in) never appeared in its list. The privileged helper now
+  lists them as root and hands the list to the app. Existing listeners the helper finds for
+  the first time are quietly added to the baseline once, so an update doesn't block your
+  own VPN or similar.
+- **Fix: the cache of signature results couldn't notice a swap.** Replace a signed
+  executable with an unsigned one and restore only its modification time, and the old
+  "signed" answer was returned. Change time, size and inode are now compared as well.
+- **Change: faster listener lookup, scanning every 2 seconds.** Listeners are read through
+  libproc without starting a process (about 2.4 ms, against about 16 ms for `lsof`). It
+  falls back to `lsof` only if libproc returns nothing.
+- **Change: stronger port-scan and unknown-port detection.** Memory no longer grows under a
+  flood of spoofed sources; listening ports count 1/8 as much as closed ones, cutting false
+  positives; a 24-hour window catches slow scans. Binds to a non-wildcard LAN address,
+  listeners run from temporary folders, and changed or broken signatures are flagged. UDP
+  listeners from interpreters or unsigned programs are reported (notification only).
 
 ## 1.9.47
 
