@@ -333,6 +333,14 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 
 ## RoamSwitch for Mac
 
+## 1.9.49
+
+- **Fix: right after updating, a root program's UDP listener was reported as unknown.**
+  1.9.48 quietly adds the existing listeners the privileged helper sees for the first time
+  to the baseline, but only for TCP; UDP was missed (for example `tailscaled` raised one
+  "unknown UDP listener" notification right after the update). Both TCP and UDP are now
+  added. It was a notification only; nothing was blocked.
+
 ## 1.9.48
 
 - **Fix: automatic blocking of unknown ports couldn't see ports opened by root
