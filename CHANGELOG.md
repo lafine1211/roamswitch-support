@@ -19,6 +19,30 @@ development — see
 <https://lafine.net/roamswitch-sensor-manual.html> for current status and
 setup instructions.
 
+### 0.3.9
+
+- **Add: the control API now speaks TLS 1.3 with certificate pinning.** Until now, pairing codes
+  and audit results crossed the LAN in plaintext. The Sensor holds a self-signed certificate and
+  the RoamSwitch client pins its fingerprint. The pairing request binds that fingerprint with a
+  signature, so a man in the middle cannot complete pairing. `control.tls` is
+  `off` / `optional` / `required` (default `optional`). In `optional` mode, clients that do not
+  speak TLS yet still connect in plaintext, with a warning in the TUI and CLI while they do.
+  Switch to `required` once every client is updated. `sensor-cli tls show|rotate`, `pairing show`.
+- **Change: replay protection.** Signed requests now carry a timestamp (±300 seconds) and a
+  one-time value. The old format is accepted only while `control.allow_legacy_signatures` is on,
+  and warns each time. Pairing brute force is locked out per source and globally, and request
+  lines are capped at 64 KiB.
+- **Add: the TUI now covers every function of the CLI and daemon.** View and edit all 25 config
+  keys, TLS status and certificate rotation, manual pairing, a test notification, the passive
+  capture / IoT behaviour / network threat / IoT advisory event views, collector management, and
+  filtered exports. Ten languages; reports and exports are also rendered in ten languages.
+- **Add**: a bind address (`control.bind_addr`), a switch to stop the CVE-map and NSE-database
+  fetch (`updates.fetch_cve_map`), and a distinction between hosts that run RoamSwitch but are not
+  paired and unknown devices (a per-device summary can optionally be sent to the collector).
+- **Compatibility**: the RoamSwitch Mac app does not speak the Sensor's TLS or the new signatures
+  yet. It keeps pairing as before while `control.tls=optional` and
+  `allow_legacy_signatures=true` (both defaults). The Linux client speaks TLS from 1.9.90.
+
 ### 0.3.8
 
 - **Fix: slow ARP sweeps went undetected.** The short window (15 targets in 30 seconds)
@@ -105,6 +129,56 @@ setup instructions.
 
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
+
+### 1.9.90
+
+- **Change: an isolation triggered by a high-confidence detection no longer releases itself on
+  a timer.** Isolations caused by a tampered canary, suspected ransomware, or a critical eBPF
+  detection used to be fully released by a short timer even while the cause continued. If a
+  re-check shows the cause is still there, the host now moves to a "degraded" mode after a cap
+  (1 hour by default) and never re-opens on a timer. It is released only by `roamswitch
+  emergency-restore`, the GUI, the server's `roamswitch server ack`, or a verified-cleared
+  re-check. Detections that are prone to false positives still release on the short timer.
+  Settings: `airgap_low_confidence_secs` / `airgap_hard_cap_secs` (client),
+  `isolation_hard_cap_secs` (server).
+- **Fix: connections that were already open survived an isolation.** An attacker's reverse shell
+  could keep running after the host was isolated. The server edition now cuts every established
+  connection except the maintenance SSH and allowed IPs, and the client's degraded mode allows
+  loopback only.
+- **Add: a continuous process-execution record** (`roamswitch events
+  search|tree|export|verify|status`). It records which programs ran, their parents, hashes and
+  containers on the machine only (default retention 200 MB / 14 days; a hash chain detects
+  tampering) and adds seven notify-only correlation rules (a shell under a web server, execution
+  from a temporary directory, running a file right after download, and so on). It is on by default
+  on the server and on the client (except clients with under 1 GiB of RAM). Turn it off with
+  `exec_recorder_enabled=false`. Nothing is sent anywhere.
+- **Add: event forwarding** (off by default). Send to a destination you configure — syslog
+  (RFC 5424 over UDP/TCP/TLS), CEF, JSON Lines, or an HMAC-signed webhook.
+  `roamswitch forward status|test|queue`. TLS and webhooks use the system `openssl` and `curl`
+  (added as package dependencies).
+- **Add: a full-coverage TUI for the Server Edition** (`roamswitch server tui`,
+  `roamswitch-server-tui`). Every CLI operation and all 120 `server.conf` / `guard.yaml` keys can
+  be viewed and edited from the screen. Risky actions ask for confirmation and non-root users get
+  a read-only view. Ten languages.
+- **Add: the Docker firewall-bypass guard now works with Docker's native nftables backend and
+  IPv6.** It heals itself within a minute if Docker rewrites its rules. Containers that were
+  already running when the daemon started are now watched, and the FIM scope grew
+  (`authorized_keys`, `ld.so.preload`, new files in watched directories).
+- **Fix (security): a local unprivileged user could send a forged critical event to Falco's event
+  socket and trigger a full Air-Gap.** The socket is now mode 0600 and the peer UID is checked.
+  Also fixed: look-alike names such as `sshd-x` escaping the protected-process list, allowlist
+  entries being bypassed by renaming a process, isolating a UID 0 process cutting the admin
+  channel, and isolations that were not recorded. Allowlist entries can be bound to the real
+  executable with `--exe`.
+- **Fix (security): Telegram and LINE tokens and webhook URLs were visible in the process list**
+  as `curl` arguments. They are now passed on standard input.
+- **Add**: `--json` / `--export` (`status`, `report`, `timeline`, `notifications`), resuming a
+  frozen process now also lifts its isolation, `sensor pair --fingerprint` and `sensor repin`, and
+  a notification when another program opens credential files such as SSH keys (off by default).
+- **Change: the RoamSwitch Sensor integration now speaks TLS 1.3 with certificate pinning.** When
+  new pairings require Sensor 0.3.9 or later and you enter the Sensor's fingerprint (a Sensor
+  older than 0.3.9 cannot be newly paired). Sensors that are already paired keep working in
+  plaintext, with a warning, until you pin them with `roamswitch sensor repin`.
 
 ### 1.9.89
 

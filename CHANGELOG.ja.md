@@ -17,6 +17,28 @@ Client / Server Edition）とのペアリングコード方式(固定IP+短命�
 現在も開発中です。現状の実装状況・動作確認方法は
 <https://lafine.net/roamswitch-sensor-manual.html> を参照してください。
 
+### 0.3.9
+
+- **追加: 制御APIがTLS 1.3と証明書の指紋固定に対応しました**。これまでは、ペアリングコードや診断結果が
+  LAN上で平文でした。Sensorが自己署名の証明書を持ち、RoamSwitch側がその指紋を固定します。
+  ペアリング要求には指紋が署名で束ねられ、中間者は成立しません。`control.tls` は
+  `off` / `optional` / `required`（既定は `optional`）です。`optional` では、対応前の
+  クライアントは従来どおり平文で接続でき、その間はTUIとCLIに警告が出ます。すべてのクライアントが
+  対応したら `required` に切り替えてください。`sensor-cli tls show|rotate`、`pairing show`。
+- **変更: リプレイ対策**。署名つきの要求にタイムスタンプ（±300秒）と使い捨ての値を加えました。
+  従来の形式は `control.allow_legacy_signatures` が有効な間だけ受け付け、使うたびに警告します。
+  ペアリングの総当たりは、送信元ごと・全体でロックアウトします。要求の行の長さも64KiBに制限しました。
+- **追加: TUIが、CLIとデーモンの全機能を扱えるようになりました**。設定の表示と編集（全25キー）、
+  TLSの状態と証明書の更新、手動ペアリング、テスト通知、受動キャプチャ・IoT挙動・ネットワーク脅威・
+  IoT勧告のイベント、collectorの管理、絞り込みつきの書き出しなど。10言語に対応し、レポートと
+  書き出しも10言語で出力します。
+- **追加**: 待ち受けアドレス（`control.bind_addr`）、CVEマップとNSEデータベースの取得を止める設定
+  （`updates.fetch_cve_map`）、RoamSwitchが入っているのにペアリングしていない端末と、不明な端末の区別
+  （collectorへは任意で、端末ごとの概要を送れます）。
+- **互換性**: Mac版のRoamSwitchは、このSensorのTLS・新しい署名にまだ対応していません。Mac版とは、
+  `control.tls=optional` と `allow_legacy_signatures=true`（どちらも既定）のままで、従来どおり
+  ペアリングできます。Linux版は1.9.90以降でTLSに対応します。
+
 ### 0.3.8
 
 - **修正: 低速なARPスキャンを検知できませんでした**。30秒に15個の宛先という短い窓では、
@@ -94,6 +116,49 @@ Client / Server Edition）とのペアリングコード方式(固定IP+短命�
 
 Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）。
 詳しくは <https://lafine.net/linux>。
+
+### 1.9.90
+
+- **変更: 高確度の検知で発動した隔離は、時間が来ても自動では解除されなくなりました**。
+  カナリアの改ざん、ランサムウェアの疑い、eBPFの重大な検知などによる隔離は、原因が続いている
+  まま短いタイマーで全開放されていました。今後は、再確認しても原因が消えていない場合、
+  上限（既定1時間）の後に「縮退モード」へ移り、時間では開きません。解除は、`roamswitch
+  emergency-restore`・GUI・サーバーの `roamswitch server ack`、または原因の解消を確認できたとき
+  だけです。誤検知が多い種類の検知は、これまでどおり短いタイマーで解除されます。
+  設定: `airgap_low_confidence_secs` / `airgap_hard_cap_secs`（クライアント）、
+  `isolation_hard_cap_secs`（サーバー）。
+- **修正: 隔離中も、すでに開いていた接続が生き残っていました**。攻撃者が先に張った通信
+  （リバースシェル等）が、隔離後も続く状態でした。サーバー版は、保守用のSSHと許可IP
+  以外の確立済み接続をすべて遮断し、クライアント版の縮退モードはループバックのみにしました。
+- **追加: プロセス実行の継続記録**（`roamswitch events search|tree|export|verify|status`）。
+  実行されたプログラム、親子関係、ハッシュ、コンテナを、端末の中にだけ記録します
+  （既定の保持は200MB・14日、ハッシュ連鎖で改ざんを検知）。通知専用の相関ルール7件
+  （Webサーバー配下のシェル、一時領域からの実行、ダウンロード直後の実行など）が付きます。
+  サーバー版とクライアント版で既定はオンです（メモリ1GiB未満のクライアントを除く）。
+  止めるときは `exec_recorder_enabled=false`。外部への送信はありません。
+- **追加: イベント転送**（既定オフ）。運用者が指定した宛先にだけ、syslog（RFC 5424、UDP/TCP/TLS）、
+  CEF、JSON Lines、HMAC署名つきwebhookで送れます。`roamswitch forward status|test|queue`。
+  TLSとwebhookには、システムの `openssl` と `curl` を使います（パッケージの依存に追加しました）。
+- **追加: Server Edition の全機能TUI**（`roamswitch server tui`、`roamswitch-server-tui`）。
+  CLIの全操作と、`server.conf` と `guard.yaml` の120個の設定キーを、画面から確認・編集できます。
+  危険な操作は確認画面つきで、root以外は読み取り専用です。10言語に対応します。
+- **追加: Dockerの遮断回避の防止が、nftablesを使うDockerとIPv6にも効くようになりました**。
+  Dockerがルールを作り直しても、1分以内に自己修復します。起動前から動いていたコンテナの
+  実行監視、FIMの監視範囲（`authorized_keys`、`ld.so.preload`、新規ファイルなど）も広げました。
+- **修正（セキュリティ）**: ローカルの一般ユーザーが、Falcoのイベント用ソケットへ偽の重大イベントを
+  送って全遮断を起こせました。ソケットの権限を0600にし、接続元のUIDを確認します。
+  `sshd-x` のような似た名前のプロセスが保護対象から外れて封じ込めを免れる問題、許可リストを
+  プロセス名の偽装で回避できる問題、UID 0のプロセスを遮断すると管理用の通信まで止まる問題、
+  隔離の記録が残らない問題も修正しました。許可リストには `--exe` で実行ファイルを紐づけられます。
+- **修正（セキュリティ）**: Telegram・LINEのトークンやwebhookのURLが、`curl` の引数として
+  プロセス一覧から見える状態でした。標準入力で渡すように変更しました。
+- **追加**: `--json` / `--export`（`status`・`report`・`timeline`・`notifications`）、
+  凍結したプロセスの再開時に隔離も解除、`sensor pair --fingerprint` と `sensor repin`、
+  認証情報ファイル（SSH鍵など）を他のプログラムが開いたときの通知（既定オフ）。
+- **変更: RoamSwitch Sensor との連携が、TLS 1.3と証明書の指紋固定に対応しました**。
+  新規のペアリングにはSensor 0.3.9以降が必要で、Sensorの指紋を入力します（0.3.8以前のSensorとは
+  新規にペアリングできません）。ペアリング済みのSensorは、指紋を固定するまで従来どおり平文で
+  動作し、警告が出ます。`roamswitch sensor repin` で固定できます。
 
 ### 1.9.89
 
