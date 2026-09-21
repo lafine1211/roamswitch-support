@@ -333,6 +333,24 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 
 ## RoamSwitch for Mac
 
+## 1.9.50
+
+- **New: "Ransomware Recovery" lets you get back just the files you need after a ransomware attack.**
+  Independently of any detection, APFS local snapshots are taken every 6 hours by default
+  (off, 1, 3, 6, 12 or 24 hours). A snapshot taken after a detection already holds the files
+  that were encrypted, so it is not a recovery source. A snapshot is also taken at detection
+  time, and while it is the newest one, new scheduled snapshots and pruning pause for up to
+  7 days so the last pre-encryption generation is not pushed out.
+- **Recovery is always manual and file-level.** From "Ransomware Recovery..." in the menu (Pro),
+  files and folders from the recommended snapshot (the newest pre-detection one that still
+  exists) are copied to `~/RoamSwitch-Recovered/`. Current files are never overwritten and
+  no whole-volume restore is offered.
+- **Limits**: taking files out needs Full Disk Access for the RoamSwitch helper (creating
+  snapshots does not). macOS may delete local snapshots after about 24 hours, sooner when
+  free space is low.
+- **MCP: added the read-only tool `get_ransomware_recovery_snapshots` (Pro).** It returns the
+  snapshot list, the recommended one, retention mode and the interval. It cannot restore anything.
+
 ## 1.9.49
 
 - **Fix: right after updating, a root program's UDP listener was reported as unknown.**
