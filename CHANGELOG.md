@@ -138,6 +138,20 @@ setup instructions.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.9.92
+
+- **Fix: some notifications were Japanese-only (or Japanese/English-only).** These now appear in ten
+  languages. Client: critical-file (FIM) tampering, dependency lockfile changes (including the note on
+  whether a package manager was running), low-severity eBPF detections, and kernel-exploit detection
+  (Air-Gap emergency isolation). Server Edition: every alert (Telegram, LINE, webhook), the test
+  notification, and the Air-Gap notices. The triage summary attached to eBPF, FIM and lockfile
+  notifications, and its detailed report, are also in ten languages.
+- **Change: the Server Edition's notification language is set by `language`** (`system` follows the OS
+  locale; `roamswitch server config set language <ja|en|zh-Hans|zh-Hant|ko|de|fr|es|it|pt-PT|system>`).
+  Installs with no such key stay Japanese. Previously, any setting other than English still sent Japanese.
+  One language per host.
+- **Fix: the message printed when a second app instance is started was Japanese-only.** It is now in
+  ten languages.
 ### 1.9.91
 
 - **Fix: when pairing failed there was no way to tell why, and it looked like a wrong code or

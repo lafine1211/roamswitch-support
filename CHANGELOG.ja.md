@@ -124,6 +124,18 @@ Client / Server Edition）とのペアリングコード方式(固定IP+短命�
 Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）。
 詳しくは <https://lafine.net/linux>。
 
+### 1.9.92
+
+- **修正: 通知の一部が日本語のみ（または日本語と英語のみ）でした**。次の通知を、10言語で表示するように
+  しました。クライアント: 重要ファイル（FIM）の改ざん検知、依存関係ロックファイルの変更（パッケージ
+  マネージャーが動いていたかの説明を含む）、eBPFの低深刻度の検知、カーネル攻撃の検知（Air-Gapの緊急遮断）。
+  Server Edition: すべてのアラート（Telegram・LINE・webhook）、テスト通知、Air-Gapの通知。
+  eBPF・FIM・ロックファイルの通知に付く精査の要約と、その詳細レポートも10言語です。
+- **変更: Server Editionの通知の言語は、設定 `language` で決まります**（`system` は OS のロケール。
+  `roamswitch server config set language <ja|en|zh-Hans|zh-Hant|ko|de|fr|es|it|pt-PT|system>`、
+  設定キーが無い既存の環境は日本語のままです）。これまでは、英語以外の設定でも日本語で送られていました。
+  1台につき1言語です。
+- **修正: 2つ目のアプリを起動したときのメッセージが日本語のみでした**。10言語にしました。
 ### 1.9.91
 
 - **修正: ペアリングに失敗したとき、原因が分からず、コードや指紋の誤りに見えました**。Sensor側の
