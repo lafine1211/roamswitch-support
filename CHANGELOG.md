@@ -152,6 +152,9 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
   One language per host.
 - **Fix: the message printed when a second app instance is started was Japanese-only.** It is now in
   ten languages.
+- **Fix: two health-check status lines (gateway ARP, /tmp noexec) were partly Japanese in other
+  languages** on some machines. All their variants are now in ten languages, and a test covers every one.
+- **Change: in the Sensor manual-pairing form, the fingerprint field now comes before the optional name.**
 ### 1.9.91
 
 - **Fix: when pairing failed there was no way to tell why, and it looked like a wrong code or
