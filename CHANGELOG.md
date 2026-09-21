@@ -333,6 +333,15 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 
 ## RoamSwitch for Mac
 
+## 1.9.51
+
+- **Fix: it could take minutes from a ransomware decoy being tampered with to the emergency cutoff.**
+  The step that looks for the suspicious process ran a full code-signature check, which
+  hashes the whole executable, for every line of the open-files list (about 29,000 lines
+  on the test Mac). It now checks only lines that involve a decoy or a watched folder,
+  and only once per process. The detection rule is unchanged. On the test Mac, the time
+  from tampering to the cutoff went from minutes to about 2 seconds.
+
 ## 1.9.50
 
 - **New: "Ransomware Recovery" lets you get back just the files you need after a ransomware attack.**
