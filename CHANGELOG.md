@@ -440,6 +440,43 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 
 ## RoamSwitch for Mac
 
+## 1.9.52
+
+- **Changed: the network isolation (Air-Gap) was reworked.** What triggered it now decides how it ends.
+  A tampered ransomware decoy, a confirmed XProtect detection and a manual isolation chosen from an ARP
+  warning are "high confidence"; the rest (ClickFix, port anomalies and so on) are "low confidence".
+  Low confidence still releases by itself after 10 minutes. High confidence does not release at 10
+  minutes: full isolation continues up to a limit (1 hour by default). At the limit it releases if the
+  cause is confirmed gone, and otherwise moves to "degraded mode", which keeps new connections blocked,
+  never opens by time, and comes back only when you release it or the cause is confirmed gone.
+  Connections that were already open are cut when the isolation starts. The state survives a helper restart.
+- **Changed: an isolation caused by ARP spoofing is not released automatically.** While isolated, the
+  gateway's ARP entry disappears, so the cause cannot be confirmed gone without traffic. Release it by hand.
+- **New (Pro): process execution recorder.** It records process starts, on this Mac only, with macOS's own
+  `eslogger` (off by default; the helper needs Full Disk Access). The log is stored in a tamper-evident
+  form, and nothing is blocked. It notifies on seven behaviours: a browser, Office or mail app starting a
+  shell directly; an unsigned binary run from a temp folder or with the quarantine flag; a one-liner that
+  downloads and pipes into a shell; osascript with base64 or eval; running a file right after its
+  quarantine flag is removed; an unsigned binary started from a freshly written launch agent; and a
+  non-Apple parent reading a keychain secret. The read-only Pro MCP tools `search_exec_events` and
+  `get_process_tree` search the record.
+- **New: quieter notifications, and an allow action.** Execution-recorder notifications show a banner only for
+  high severity, and at most once per kind every 10 minutes (everything stays in the record). Claude Code
+  and `gh` (GitHub CLI) reading their own credentials are not reported. When another program reads a
+  keychain item, "Allow this program" on the notification allows that one item only.
+- **New: TLS and v2 signatures for the Sensor.** With a pinned certificate fingerprint, pairing, audit
+  requests and result retrieval work over TLS with Sensor 0.3.9 or later. A Sensor without a fingerprint
+  is still reached as before, with a warning. When a certificate changes, the fingerprint must be
+  registered again; the pin is never updated automatically.
+- **Fix: the rule for running a file after its quarantine flag is removed missed files under `/tmp`.**
+- **Fix: ransomware recovery showed the reason for a failure in English.** It is now shown in ten
+  languages, as are the Sensor connection errors. When pairing, a wrong fingerprint is explained as a typing
+  mistake.
+- **Fix: some Korean and Chinese texts contained the Japanese middle dot.**
+- **Limits**: the recorder does not capture what ran before the helper started or before it was
+  enabled. It does not run without Full Disk Access and resumes within about a minute after the permission
+  is restored. Removing the helper's permission takes effect only after the helper restarts.
+
 ## 1.9.51
 
 - **Fix: it could take minutes from a ransomware decoy being tampered with to the emergency cutoff.**
