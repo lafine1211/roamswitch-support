@@ -19,6 +19,14 @@ development — see
 <https://lafine.net/roamswitch-sensor-manual.html> for current status and
 setup instructions.
 
+### 0.3.10
+
+- **Fix: the pairing command shown to you failed when run as-is.** The TUI's `sudo roamswitch sensor pair
+  --addr … --code …` did not include the fingerprint, and Linux 1.9.90+ endpoints refuse to pair without
+  one, so running it exactly as shown always failed. With TLS on, the command now includes
+  `--fingerprint`. `sensor-cli issue-code` also prints the command to run on the endpoint (with this
+  Sensor's own IP and fingerprint).
+
 ### 0.3.9
 
 - **Add: the control API now speaks TLS 1.3 with certificate pinning.** Until now, pairing codes
@@ -129,6 +137,31 @@ setup instructions.
 
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
+
+### 1.9.91
+
+- **Fix: when pairing failed there was no way to tell why, and it looked like a wrong code or
+  fingerprint.** Even when a firewall on the Sensor host blocked TCP 50543, the GUI always said "check
+  the IP address, pairing code and public key". The GUI waited 6 s but the connection attempt waits 10 s,
+  so it gave up before the daemon's actual reason arrived. The wait is now 30 s; an unreachable Sensor
+  now lists the likely causes (firewall, Sensor stopped, plaintext-only) with a command to run on the
+  Sensor host, and a separate message is shown when no answer comes back at all.
+- **Fix: the notification history screen was so heavy it could freeze.** Some log-audit notifications
+  had bodies of up to 99,000 characters and every entry was laid out in full. Bodies are now capped at
+  2,000 characters when stored (oversized entries already on disk are truncated when read), desktop
+  popups at 1,000. The screen draws the newest 200 entries; the full text stays in the CSV export.
+- **Fix: "suspected malware" notifications repeated for the same file.** The approval de-duplication
+  included the modification time, so every save of a file you were editing looked like a new threat.
+  A given file and threat family is now quiet for 30 minutes (and re-notified every 30 minutes while it is
+  still detected). Exec denials and quarantine after confirmation are unaffected.
+- **Add: the ARP re-check sends a direct ARP request when the gateway has no neighbour-cache entry**
+  (`arp_recheck_active_probe`, on by default). This reduces ARP-triggered isolations that stay stuck
+  needing a manual release even though the link is up. Any reply carrying a MAC other than the trusted one
+  is a mismatch, and so is a reply whose Ethernet source disagrees with its ARP sender.
+- **Change: screens are split into tabs.** Package CVE scan (six checks) and Ports & DevIsolator (checks,
+  Sensor, port list).
+- **Fix: the record text of a manual Air-Gap was a hard-coded Japanese string.** It now follows the
+  language setting (ten languages).
 
 ### 1.9.90
 
