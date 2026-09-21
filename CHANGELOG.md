@@ -138,6 +138,11 @@ setup instructions.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.9.93
+
+- **Improved: Vulnerability scan log CSV export now shows appropriate descriptions for safe or inconclusive checks.** Previously, even when a check result was `safe` or `inconclusive`, the finding description and recommendation for the vulnerable case were displayed. Results now display appropriate explanations according to the outcome (e.g., "This check found no problem.", "No action needed.") across ten languages.
+- **Improved: Vulnerability scan logging reliability and added scan IDs.** Introduced file locking during log append to prevent corruption from concurrent writes, and added a unique scan ID (UUID) per scan session to easily identify results from the same run. In addition, legacy logs or records with empty port numbers are now clearly displayed as "Unknown".
+
 ### 1.9.92
 
 - **Fix: some notifications were Japanese-only (or Japanese/English-only).** These now appear in ten
@@ -456,6 +461,11 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 ---
 
 ## RoamSwitch for Mac
+
+## 1.9.53
+
+- **Improved: Active vulnerability scan log CSV export now shows appropriate descriptions for safe or inconclusive checks.** Previously, even when a check result was `safe` or `inconclusive`, the finding description and recommendation for the vulnerable case were displayed. Results now display appropriate explanations according to the outcome (e.g., "This check found no problem.", "No action needed.") across ten languages.
+- **Improved: Active vulnerability scan logging reliability and added scan IDs.** Introduced file locking during log append to prevent corruption from concurrent writes, and added a unique scan ID (UUID) per scan session to easily identify results from the same run. In addition, legacy logs or records with empty port numbers are now clearly displayed as "Unknown".
 
 ## 1.9.52
 
