@@ -470,6 +470,10 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 
 ## RoamSwitch for Mac
 
+## 1.9.54
+
+- **Improved: unknown-port-listener alerts now identify the actual program.** A process listening via a generic interpreter (`python3`, `node`, …) previously showed only the interpreter name (e.g. `python3`) in alerts and incident history, leaving the real program (e.g. `wsdd`) unidentifiable. The alert now resolves the script name from the command line and shows it as `wsdd (python3)`.
+
 ## 1.9.53
 
 - **Improved: Active vulnerability scan log CSV export now shows appropriate descriptions for safe or inconclusive checks.** Previously, even when a check result was `safe` or `inconclusive`, the finding description and recommendation for the vulnerable case were displayed. Results now display appropriate explanations according to the outcome (e.g., "This check found no problem.", "No action needed.") across ten languages.
