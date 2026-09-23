@@ -534,6 +534,13 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
   false-positived on every Xcode debug run.** The check now looks at whether the injected library
   itself lives somewhere trustworthy (system locations, inside Xcode.app), rather than at the
   signature of the binary being executed.
+- **Fixed: Link Guard's brand-impersonation (homograph) detection had never worked at all for two
+  brands, Apple and PayPal.** A character-normalization bug always remapped the letter "l" to
+  another character, which made matching those two brand names structurally impossible. Also fixed
+  a gap where swapping in a single look-alike character (`app1e.com`) went undetected, and added
+  detection for a brand name combined with a word like "security" or "support" in a newly
+  registered domain (`microsoft-security-alert.com`) — especially useful for domains too new for
+  threat feeds to have caught yet.
 
 ## 1.10.0
 
