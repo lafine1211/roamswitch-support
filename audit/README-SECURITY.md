@@ -80,7 +80,7 @@ From your Host terminal, transfer `rs-defense-audit.sh` into the VM:
 VM_IP=$(tart ip test-mac)
 
 # SCP into VM home directory
-scp /Users/tetsuharu/Dev/roamswitch-support/audit/rs-defense-audit.sh admin@$VM_IP:~/
+scp audit/rs-defense-audit.sh admin@$VM_IP:~/
 ```
 
 ---
