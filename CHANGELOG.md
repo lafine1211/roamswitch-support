@@ -144,6 +144,15 @@ setup instructions.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.10.1
+
+- **Fixed: a program that rebinds to a random ephemeral UDP port through an interpreter (like
+  `wsdd`) was treated as a different port on every restart, repeating the notification endlessly.**
+  Introduced a fingerprint that excludes the port (executable path + script arguments); only the
+  first occurrence raises a desktop notification, and further occurrences with the same fingerprint
+  are recorded to the notification history only. Individual incident records (for the MCP history)
+  are still written every time.
+
 ### 1.10.0
 
 - **Add: DNS tunneling / exfiltration detection** (Client and Server Edition). Watches this host's own
@@ -505,6 +514,14 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 ---
 
 ## RoamSwitch for Mac
+
+## 1.10.1
+
+- **Fixed: a program that rebinds to a random ephemeral UDP port through an interpreter (like
+  `wsdd`) was treated as a different port on every restart, repeating the notification endlessly
+  (ported from the Linux edition's fix, same design).** Introduced a fingerprint that excludes the
+  port (executable path + script arguments); only the first occurrence raises an alert, and further
+  occurrences with the same fingerprint are recorded to the notification history only.
 
 ## 1.10.0
 
