@@ -19,6 +19,12 @@ development — see
 <https://lafine.net/roamswitch-sensor-manual.html> for current status and
 setup instructions.
 
+### 0.3.11
+
+- **Improve: the fingerprint field on the manual-pairing screen now explains itself.** Since the shown
+  command already includes `--fingerprint` (0.3.10), this field is now labeled as being for the GUI /
+  Mac entry field specifically.
+
 ### 0.3.10
 
 - **Fix: the pairing command shown to you failed when run as-is.** The TUI's `sudo roamswitch sensor pair
@@ -137,6 +143,36 @@ setup instructions.
 
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
+
+### 1.10.0
+
+- **Add: DNS tunneling / exfiltration detection** (Client and Server Edition). Watches this host's own
+  outbound DNS queries for the suspicious shapes DNS-tunneling tools (iodine, dnscat2, …) rely on — long,
+  high-entropy labels, or TXT/NULL query types — and alerts (and records to the incident timeline) once a
+  burst crosses a threshold within a short window. Never inspects non-DNS traffic, and a stalled or
+  crashed detector can never delay DNS resolution. Server Edition gets a new `dns_tunnel_detect_enabled`
+  config key (on by default).
+- **Add: forensic evidence bundles** (Client and Server Edition). When a containment action fires (a
+  ransomware canary trip, a critical eBPF detection, …), a process list, recently-modified files, and a
+  SHA-256 manifest are captured automatically.
+- **Add: deception / credential honeytokens** (Client and Server Edition). Realistic-looking decoy files
+  are placed at `.aws/credentials`, `.ssh/id_rsa`, `.docker/config.json`, and similar paths (with a cascade
+  of related decoys); any real access is detected and alerted on immediately.
+- **Add: vulnerability scan staleness (pass_age) is now visible.** For each active-verification probe
+  (`scan-vulns --confirm`), the last recorded result and the days elapsed since are available from
+  `roamswitch vuln-status`, the GUI app's Ports tab, and an MCP tool.
+- **Add: health-check items now carry NIST CSF 2.0 / CIS Controls v8 mappings** (Client and Server
+  Edition) — useful for audits and business/compliance conversations. Only confidently-mappable items get
+  a control number; uncertain ones are left blank rather than guessed.
+- **Fix: CPU usage could pin itself at high levels indefinitely in rare cases.** The malware guard (YARA)
+  asking ClamAV for a second opinion spawns `clamdscan`, whose own file-open was re-detected by the
+  on-access monitor, causing the notification pipeline to re-trigger itself in a self-sustaining loop.
+  `clamdscan` (and `clamscan`/`clamd`) are now excluded from on-access monitoring.
+- **Improve: `credential_watch` (off by default) now allowlists `ansible`/`python3`/`python`**, reducing
+  false positives from common infrastructure-as-code tooling.
+- **Add: four new AI-agent triage skills for `roamswitch-mcp`** (the MCP server), covering port-anomaly,
+  active-vulnerability-scan, package-CVE, and ransomware/incident-timeline prioritization — a consistent
+  procedure an AI agent can follow when triaging RoamSwitch's findings.
 
 ### 1.9.94
 
