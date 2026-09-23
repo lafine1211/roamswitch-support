@@ -530,6 +530,10 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 - **Fixed: credential honeytokens (added in 1.10.0) silently stopped monitoring after an app
   restart that happened after the honeytoken files had already been created.** On restart, a file
   is now resumed for monitoring whenever it's recognized as a honeytoken this app planted earlier.
+- **Fixed: the process-execution recorder's DYLD_INSERT_LIBRARIES detection (added in 1.10.0)
+  false-positived on every Xcode debug run.** The check now looks at whether the injected library
+  itself lives somewhere trustworthy (system locations, inside Xcode.app), rather than at the
+  signature of the binary being executed.
 
 ## 1.10.0
 
