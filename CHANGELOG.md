@@ -144,6 +144,16 @@ setup instructions.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.10.2
+
+- **Fixed: Server Edition's unknown-port-exposure guard could permanently, wrongly block the
+  co-located RoamSwitch Sensor's own pairing control port (50543), depending on startup
+  timing.** If this guard's baseline scan for "ports not yet known to be exposed" happened to run
+  moments before the Sensor started listening on its control port, it flagged the Sensor's own
+  port as a newly-seen, suspicious listener and blocked it — with no way to clear it short of
+  restarting the daemon. Ports the firewall already always allows (`ssh_ports`, `allowed_ports`)
+  are now exempt from this guard's auto-block, regardless of scan timing.
+
 ### 1.10.1
 
 - **Fixed: a program that rebinds to a random ephemeral UDP port through an interpreter (like
