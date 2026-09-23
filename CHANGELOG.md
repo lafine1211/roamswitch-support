@@ -560,6 +560,20 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
   unresolved from then on, leaving "Register current network as trusted" unresponsive.** The retry
   now also covers that first, right-at-launch failure, and keeps self-healing in the background
   until it resolves.
+- **Fixed: the Tailscale Exit Node feature only trusted tailscaled's own self-reported "connected"
+  state, without verifying traffic was actually flowing through the exit node.** `tailscaled` itself
+  has a known macOS bug where the OS's default route can stay on the physical network after an exit
+  node is set, which meant RoamSwitch could show "protected" while nothing was actually protected — a
+  silent failure. The real OS default route is now independently verified; the exit node is
+  disconnected and a notification shown if it's never established. Also fixed a case where backing
+  out of a broken connection didn't stop auto-retry, causing the notification to repeat, and a case
+  where the network-recovery step after disconnecting (a DHCP renew) reported success purely from a
+  command's exit code without confirming a real address had actually been obtained — left unfixed,
+  this could leave the Mac with no internet connectivity at all.
+- **Fixed: browser credential-store monitoring falsely flagged legitimate access by Chrome/Brave-family
+  helper processes (renderer, GPU, etc.) as suspicious.** It read process names from `lsof`'s
+  human-readable output, which truncates long names (e.g. "Google Chrome Helper (Renderer)"),
+  breaking the allowlist match. Switched to `lsof`'s untruncated machine-readable output.
 
 ## 1.10.0
 
