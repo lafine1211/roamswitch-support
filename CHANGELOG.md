@@ -634,53 +634,17 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
   listeners run from temporary folders, and changed or broken signatures are flagged. UDP
   listeners from interpreters or unsigned programs are reported (notification only).
 
-## 1.9.47
+## 1.9.44 - 1.9.47
 
-- **Fix: a flood of forged SYNs could fill pf's state table.** The log rule used by
-  port-scan detection left a state entry for every SYN it passed. On a real Mac
-  (macOS 27) we confirmed that 24 of 100 forged SYNs left states that were still
-  there 3 seconds later. pf's state limit is 10,000, and a flood with many different
-  sources is never blocked, so states could pile up. The log rule no longer creates
-  states. We confirmed on the real Mac that SYNs are still logged and that detection
-  and blocking still work.
-- **Added: a notification when detection is saturated.** When SYNs arrive above about
-  2,000 per second and exceed what detection processes, you are told that port scans
-  in that window may have been missed (at most once per 6 hours, in 10 languages).
-- **Fix: a paired Sensor's audit was being auto-blocked.** Scans from a paired Sensor's
-  address are no longer blocked. Because pf's log carries no MAC on the Mac, the warning
-  for a forged claim of the Sensor's address is not softened.
-- **Fix: which gateways are protected.** Gateways of every default route are now
-  exempt from the block, not just the primary one (for Wi-Fi plus Ethernet setups),
-  and only valid IP addresses can enter the block rule.
-
-## 1.9.46
-
-- **Fix: incoming port-scan detection was not running (confirmed on macOS 27).**
-  `pflog0`, the interface pf writes its log to, was not created automatically,
-  so the detector stopped right after starting. The helper now creates `pflog0`
-  when it is needed. We also confirmed on a real Mac that a forged scan claiming
-  the gateway's address is not blocked, and that the block stops only new TCP
-  connections while replies keep working.
-
-## 1.9.45
-
-- **Fix: the port-scan guard's auto-block could be abused with a forged
-  source address.** A SYN scan's source address is unauthenticated, so an
-  attacker on the same network could send SYNs "from" the gateway and make
-  the Mac block its own gateway (the same structure was reproduced in the
-  Linux edition's isolated lab). The block now refuses only new TCP
-  connections, and the gateway, DNS resolvers and the Mac's own addresses
-  are never blocked. Auto-block stays on by default. Unlike the Linux
-  edition, source-MAC verification is not done here because pf's log
-  carries no Ethernet header.
-
-## 1.9.44
-
-- **Added: broader active vulnerability checks.** The manual active scan now
-  also detects unauthenticated Elasticsearch, CouchDB, Jenkins and VNC
-  services, plus SMBv1 being enabled and SMB signing not being required on
-  `smbd`. Each check is a single read-only connection with no login attempt and
-  no writes. Translations for all 10 languages are included.
+- **Broadened active vulnerability checks** (1.9.44): the manual active scan now also detects
+  unauthenticated Elasticsearch, CouchDB, Jenkins and VNC services, plus SMBv1 being enabled and
+  SMB signing not being required on `smbd`.
+- **Hardened incoming port-scan detection's reliability** (1.9.45-1.9.47): fixed the auto-block
+  being abusable via a forged SYN claiming the gateway's address (the block now only refuses new
+  TCP connections, and the gateway, DNS resolvers and the Mac's own addresses are exempt), fixed
+  detection stopping right after startup (`pflog0` was not created automatically), and fixed a
+  flood of forged SYNs being able to fill pf's state table. Also adds a notification when
+  detection is saturated and fixes a paired Sensor's audit being incorrectly blocked.
 
 ## 1.9.33 - 1.9.43
 
