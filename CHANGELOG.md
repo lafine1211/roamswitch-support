@@ -546,6 +546,10 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
   folder-access notice shown on first launch could crash the app during its own startup sequence.
   This — not a detection-accuracy problem — is why things like the EICAR test detection for this
   feature didn't fire.
+- **Fixed: if the gateway MAC address lookup happened to fail right at launch, it stayed stuck as
+  unresolved from then on, leaving "Register current network as trusted" unresponsive.** The retry
+  now also covers that first, right-at-launch failure, and keeps self-healing in the background
+  until it resolves.
 
 ## 1.10.0
 
