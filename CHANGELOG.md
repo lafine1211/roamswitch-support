@@ -144,6 +144,32 @@ setup instructions.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.10.3
+
+- **Improved: repeated identical notifications are now suppressed.** A notification with the same
+  title and body is not shown as a pop-up or queued over IPC again for 10 minutes; it is still
+  recorded in the notification history (every one is kept). Low-urgency notifications go to the
+  history only. Dangerous-Docker-configuration notifications are likewise suppressed for the same
+  image and the same reason (a new reason notifies immediately).
+- **Fixed: DNS tunneling detection false-flagged `clamav.net` TXT responses (freshclam's
+  definition check).** These TXT queries are now exempt (NULL records and high-entropy responses
+  are still detected as before). The re-notification interval now grows in steps
+  (300 → 600 → 1200 → 1800 s), and the notification text and timeline now include the target
+  apex domain.
+- **Improved: YARA false positives on development build output (under `target/debug` and
+  `target/release`) no longer raise a notification or an approval request.** When ClamAV does not
+  agree and nothing was blocked from executing, the hit is recorded in the history only. Hits that
+  ClamAV disagrees with in the same directory and the same family are collapsed to one per 30
+  minutes.
+- **Improved: on Arch-based distributions, the "automatic security updates" diagnostic is now
+  treated as "not applicable" (no score penalty).** Unattended `pacman -Syu` on a rolling release
+  can leave the system unbootable through partial upgrades and is officially discouraged. If you
+  have enabled automatic updates yourself, it is evaluated as usual. Behavior on non-Arch
+  distributions is unchanged.
+- **Fixed: removed hard-coded developer home-directory paths.** When `HOME` was unset, the MCP
+  server's config-file lookup and the app's scan targets fell back to a fixed path. UIDs whose
+  user name cannot be resolved are now skipped instead of running commands as a fixed user name.
+
 ### 1.10.2
 
 - **Fixed: Server Edition's unknown-port-exposure guard could permanently, wrongly block the
