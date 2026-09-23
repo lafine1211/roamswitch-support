@@ -541,6 +541,11 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
   detection for a brand name combined with a word like "security" or "support" in a newly
   registered domain (`microsoft-security-alert.com`) — especially useful for domains too new for
   threat feeds to have caught yet.
+- **Fixed: Web/mail download protection (instant scanning of files downloaded via a browser or mail
+  app) had never actually run, due to an internal issue right at startup.** The timing of a one-time
+  folder-access notice shown on first launch could crash the app during its own startup sequence.
+  This — not a detection-accuracy problem — is why things like the EICAR test detection for this
+  feature didn't fire.
 
 ## 1.10.0
 
