@@ -506,6 +506,33 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 
 ## RoamSwitch for Mac
 
+## 1.10.0
+
+- **Added: general-purpose entropy-based ransomware detection.** Alongside decoy-file tampering, it
+  analyzes the entropy (randomness) of writes to the Documents, Desktop, Downloads, and Pictures
+  folders, and detects when a large number of apparently-encrypted files are written in a short
+  time — catching encryption even in places with no decoy file. On detection, it triggers the same
+  emergency network block as the existing ransomware detection (Pro, on by default).
+- **Added: forensic evidence bundle.** When an emergency network block fires, it automatically saves
+  a snapshot of the process list, network connections, and recently changed files, with SHA-256
+  hashes.
+- **Added: credential honeytokens.** Plants decoy credential files at `~/.aws/credentials`,
+  `~/.ssh/id_rsa`, and `~/.docker/config.json`, and notifies you if they're accessed (Pro, on by
+  default; never overwrites an existing real file).
+- **Added: browser credential-access watch.** Notifies you when a process other than the browser
+  itself accesses saved passwords/cookies in Chrome, Firefox, and similar browsers (off by default
+  even within Pro; opt in from Settings).
+- **Added: two more detection rules for the process-execution recorder.** Now detects python3, perl,
+  ruby, php, or pwsh inline one-liners where a base64/eval decode and a `curl`/`wget`/etc. call
+  appear on the same line, and dylib injection via the `DYLD_INSERT_LIBRARIES` environment variable
+  (Pro).
+- **Added: you can now check how long it's been since each vulnerability scan probe last ran.** For
+  each item in the active vulnerability scan, the last recorded result and the days elapsed since
+  are available from the MCP tools.
+- **Added: NIST CSF 2.0 / CIS Controls v8 mappings for the health-check (18-item) diagnostics.**
+  Useful for audit compliance and business use explanations.
+- **Added: four AI-agent triage skill documents to roamswitch-mcp (the MCP server).**
+
 ## 1.9.54
 
 - **Improved: unknown-port-listener alerts now identify the actual program.** A process listening via a generic interpreter (`python3`, `node`, …) previously showed only the interpreter name (e.g. `python3`) in alerts and incident history, leaving the real program (e.g. `wsdd`) unidentifiable. The alert now resolves the script name from the command line and shows it as `wsdd (python3)`.
