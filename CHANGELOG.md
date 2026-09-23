@@ -522,6 +522,14 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
   (ported from the Linux edition's fix, same design).** Introduced a fingerprint that excludes the
   port (executable path + script arguments); only the first occurrence raises an alert, and further
   occurrences with the same fingerprint are recorded to the notification history only.
+- **Fixed: general-purpose entropy-based ransomware detection (added in 1.10.0) could miss a
+  genuinely malicious process when a benign background process (such as Spotlight's mdworker) was
+  also present.** Whether a process is safe is now decided while candidate processes are being
+  collected, so if even one unsafe process is found, it is always the one flagged — even alongside
+  benign processes in the same snapshot.
+- **Fixed: credential honeytokens (added in 1.10.0) silently stopped monitoring after an app
+  restart that happened after the honeytoken files had already been created.** On restart, a file
+  is now resumed for monitoring whenever it's recognized as a honeytoken this app planted earlier.
 
 ## 1.10.0
 
