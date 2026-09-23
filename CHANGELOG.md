@@ -525,6 +525,31 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 
 ## RoamSwitch for Mac
 
+## 1.10.2
+
+- **Fixed: reachability checking for a Tailscale exit node (`tailscale ping`) misjudged an exit
+  node that was working fine over a DERP relay as "unreachable," disconnecting even a legitimate
+  manual connection.** `tailscale ping` returns a non-zero exit code whenever a direct (P2P)
+  connection isn't established, even if a relayed pong actually came back. Since the check relied
+  on the exit code alone, this wrongly tore down working exit-node connections on networks that
+  could only reach the node via a DERP relay (e.g. away from home). Confirmed on a real device that
+  a real pong still produced a false result, and fixed it to also check stdout for "pong from".
+- **Fixed: once a Tailscale exit-node connection attempt on any network backed out due to a failure
+  (unreachable / route unconfirmed), auto-connect stopped working on every subsequent network, not
+  just the one where it failed.** The suppression flag set on backout was never reset except on app
+  relaunch, so it carried over across unrelated network changes. It's now reset whenever a genuine
+  network change is detected (an explicit manual "Connect now" intent is left untouched).
+- **Fixed: browser credential-access monitoring kept a history record even when the accessing
+  process couldn't be identified (which happens on nearly every browser quit and has nothing to do
+  with an actual threat), even after the notification itself was already suppressed for this case.**
+  Simplified so that an unattributed access does nothing at all — no notification, no record (a real
+  attacking process is normally caught while it's actually running, so this doesn't reduce coverage).
+- **Changed: aligned the VPN auto-connect trigger level with the Linux edition.** Auto-connect now
+  fires only at "Maximum lockdown," not "Standard protection (balanced)" (both WireGuard and
+  Tailscale). An explicit manual connect via "Connect now" still stays up regardless of level.
+- **i18n: added the 9 missing language translations for the Tailscale notification strings
+  (route-not-protected / network-recovery-failed) introduced in the previous update.**
+
 ## 1.10.1
 
 - **Fixed: a program that rebinds to a random ephemeral UDP port through an interpreter (like
