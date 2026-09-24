@@ -566,6 +566,28 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 
 ## RoamSwitch for Mac
 
+## 1.10.3
+
+- **Fixed: the credential honeytokens (added in 1.10.0) could break real tools and trigger false alarms
+  on themselves.** The ssh decoy moved from the default `~/.ssh/id_rsa` to `id_rsa_backup`, a name ssh does
+  not look for by default (with mode 0600 a normal ssh run raised a false alarm, and with 0644 it printed a
+  permissions warning). The AWS decoy is now a `[backup-admin]` profile instead of `[default]`, the Docker
+  decoy points at a non-existent internal registry instead of Docker Hub, and decoys are planted with mode
+  0600. Decoys planted by an older version are migrated to the new content (the old `id_rsa` decoy is
+  removed; real files are never touched).
+- **Fixed: honeytoken self-alarms.** After monitoring was re-enabled, the app's own read could be judged
+  suspicious against a stale baseline time, so the baseline is now cleared on stop and re-taken on start.
+  An access from RoamSwitch itself, or from the ssh tools in `/usr/bin/` (for the ssh decoy only), is no
+  longer treated as suspicious. If the accessing executable's path can't be determined, it still warns as
+  before.
+- **Fixed: the secret-leak audit (SecretLeakScanning) read the honeytoken decoy files and triggered the
+  very detection it sits beside.** It now skips only files whose path and byte size match a decoy (a real
+  file with the same name is still audited).
+- **Improved: identical threat notifications are no longer repeated for 10 minutes.** The sound and banner
+  for a threat notification with the same content are suppressed for 10 minutes (a changed body notifies
+  as usual; the notification history still records every occurrence, and isolation-state notices are
+  exempt). Same design as the Linux edition's notification-flood fix.
+
 ## 1.10.2
 
 - **Fixed: reachability checking for a Tailscale exit node (`tailscale ping`) misjudged an exit
