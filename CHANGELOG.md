@@ -144,6 +144,21 @@ setup instructions.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.10.4
+
+- **Fixed: ClamAV detection relied on a fallback because `clamdscan --fdpass` always failed inside the daemon's systemd sandbox** ("Not a regular file"). `--stream` is now tried first and `--fdpass` is retried only on error. If both fail the result is an error, never "clean".
+- **Fixed: the USB disk scan treated `clamdscan` exit code 2 (execution failure) as malware and ran `umount -f`.** Only exit code 1 (detection) now unmounts.
+- **Added: a ClamAV detection self-test and a fanotify event-overflow check (diagnostics: Client 24→26, Server 30→32, 10 languages).** An EICAR test file verifies, 120 s after start and every 6 hours, that the detection path really works.
+- **Fixed: DNS enforcement ran `resolvectl` (`dns`, `default-route`, `flush-caches`) every 3 seconds.** This flushed the DNS cache continuously and slowed name resolution. It now runs only when the state changes.
+- **Improved: Docker protection (`DOCKER-USER`) is self-healed every 60 seconds (including IPv6 and native nftables)**, on the desktop edition too, instead of once at startup.
+- **Improved: Link Guard.** The 50 ms packet-wait sleep was replaced with `poll(2)`, the queue length is 4096, and the TCP ClientHello is reassembled from sequence numbers (up to 8192 bytes). In block mode, an option (`linkGuard.blockQuic`, off by default) rejects UDP/443 (QUIC) so clients fall back to TCP.
+- **Improved: fanotify on-access scanning.** Permission events are limited to execution (`FAN_OPEN_EXEC_PERM`); `open` is a notification (`fanotify_open_perm` restores the old behavior). Executables already scanned clean are cached for 60 s and the daemon's own children are excluded. A warning is shown when `/home` is on the same filesystem as `/`.
+- **Changed: BadUSB guard.** An unapproved keyboard is no longer released after the 3-minute approval wait (`usb_keyboard_timeout_release` restores the old behavior). Hot-plug is detected immediately from `/dev/input`. A USB descriptor fingerprint (trust on first use) detects a different device claiming an already-approved VID:PID.
+- **Changed (security): IPC calls that change state are accepted only from root or from a UID with a local login session.** Read-only calls are unchanged. A refusal returns a fixed code and is shown in the GUI (10-language notification) and the CLI (ja/en). The CLI's `airgap enable/disable` also reported success without reading the reply; that is fixed.
+- **Improved: honeytoken decoy files no longer break real tools.** The AWS decoy no longer uses the `[default]` profile and the Docker decoy no longer targets Docker Hub (it uses a non-existent registry name). Decoys are created with mode 0600. Access by the OpenSSH clients (`ssh`, `scp`, `sftp`, …) and by RoamSwitch itself is recognized by executable path and no longer raises a false alarm. The accessing process is identified at event time with notify-class fanotify. Decoys planted by older versions are migrated on start (real files are never touched).
+- **Improved: external commands are launched by absolute path**, removing audit-log noise from failed `PATH` lookups. `/proc/net/route` is parsed directly and unnecessary command launches were reduced.
+- **Fixed: the advanced settings dropped unknown keys on save.** The GUI gains checkboxes for QUIC blocking, synchronous scanning on open, and keyboard auto-release (10 languages).
+
 ### 1.10.3
 
 - **Improved: repeated identical notifications are now suppressed.** A notification with the same
