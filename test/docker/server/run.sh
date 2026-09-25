@@ -159,7 +159,10 @@ docker exec "$TARGET_CONT" roamswitch fim verify >/dev/null 2>&1 && pass "Baseli
 
 echo ""
 echo "[TEST 6] guard.yaml on_critical: real decoy process + kill_process:true..."
-docker exec -d "$TARGET_CONT" bash -c "exec -a fake_exploit sleep 3600"
+# Runs as an unprivileged user on purpose: per-process network isolation refuses a
+# UID-wide drop for uid 0 (it would cut off the daemon and sshd) and escalates to host
+# isolation instead, so a root decoy would never reach the kill_process step tested here.
+docker exec -d --user nobody "$TARGET_CONT" bash -c "exec -a fake_exploit sleep 3600"
 sleep 1
 EXPLOIT_PID=$(docker exec "$TARGET_CONT" pgrep -f "fake_exploit" | head -n1)
 docker exec "$TARGET_CONT" bash -c "echo '{\"priority\":\"Critical\",\"rule\":\"fake_kernel_exploit\",\"time\":\"2026-09-07T00:00:00Z\",\"output_fields\":{\"proc.name\":\"fake_exploit\",\"proc.pid\":$EXPLOIT_PID,\"user.name\":\"attacker\"}}' | socat - UNIX-CONNECT:/run/roamswitch/events.sock"
@@ -176,15 +179,22 @@ if docker exec "$TARGET_CONT" bash -c "kill -0 $SSHD_PID" 2>/dev/null; then pass
 
 echo ""
 echo "[TEST 8] guard.yaml on_emergency: host-wide Air-Gap, SSH lockout prevention..."
-docker exec "$TARGET_CONT" bash -c "echo '{\"priority\":\"Emergency\",\"rule\":\"fake_ransomware_c2\",\"time\":\"2026-09-07T00:00:00Z\",\"output_fields\":{\"proc.name\":\"fake_ransom\",\"proc.pid\":99999,\"user.name\":\"attacker\"}}' | socat - UNIX-CONNECT:/run/roamswitch/events.sock"
+# The Emergency event names a live process, so the isolation's cause persists and the
+# Air-Gap is held while the checks run. With a non-existent PID the isolation is released
+# within seconds and the SSH check could pass after the release instead of during it.
+docker exec -d --user nobody "$TARGET_CONT" bash -c "exec -a fake_ransom sleep 3600"
+sleep 1
+RANSOM_PID=$(docker exec "$TARGET_CONT" pgrep -f "fake_ransom" | head -n1)
+docker exec "$TARGET_CONT" bash -c "echo '{\"priority\":\"Emergency\",\"rule\":\"fake_ransomware_c2\",\"time\":\"2026-09-07T00:00:00Z\",\"output_fields\":{\"proc.name\":\"fake_ransom\",\"proc.pid\":$RANSOM_PID,\"user.name\":\"attacker\"}}' | socat - UNIX-CONNECT:/run/roamswitch/events.sock"
 sleep 2
 if docker exec "$ATTACKER_CONT" curl -s -m 2 "http://$TARGET_IP:80/" >/dev/null; then fail "Target still reachable after an Emergency alert!"; else pass "Air-Gap isolation engaged."; fi
 if tcp_reachable "$TARGET_IP" 22; then pass "SSH stayed reachable during Air-Gap (preserve_ssh_on_isolation)."; else fail "SSH was cut off during Air-Gap!"; fi
 
 echo ""
-echo "[TEST 9] Safety timer: auto-restore with no ACK (guard.yaml sets safety_timer_secs=5)..."
+echo "[TEST 9] The Air-Gap is released once its cause is verified gone, with no ACK (safety_timer_secs=5)..."
+docker exec "$TARGET_CONT" kill -9 "$RANSOM_PID" 2>/dev/null || true
 sleep 20
-if curl_reachable "$TARGET_IP" 80; then pass "Air-Gap auto-restored without any ACK."; else fail "Air-Gap did NOT auto-restore."; fi
+if curl_reachable "$TARGET_IP" 80; then pass "Air-Gap released after the cause was verified cleared."; else fail "Air-Gap was NOT released although its cause is gone."; fi
 
 echo ""
 echo "[TEST 10] Safety timer: 'roamswitch server ack' suppresses auto-restore..."
