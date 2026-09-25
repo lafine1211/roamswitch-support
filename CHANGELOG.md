@@ -144,6 +144,10 @@ setup instructions.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### Unreleased
+
+- **Security: the Link Guard's packet parser no longer runs as root.** The first packets of every new connection (IP, TCP, DNS, TLS ClientHello, HTTP) are bytes chosen by the other end. A child process (the same binary, `--link-guard-parser`) parses them after dropping to `nobody`, clearing its capabilities, setting no-new-privileges and installing a seccomp filter that allows only reading and writing its two pipes and managing memory; the daemon reads only its answer. If the worker is missing or slow, the packet is accepted unparsed (the guard never takes connectivity down) and the daemon does not parse it itself.
+
 ### 1.10.6
 
 - **Security (server and client): the daemons run inside a systemd sandbox.** Kernel modules, the kernel log, cgroups, the clock, the host name, namespaces, realtime scheduling and SUID/SGID files are protected; capabilities and system calls the daemon never uses are removed; only the socket types it uses (Unix, IP, netlink, packet) are allowed; writable-executable memory is denied. `systemd-analyze security` went from 9.3 (UNSAFE) to 5.4 (MEDIUM). Each directive was applied in a real systemd 255 install, and the health report, the guards, host isolation and restore, the download guard and the FIM gave the same result as without them. `NoNewPrivileges`, `PrivateTmp` and `PrivateMounts` stay off because they break user notifications (`sudo -u`) and the `/tmp` noexec guard.
@@ -600,6 +604,10 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 - **Fixed: a development-server port outside 1 to 65535, or an endless block time, could be persisted and make the firewall rules fail to rebuild.** They are limited to 1 to 65535 and 1 second to 24 hours.
 - **Changed: the pinned VPN tools folder is refused if it holds a file the manifest does not list.**
 - **Added to the release process: the built app is checked with Apple's tools (`codesign`, `spctl`, hardened runtime, entitlements, client build) and a failing check stops the release.**
+- **Changed (security): the output of `eslogger` (the command line of every process that starts) and of `tcpdump` (packets from the LAN) is parsed outside the root helper**, by the same kind of `nobody`, sandboxed worker. The workers are started by a small spawner that also runs as `nobody`, so that they can enter a sandbox stricter than the helper's own.
+- **Changed (security): the helper runs inside a sandbox from start-up, inherited by the programs it starts.** The kernel refuses running a program from a place a user or a download can write to, and writing LaunchDaemons, system programs, sudoers, PAM, sshd or the user database. Nothing the helper's operations use is denied.
+- **Fixed: port scans over IPv6 were never detected.** The line parser cut an IPv6 address at its own colons.
+- **Added: a notification, in 10 languages, when the VPN cannot connect because its tools are not pinned yet** (before, it was only in the log).
 
 ## 1.10.4
 
