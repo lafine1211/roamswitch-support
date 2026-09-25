@@ -26,8 +26,8 @@ Known limits.
 - On Linux, a forger who first sends one ARP request claiming the address makes the neighbour table agree
   with the forger. This was measured in an isolated lab on 2026-09-20. The gateway's ARP entry is
   additionally pinned by the ARP lock (on by default on Linux, Pro and off by default on Mac).
-- The forged-address cases above were not re-run against these exact versions on real hardware for this
-  page.
+- On Linux, the forged-address cases were re-run on a real kernel and LAN on 2026-09-26 (see below). On Mac
+  they were not.
 
 ## ARP-spoof detection and the Air-Gap
 
@@ -35,15 +35,22 @@ Detection of a changed gateway MAC can lead to a full network cut (Air-Gap) when
 the user chooses "contain now" on the warning. A forged ARP reply is enough to trigger the detection, so an
 attacker on the same segment can make the warning appear. This is a denial-of-service path by design.
 
-- Mac: outside lockdown the detection only warns. The Air-Gap needs the user's choice or lockdown.
-  Release: see the security whitepaper section 4. The whitepaper and the changelog say an ARP-caused
-  isolation is not released automatically. The code also contains a read-only check that could release it
-  after three consecutive matching reads over 60 seconds. Which one applies on a real Mac is not verified.
+- Mac: outside lockdown the detection only warns. The Air-Gap needs the user's choice or lockdown. A read-only
+  check (three consecutive matching ARP-cache reads over 60 seconds) releases an ARP-caused isolation
+  automatically when it can confirm the cause is gone. During isolation the gateway's ARP entry can disappear
+  from the neighbour table (seen on a real Mac); then the check cannot confirm, and the isolation stays until it
+  is released by hand. The security whitepaper section 4 says the same since 2026-09-26. The combination was not
+  reproduced end to end on a real Mac.
 - Linux: the ARP re-check sends a direct ARP request when the gateway has no neighbour entry
   (`arp_recheck_active_probe`, on by default, from 1.9.91) to reduce isolations that stay stuck.
+
+## Lab results
+
+The cases above for Linux (forged gateway ARP, forged-source SYN scans, release of an ARP isolation) were run on a real kernel and a real LAN on 2026-09-26; see [REAL_HOST_TESTS_2026-09-26.md](REAL_HOST_TESTS_2026-09-26.md). That run found and fixed a harmless machine answering for two IPs cutting a lockdown machine off completely, and an isolation record lost on every service restart.
 
 ## Not verified
 
 - Behaviour with a forged MAC on the gateway itself (a rogue access point that copies the gateway MAC).
-  No public test exists for whether protection is relaxed on a network trusted only by gateway MAC.
+  Not measured: a second device with the router's MAC would confuse the real switch of the test LAN. No MAC
+  comparison can tell the clone from the router, so a network trusted only by gateway MAC is trusted.
 - A third-party reproduction of any of the above.
