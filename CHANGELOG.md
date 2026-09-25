@@ -144,6 +144,15 @@ setup instructions.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### Unreleased
+
+- **Fixed: the packages of 1.10.0 to 1.10.4 did not contain `roamswitch-honeytokens` and `roamswitch-incident-capture`, so credential decoys and forensic evidence bundles never ran on installs from the apt, dnf/zypper and tarball packages** (the daemons start them by name and treat a missing binary as a silent no-op). Both are now packaged for the client and the server, the daemons log an error at start-up if either is missing, and CI fails a build whose package lacks them (`scripts/check_package_contents.sh`).
+- **Fixed (security): the root daemon trusted `~/.config/roamswitch/config.json` in every `/home/*` without checking who owned it, and followed a symlink when it wrote to it.** A local user could make root overwrite another JSON file, and a user's config could switch guards off for everyone. A config is now accepted only if it is a regular file (never a symlink), owned by the owner of that home (root or uid 1000 and above), and not writable by others (group-writable only when the group is the owner's own). Turning a guard off or adding scan exclusions is honoured only from root or a uid with a local login session, the same rule as the IPC.
+- **Added (server): `honeytokens_enabled` (default true) and `harden_userns_enabled` (default true).** Turning honeytokens off stops planting and watching; decoys already on disk stay. `harden_userns_enabled=false` skips the permanent denial of unprivileged user namespaces, which breaks rootless containers; updating to a fixed kernel is the real fix for CVE-2026-53362.
+- **Changed (server): the investigation agent is refused when it would run as root with its permission prompts switched off** (`--dangerously-skip-permissions` and similar). The setup form will not save it and the daemon will not start it.
+- **Improved (server): evidence is captured before a host-wide Air-Gap, on an escalation from a failed per-process isolation, and on a ransomware canary trip.** Before, only per-process isolation captured evidence.
+- **Improved (server): a start-up warning when the maintenance SSH ports stay open to every address during isolation (empty `whitelist_ips`), and when the egress blocklist is on but the feed is empty.**
+
 ### 1.10.4
 
 - **Fixed: ClamAV detection relied on a fallback because `clamdscan --fdpass` always failed inside the daemon's systemd sandbox** ("Not a regular file"). `--stream` is now tried first and `--fdpass` is retried only on error. If both fail the result is an error, never "clean".
@@ -565,6 +574,14 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 ---
 
 ## RoamSwitch for Mac
+
+## Unreleased
+
+- **Fixed (security): the helper (root) now enforces a floor on which processes it will signal.** `terminateProcess` refuses the helper itself, OS daemons under `/System/`, `/usr/libexec/`, `/usr/sbin/` and `/sbin/`, and RoamSwitch's own binaries. Ordinary tools such as `/bin/bash` and `/usr/bin/curl` can still be stopped.
+- **Fixed (security): `setSecureDNSServers` accepted any string as a DNS server.** Only IPv4/IPv6 literals are accepted now.
+- **Fixed (security): the WireGuard import used a substring blacklist (`postup`, `table`, ...).** It is now an allowlist of plain tunnel keys, so a legitimate config that merely mentions "table" in a comment is no longer refused and unknown directives are always refused.
+- **Added: a warning when `wg-quick` or `tailscale`, which the helper runs as root, can be replaced by a non-root user** (typically a Homebrew install). Execution is unchanged.
+- **Added: a menu-bar hint on a network that is not trusted while neither the VPN auto-connect nor the ARP/NDP lock is on.**
 
 ## 1.10.3
 
