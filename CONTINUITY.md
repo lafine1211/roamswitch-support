@@ -8,18 +8,44 @@ RoamSwitch is a security product that runs with root privileges on your machine 
 once, for life. You should not be left with an unmaintained root component you cannot inspect,
 patch or replace. This is what happens if development ends.
 
+## What is not a trigger
+
+A long gap between releases is not a trigger. A finished product may go a year without a release,
+and the maintainer may be away for weeks. Silence in the release history proves nothing, so it is
+not measured.
+
 ## When this applies
 
 Either of these:
 
-1. Lafine Systems Design announces that development or support is ending, or the business is closing.
-2. There has been **no release for 12 months** *and* **no reply to a support request for 90 days**.
-   Anyone can point this out in an [Issue](../../issues); the dates come from the public release
-   history and the Issues themselves.
+1. **An announcement.** Lafine Systems Design announces that development or support is ending, or that
+   the business is closing.
+2. **An unanswered report.** A security report or support request that was accepted (an
+   [Issue](../../issues), or a report sent to the address in <https://lafine.net/.well-known/security.txt>)
+   gets **no response for 90 days**, and there is no dated maintainer statement after it (see below).
+   The dates come from the Issue itself; anyone can point it out there.
+
+## The maintainer statement
+
+The maintainer can show they are present by updating the line below. A statement dated after a
+report starts that report's 90 days again. It is for leave, illness or a quiet period, and it should
+say when the maintainer expects to be back.
+
+> Last confirmed maintained: **2026-09-25**
+
+## Notice first, then publication
+
+Meeting condition 2 does not publish anything at once. The order is:
+
+1. **Notice.** A public notice is posted in this repository (an Issue and a line in the README) naming
+   the unanswered report and the date.
+2. **30 days.** If the maintainer responds to the report or posts a statement during these 30 days,
+   the notice is withdrawn and nothing is published.
+3. **Publication.** Otherwise, within **90 days** of the notice, we publish as described below.
+
+Condition 1 (an announcement) skips the notice and the 30 days: the 90 days start at the announcement.
 
 ## What we commit to do
-
-Within **90 days** of the trigger:
 
 1. **Publish the source** of the macOS app, its root helper, the Linux edition (core, daemon, CLI,
    server edition), the Sensor and the MCP server in a public repository, with build instructions.
