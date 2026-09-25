@@ -144,7 +144,7 @@ setup instructions.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
-### Unreleased
+### 1.10.6
 
 - **Security (server and client): the daemons run inside a systemd sandbox.** Kernel modules, the kernel log, cgroups, the clock, the host name, namespaces, realtime scheduling and SUID/SGID files are protected; capabilities and system calls the daemon never uses are removed; only the socket types it uses (Unix, IP, netlink, packet) are allowed; writable-executable memory is denied. `systemd-analyze security` went from 9.3 (UNSAFE) to 5.4 (MEDIUM). Each directive was applied in a real systemd 255 install, and the health report, the guards, host isolation and restore, the download guard and the FIM gave the same result as without them. `NoNewPrivileges`, `PrivateTmp` and `PrivateMounts` stay off because they break user notifications (`sudo -u`) and the `/tmp` noexec guard.
 - **Fixed: the daily updater never updated the ClamAV signatures.** Its unit set `NoNewPrivileges=yes`, and `freshclam` fails to switch to the `clamav` user under it ("Failed to switch to clamav user"). The unit now allows it, holds only the capabilities it needs (no `NET_ADMIN`, `SYS_ADMIN`, `NET_RAW`, `KILL`), cannot open netlink or packet sockets, and can write `/var/log/clamav`.
@@ -592,7 +592,7 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 
 ## RoamSwitch for Mac
 
-## Unreleased
+## 1.10.5
 
 - **Changed (security): talking to a Sensor no longer happens in the root helper.** The TLS handshake and the parsing of the reply, which come from another machine on the LAN, run in a short-lived child process that drops to `nobody` and is confined by a sandbox: it may open one outbound TCP connection to the Sensor control port and nothing else (no files, no other ports, no fork or exec). The helper keeps the signing key and the trust store, and receives the reply as one re-encoded JSON object.
 - **Changed (security): the helper only serves the genuine app.** Besides the Team ID, it requires the hardened runtime, no entitlement that allows code injection, and build 122 or later. An older build or a re-signed copy cannot use it.

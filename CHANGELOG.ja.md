@@ -130,7 +130,7 @@ Client / Server Edition）とのペアリングコード方式(固定IP+短命�
 Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）。
 詳しくは <https://lafine.net/linux>。
 
-### 未リリース
+### 1.10.6
 
 - **セキュリティ(サーバー版・クライアント版): デーモンを、systemdのサンドボックスの中で動かします**。カーネルモジュール、カーネルログ、cgroup、時計、ホスト名、名前空間、リアルタイムスケジューリング、SUID/SGIDファイルを保護し、デーモンが使わないcapabilityとシステムコールを除き、使うソケットの種類(Unix、IP、netlink、packet)だけを許可し、書き込み可能な実行メモリを禁止します。`systemd-analyze security` は、9.3(UNSAFE)から5.4(MEDIUM)になりました。各設定は、実機のsystemd 255で適用し、診断、ガード、ホストの隔離と解除、ダウンロード保護、FIMが、設定なしと同じ結果になることを確認しました。`NoNewPrivileges`、`PrivateTmp`、`PrivateMounts` は、ユーザーへの通知(`sudo -u`)と、`/tmp` のnoexecのガードを壊すため、入れていません。
 - **修正: 毎日の更新が、ClamAVの署名を更新していませんでした**。更新のユニットが `NoNewPrivileges=yes` だったため、`freshclam` が `clamav` ユーザーに切り替えられず(「Failed to switch to clamav user」)に失敗していました。ユニットを、これを許し、必要なcapabilityだけ(`NET_ADMIN`、`SYS_ADMIN`、`NET_RAW`、`KILL` は持たない)を持ち、netlinkとpacketのソケットを開けず、`/var/log/clamav` に書けるようにしました。
@@ -536,7 +536,7 @@ Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）
 
 ## RoamSwitch for Mac
 
-## 未リリース
+## 1.10.5
 
 - **変更(セキュリティ): Sensorとの通信を、rootのヘルパーの中では行いません**。LAN上の他の機器から届く、TLSのハンドシェイクと応答の解析は、`nobody` に権限を落とし、サンドボックスに入れた短命の子プロセスで行います。許されるのは、Sensorの制御ポートへの外向きTCP接続1本だけで、ファイル、他のポート、fork、execは使えません。ヘルパーは、署名鍵と信頼の記録を持ち、応答は、整形し直した1つのJSONオブジェクトとして受け取ります。
 - **変更(セキュリティ): ヘルパーは、正規のアプリだけを相手にします**。Team IDに加えて、ハードンドランタイムが有効で、コード注入を許すentitlementがなく、build 122以上であることを要求します。古いbuildや、再署名したコピーは、使えません。
