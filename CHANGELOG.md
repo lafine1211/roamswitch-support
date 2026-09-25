@@ -144,6 +144,14 @@ setup instructions.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### Unreleased
+
+- **Security (server and client): the daemons run inside a systemd sandbox.** Kernel modules, the kernel log, cgroups, the clock, the host name, namespaces, realtime scheduling and SUID/SGID files are protected; capabilities and system calls the daemon never uses are removed; only the socket types it uses (Unix, IP, netlink, packet) are allowed; writable-executable memory is denied. `systemd-analyze security` went from 9.3 (UNSAFE) to 5.4 (MEDIUM). Each directive was applied in a real systemd 255 install, and the health report, the guards, host isolation and restore, the download guard and the FIM gave the same result as without them. `NoNewPrivileges`, `PrivateTmp` and `PrivateMounts` stay off because they break user notifications (`sudo -u`) and the `/tmp` noexec guard.
+- **Fixed: the daily updater never updated the ClamAV signatures.** Its unit set `NoNewPrivileges=yes`, and `freshclam` fails to switch to the `clamav` user under it ("Failed to switch to clamav user"). The unit now allows it, holds only the capabilities it needs (no `NET_ADMIN`, `SYS_ADMIN`, `NET_RAW`, `KILL`), cannot open netlink or packet sockets, and can write `/var/log/clamav`.
+- **Fixed (security): `rustls` is updated to 0.23.45 (RUSTSEC-2026-0285, TLS 1.3 handshake messages accepted across encryption levels).** CI now checks the dependency tree against the RustSec advisory database on every push.
+- **Fixed: the "helper programs installed" diagnostic showed its status in Japanese in every other language.** A test now fails if a translated report contains Japanese.
+- **Tested: the packet parsers of the Link Guard (TLS ClientHello, SNI, DNS, HTTP host, TCP reassembly) never panic on hostile input** (random bytes, every truncation, extreme length fields).
+
 ### 1.10.5
 
 - **Fixed: the packages of 1.10.0 to 1.10.4 did not contain `roamswitch-honeytokens` and `roamswitch-incident-capture`, so credential decoys and forensic evidence bundles never ran on installs from the apt, dnf/zypper and tarball packages** (the daemons start them by name and treat a missing binary as a silent no-op). Both are now packaged for the client and the server, the daemons log an error at start-up if either is missing, and CI fails a build whose package lacks them (`scripts/check_package_contents.sh`).
@@ -583,6 +591,15 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 ---
 
 ## RoamSwitch for Mac
+
+## Unreleased
+
+- **Changed (security): talking to a Sensor no longer happens in the root helper.** The TLS handshake and the parsing of the reply, which come from another machine on the LAN, run in a short-lived child process that drops to `nobody` and is confined by a sandbox: it may open one outbound TCP connection to the Sensor control port and nothing else (no files, no other ports, no fork or exec). The helper keeps the signing key and the trust store, and receives the reply as one re-encoded JSON object.
+- **Changed (security): the helper only serves the genuine app.** Besides the Team ID, it requires the hardened runtime, no entitlement that allows code injection, and build 122 or later. An older build or a re-signed copy cannot use it.
+- **Fixed (security): the snapshot recovery writes into your folder with your own permissions.** If the destination was swapped for a link after the checks, root could have written outside it; now the kernel refuses. The link-filter feed is read without following links and only if it belongs to the user.
+- **Fixed: a development-server port outside 1 to 65535, or an endless block time, could be persisted and make the firewall rules fail to rebuild.** They are limited to 1 to 65535 and 1 second to 24 hours.
+- **Changed: the pinned VPN tools folder is refused if it holds a file the manifest does not list.**
+- **Added to the release process: the built app is checked with Apple's tools (`codesign`, `spctl`, hardened runtime, entitlements, client build) and a failing check stops the release.**
 
 ## 1.10.4
 
