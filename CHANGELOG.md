@@ -144,7 +144,7 @@ setup instructions.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
-### Unreleased
+### 1.10.5
 
 - **Fixed: the packages of 1.10.0 to 1.10.4 did not contain `roamswitch-honeytokens` and `roamswitch-incident-capture`, so credential decoys and forensic evidence bundles never ran on installs from the apt, dnf/zypper and tarball packages** (the daemons start them by name and treat a missing binary as a silent no-op). Both are now packaged for the client and the server, the daemons log an error at start-up if either is missing, and CI fails a build whose package lacks them (`scripts/check_package_contents.sh`).
 - **Fixed (security): the root daemon trusted `~/.config/roamswitch/config.json` in every `/home/*` without checking who owned it, and followed a symlink when it wrote to it.** A local user could make root overwrite another JSON file, and a user's config could switch guards off for everyone. A config is now accepted only if it is a regular file (never a symlink), owned by the owner of that home (root or uid 1000 and above), and not writable by others (group-writable only when the group is the owner's own). Turning a guard off or adding scan exclusions is honoured only from root or a uid with a local login session, the same rule as the IPC.
@@ -160,10 +160,6 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 - **Fixed (server): the systemd unit's sandbox (`ProtectSystem=strict`, `ProtectHome=read-only`) stopped the daemon and the honeytoken helper from creating `~/.aws`, `~/.docker` and the ransomware canaries under `/root` and `/opt`.** The helper still exited 0, so the daemon logged "honeytokens deployed" with no decoy on disk. The unit now uses `ProtectHome=no` with `ReadWritePaths=-/root -/opt` (`/home` stays read-only through `ProtectSystem=strict`), and the helper exits 3 when it cannot plant a decoy. Found and confirmed in an Ubuntu 24.04 VM (kernel 7.0, systemd 255) with the published 1.10.4; the Docker suite has no such sandbox.
 - **Added: a diagnostic "helper programs installed"** (client 27 items, server 33 items, 10 languages) that checks the two helper binaries the daemon starts by name are present.
 - **Changed: apt and rpm keep the newest three versions of each package** (was one), so a defective release can be rolled back with `apt install roamswitch=<version>` or `dnf downgrade`.
-- **Changed (Mac): the Sensor control connection never falls back to plaintext.** A Sensor paired before TLS support is refused until its certificate fingerprint is pinned.
-- **Added (Mac): while an isolation is active the menu bar shows whether it is full or degraded and what caused it.**
-- **Changed (Mac, security): the root helper no longer runs Homebrew's VPN tools directly.** Anything running as your user can rewrite `/opt/homebrew`, so running `wg-quick`, `wg`, `wireguard-go`, bash and the Tailscale CLI from there as root handed that user a path to root. You now pin them once (after a confirmation): they are copied, with the libraries they load, to a root-only folder with their SHA-256 hashes recorded, verified before every run, and only those copies are executed. A connection is refused until the tools are pinned, and the menu asks you to pin them again after a Homebrew upgrade (10 languages).
-- **Added (Mac): a window that explains the isolation state and how to release it** (menu: "Isolation state and how to release it…"): full or degraded, the cause, what to check for that cause before releasing, and a release button that works without Pro (10 languages).
 - **Verified in a real VM (2026-09-25):** the Frag Gap mitigation lands (`user.max_user_namespaces=0`, `kernel.unprivileged_userns_clone=0`, Yama 2, unprivileged BPF off) and `unshare -U -r` is refused; and during host isolation SSH from another machine works on the fixed build and is cut off on the published 1.10.4.
 
 ### 1.10.4
@@ -588,12 +584,15 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 
 ## RoamSwitch for Mac
 
-## Unreleased
+## 1.10.4
 
+- **Changed (Mac): the Sensor control connection never falls back to plaintext.** A Sensor paired before TLS support is refused until its certificate fingerprint is pinned.
+- **Added (Mac): while an isolation is active the menu bar shows whether it is full or degraded and what caused it.**
+- **Changed (Mac, security): the root helper no longer runs Homebrew's VPN tools directly.** Anything running as your user can rewrite `/opt/homebrew`, so running `wg-quick`, `wg`, `wireguard-go`, bash and the Tailscale CLI from there as root handed that user a path to root. You now pin them once (after a confirmation): they are copied, with the libraries they load, to a root-only folder with their SHA-256 hashes recorded, verified before every run, and only those copies are executed. A connection is refused until the tools are pinned, and the menu asks you to pin them again after a Homebrew upgrade (10 languages).
+- **Added (Mac): a window that explains the isolation state and how to release it** (menu: "Isolation state and how to release it…"): full or degraded, the cause, what to check for that cause before releasing, and a release button that works without Pro (10 languages).
 - **Fixed (security): the helper (root) now enforces a floor on which processes it will signal.** `terminateProcess` refuses the helper itself, OS daemons under `/System/`, `/usr/libexec/`, `/usr/sbin/` and `/sbin/`, and RoamSwitch's own binaries. Ordinary tools such as `/bin/bash` and `/usr/bin/curl` can still be stopped.
 - **Fixed (security): `setSecureDNSServers` accepted any string as a DNS server.** Only IPv4/IPv6 literals are accepted now.
 - **Fixed (security): the WireGuard import used a substring blacklist (`postup`, `table`, ...).** It is now an allowlist of plain tunnel keys, so a legitimate config that merely mentions "table" in a comment is no longer refused and unknown directives are always refused.
-- **Added: a warning when `wg-quick` or `tailscale`, which the helper runs as root, can be replaced by a non-root user** (typically a Homebrew install). Execution is unchanged.
 - **Added: a menu-bar hint on a network that is not trusted while neither the VPN auto-connect nor the ARP/NDP lock is on.**
 
 ## 1.10.3
