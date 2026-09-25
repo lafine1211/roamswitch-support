@@ -176,7 +176,7 @@ Japanese and English are both welcome in Issues.
 ## Links
 
 - Website & download: https://lafine.net/
-- [FAQ](https://lafine.net/faq.html) · [Privacy Policy](https://lafine.net/privacy.html) · [Changelog](CHANGELOG.md)
+- [FAQ](https://lafine.net/faq.html) · [Privacy Policy](https://lafine.net/privacy.html) · [Changelog](CHANGELOG.md) · [If development stops](CONTINUITY.md)
 
 ---
 

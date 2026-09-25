@@ -167,7 +167,7 @@ Issue は日本語・英語どちらでも構いません。
 ## リンク
 
 - Web サイト・ダウンロード: https://lafine.net/
-- [FAQ](https://lafine.net/faq.html) ／ [プライバシーポリシー](https://lafine.net/privacy.html) ／ [変更履歴](CHANGELOG.ja.md)
+- [FAQ](https://lafine.net/faq.html) ／ [プライバシーポリシー](https://lafine.net/privacy.html) ／ [変更履歴](CHANGELOG.ja.md) ／ [開発が止まったとき](CONTINUITY.ja.md)
 
 ---
 
