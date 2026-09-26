@@ -125,6 +125,10 @@ setup instructions.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.10.8
+
+- **Fixed: the Server's investigation-agent report and the "agent handoff failed" notification did not name the host or its IP address.** Every other alert does, so on a fleet of servers you could not tell which machine a report was about. The notifications (10 languages) and the "Agent Investigation Result" section appended to the report file now carry the host name and IP address.
+
 ### 1.10.7
 
 - **Changed: the license signing key was replaced, and the app accepts the old and the new public key.** Licenses activated before keep verifying; new activations are signed with the new key, so an older version cannot activate a new license: upgrade first.
