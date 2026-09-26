@@ -45,6 +45,18 @@ Widening the detection risked false positives on legitimate files, so this was m
     data looks the same once Base64-encoded, so email attachments, files made with `base64`, and PEM bundles cannot be told apart
     by content. One file proves nothing; it takes the behaviour ("rewrites existing files in place, one after another, as Base64").
 
+## Confirmed on a real kernel (Ubuntu 24.04 aarch64, real fanotify)
+
+The simulator (`test/realhost/ransom_sim.pl`, 40 files) was run against the daemon with this change. The simulator's text was changed to
+ordinary prose (GPL-3); the earlier pangram uses almost every letter in every 16-byte stretch, so it did not look like text.
+
+| Simulation | Result |
+|---|---|
+| full | Detected and stopped with SIGSTOP (31 of 40 files encrypted by then) |
+| partial (16 of every 32 bytes) | **Detected** (0 before). At full speed the simulator finishes all 40 files before the 20-file threshold is evaluated, so the process was already gone when the freeze came ("NOT frozen: process gone"). With 0.2 s per file it was stopped at 20 of 40, like full |
+| b64 | Not counted as a detection; two shadow log lines (`uniform-base64`, 20 files each) |
+| none (low entropy left as is) | Neither a detection nor a shadow line |
+
 ## What this does not do
 
 - Ransomware written in a genuine allowlisted program (`python3` and the like) cannot be told apart by name (a limit of the design).
