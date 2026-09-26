@@ -127,6 +127,7 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 
 ### 1.10.8
 
+- **Fixed: RoamSwitch's own processes could trigger a Critical false positive just by opening a decoy file.** When the daemon's helpers such as `roamswitch-mcp-forensic` opened the decoys several times in a short window, from the second event on the process was already exiting when the event was read, so its executable path could not be resolved and it missed the allow-list (in QEMU: 3 alerts on the first run, 9 on the second). The path resolved for the same PID and the same start time within the last 10 seconds is now reused; if the PID was reused by another process the start time differs and the cache is not used.
 - **Fixed: the Server's investigation-agent report and the "agent handoff failed" notification did not name the host or its IP address.** Every other alert does, so on a fleet of servers you could not tell which machine a report was about. The notifications (10 languages) and the "Agent Investigation Result" section appended to the report file now carry the host name and IP address.
 
 ### 1.10.7
