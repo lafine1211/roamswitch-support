@@ -3,7 +3,7 @@
 **English** | [日本語](CHANGELOG.ja.md)
 
 All notable user‑facing changes to RoamSwitch. The Mac
-edition (1.x) and the Linux edition (a separate 1.9.x series) are versioned
+edition (1.x) and the Linux edition (1.x, a separate series) are versioned
 independently. Older releases are summarized in ranges.
 
 ---
