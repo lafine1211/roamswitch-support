@@ -125,6 +125,15 @@ setup instructions.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.10.9
+
+- **Fixed: blocking a port reported success even when it could not be applied to nftables, and the window closed without looking at the result.** Found on RoamSwitch OS, where pressing the button did nothing. The daemon now returns the real outcome, and on failure the window shows the reason, separating "could not connect" from "could not apply" (10 languages).
+- **Fixed: the Wi-Fi security check (open, weak encryption) always said "unknown" on systems that use iwd.** RoamSwitch OS uses iwd and systemd-networkd, so neither `nmcli` nor `wpa_supplicant` exists. When `nmcli` and `wpa_cli` give nothing, the connected SSID and security type are now read from `iwctl station show` and passed to the existing classification.
+- **Improved: the OS-hardening check now gives a dedicated message when a Validity fingerprint sensor is on the USB bus but the stock driver does not support it** (10 languages). On a real ThinkPad (138a:0090) it said "not present on VMs or desktops, so this is not a problem".
+- **Fixed: some tabs in the main window were cut off at 1280 pixels wide.** When the tab row overflows, you can now scroll it with arrows.
+- **Fixed: the client package dependencies now include `conntrack-tools` (Arch), `bluez` and `lsof`.** The Arch package had no `conntrack-tools` dependency (the deb and the PKGBUILD had it). `bluez` (Bluetooth protection, `bluetoothctl`) and `lsof` (a helper for the port list) are recommended in deb and rpm, and optional dependencies on Arch.
+- **Fixed (Server): the alert for a stopped eBPF guard told you to run a command that does not exist, `roamswitch-cli health`** (10 languages). The executable is `roamswitch` and it has no `health` verb. It now points to `roamswitch status --server`, which really checks whether Falco or Tetragon is running. A test now makes sure alert texts never name a nonexistent command.
+
 ### 1.10.8
 
 - **Fixed: RoamSwitch's own processes could trigger a Critical false positive just by opening a decoy file.** When the daemon's helpers such as `roamswitch-mcp-forensic` opened the decoys several times in a short window, from the second event on the process was already exiting when the event was read, so its executable path could not be resolved and it missed the allow-list (in QEMU: 3 alerts on the first run, 9 on the second). The path resolved for the same PID and the same start time within the last 10 seconds is now reused; if the PID was reused by another process the start time differs and the cache is not used.
@@ -318,6 +327,10 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 ---
 
 ## RoamSwitch for Mac
+
+## 1.10.6
+
+- **Fixed: when you isolated a port by hand and the privileged helper failed, the window kept showing it as "isolated".** The result was never checked. On failure the display is now reverted and the reason is shown (10 languages). This follows the same bug found on a real RoamSwitch OS machine on the Linux side.
 
 ## 1.10.5
 
