@@ -162,121 +162,18 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 - **Tested: deterministic fuzzing** of the Falco event lines, `guard.yaml`, `server.conf`, the isolation record, IPC refusal text, the DNS allowlist field and the maintenance-source answers never panics. The number of editable configuration keys (88 in `server.conf`, 37 in `guard.yaml`) is pinned by a test.
 - **Security: the Link Guard's packet parser no longer runs as root.** The first packets of every new connection (IP, TCP, DNS, TLS ClientHello, HTTP) are bytes chosen by the other end. A child process (the same binary, `--link-guard-parser`) parses them after dropping to `nobody`, clearing its capabilities, setting no-new-privileges and installing a seccomp filter that allows only reading and writing its two pipes and managing memory; the daemon reads only its answer. If the worker is missing or slow, the packet is accepted unparsed (the guard never takes connectivity down) and the daemon does not parse it itself.
 
-### 1.10.6
+### 1.10.0 - 1.10.6 (summarized)
 
-- **Security (server and client): the daemons run inside a systemd sandbox.** Kernel modules, the kernel log, cgroups, the clock, the host name, namespaces, realtime scheduling and SUID/SGID files are protected; capabilities and system calls the daemon never uses are removed; only the socket types it uses (Unix, IP, netlink, packet) are allowed; writable-executable memory is denied. `systemd-analyze security` went from 9.3 (UNSAFE) to 5.4 (MEDIUM). Each directive was applied in a real systemd 255 install, and the health report, the guards, host isolation and restore, the download guard and the FIM gave the same result as without them. `NoNewPrivileges`, `PrivateTmp` and `PrivateMounts` stay off because they break user notifications (`sudo -u`) and the `/tmp` noexec guard.
-- **Fixed: the daily updater never updated the ClamAV signatures.** Its unit set `NoNewPrivileges=yes`, and `freshclam` fails to switch to the `clamav` user under it ("Failed to switch to clamav user"). The unit now allows it, holds only the capabilities it needs (no `NET_ADMIN`, `SYS_ADMIN`, `NET_RAW`, `KILL`), cannot open netlink or packet sockets, and can write `/var/log/clamav`.
-- **Fixed (security): `rustls` is updated to 0.23.45 (RUSTSEC-2026-0285, TLS 1.3 handshake messages accepted across encryption levels).** CI now checks the dependency tree against the RustSec advisory database on every push.
-- **Fixed: the "helper programs installed" diagnostic showed its status in Japanese in every other language.** A test now fails if a translated report contains Japanese.
-- **Tested: the packet parsers of the Link Guard (TLS ClientHello, SNI, DNS, HTTP host, TCP reassembly) never panic on hostile input** (random bytes, every truncation, extreme length fields).
+Everything in these releases, grouped by topic (Client and Server Edition unless marked). The full text of each entry is in the git history of this file.
 
-### 1.10.5
-
-- **Fixed: the packages of 1.10.0 to 1.10.4 did not contain `roamswitch-honeytokens` and `roamswitch-incident-capture`, so credential decoys and forensic evidence bundles never ran on installs from the apt, dnf/zypper and tarball packages** (the daemons start them by name and treat a missing binary as a silent no-op). Both are now packaged for the client and the server, the daemons log an error at start-up if either is missing, and CI fails a build whose package lacks them (`scripts/check_package_contents.sh`).
-- **Fixed (security): the root daemon trusted `~/.config/roamswitch/config.json` in every `/home/*` without checking who owned it, and followed a symlink when it wrote to it.** A local user could make root overwrite another JSON file, and a user's config could switch guards off for everyone. A config is now accepted only if it is a regular file (never a symlink), owned by the owner of that home (root or uid 1000 and above), and not writable by others (group-writable only when the group is the owner's own). Turning a guard off or adding scan exclusions is honoured only from root or a uid with a local login session, the same rule as the IPC.
-- **Added (server): `honeytokens_enabled` (default true) and `harden_userns_enabled` (default true).** Turning honeytokens off stops planting and watching; decoys already on disk stay. `harden_userns_enabled=false` skips the permanent denial of unprivileged user namespaces, which breaks rootless containers; updating to a fixed kernel is the real fix for CVE-2026-53362.
-- **Changed (server): the investigation agent is refused when it would run as root with its permission prompts switched off** (`--dangerously-skip-permissions` and similar). The setup form will not save it and the daemon will not start it.
-- **Improved (server): evidence is captured before a host-wide Air-Gap, on an escalation from a failed per-process isolation, and on a ransomware canary trip.** Before, only per-process isolation captured evidence.
-- **Improved (server): a start-up warning when the maintenance SSH ports stay open to every address during isolation (empty `whitelist_ips`), and when the egress blocklist is on but the feed is empty.**
-- **Fixed (server): host isolation cut off the admin SSH channel it was meant to keep.** The isolation output chain ran at priority -300, before connection tracking, so `ct state established,related` never matched for the host's own replies and the SSH SYN-ACK (and every packet of an existing session) hit the drop policy. The operator was locked out during isolation even with `preserve_ssh_on_isolation=true`. The chain now runs at -100, with a regression test. Confirmed on the published 1.10.4 with the corrected pentest suite.
-- **Fixed (server): with `preserve_ssh_on_isolation=false` host isolation still opened port 22** (an empty port list fell back to the legacy admin port). It now severs everything except loopback, as documented.
-- **Fixed (server): an operator acknowledgement (`roamswitch server ack`) was ignored for a high-confidence isolation whose cause looked cleared.** The isolation was released although the command promises it will not auto-restore. An acknowledged FULL isolation is now held until the operator releases it.
-- **Fixed: the FIM reported the honeytoken decoys under `/root/.ssh` as new files.** Once the helper binary is packaged the daemon plants them after the baseline exists, so the FIM tripped its own bait. Files carrying the honeytoken marker are no longer listed; a real key without the marker is still reported.
-- **Pentest suite re-run on 2026-09-25** (Docker Desktop, arm64, Ubuntu 24.04 containers): the server suite passes 19 of 19 on a build of the 1.10 source with these fixes, and on the published 1.10.4 the corrected suite fails two checks (SSH during isolation, acknowledgement). The client suite passes 11 of 11. Kernel-level checks that need a real VM (user-namespace and Yama sysctls) are not covered. The suite now requires `PENT_DEB` and no longer tests a fixed v1.3.2 package by accident.
-- **Fixed (server): the systemd unit's sandbox (`ProtectSystem=strict`, `ProtectHome=read-only`) stopped the daemon and the honeytoken helper from creating `~/.aws`, `~/.docker` and the ransomware canaries under `/root` and `/opt`.** The helper still exited 0, so the daemon logged "honeytokens deployed" with no decoy on disk. The unit now uses `ProtectHome=no` with `ReadWritePaths=-/root -/opt` (`/home` stays read-only through `ProtectSystem=strict`), and the helper exits 3 when it cannot plant a decoy. Found and confirmed in an Ubuntu 24.04 VM (kernel 7.0, systemd 255) with the published 1.10.4; the Docker suite has no such sandbox.
-- **Added: a diagnostic "helper programs installed"** (client 27 items, server 33 items, 10 languages) that checks the two helper binaries the daemon starts by name are present.
-- **Changed: apt and rpm keep the newest three versions of each package** (was one), so a defective release can be rolled back with `apt install roamswitch=<version>` or `dnf downgrade`.
-- **Verified in a real VM (2026-09-25):** the Frag Gap mitigation lands (`user.max_user_namespaces=0`, `kernel.unprivileged_userns_clone=0`, Yama 2, unprivileged BPF off) and `unshare -U -r` is refused; and during host isolation SSH from another machine works on the fixed build and is cut off on the published 1.10.4.
-
-### 1.10.4
-
-- **Fixed: ClamAV detection relied on a fallback because `clamdscan --fdpass` always failed inside the daemon's systemd sandbox** ("Not a regular file"). `--stream` is now tried first and `--fdpass` is retried only on error. If both fail the result is an error, never "clean".
-- **Fixed: the USB disk scan treated `clamdscan` exit code 2 (execution failure) as malware and ran `umount -f`.** Only exit code 1 (detection) now unmounts.
-- **Added: a ClamAV detection self-test and a fanotify event-overflow check (diagnostics: Client 24→26, Server 30→32, 10 languages).** An EICAR test file verifies, 120 s after start and every 6 hours, that the detection path really works.
-- **Fixed: DNS enforcement ran `resolvectl` (`dns`, `default-route`, `flush-caches`) every 3 seconds.** This flushed the DNS cache continuously and slowed name resolution. It now runs only when the state changes.
-- **Improved: Docker protection (`DOCKER-USER`) is self-healed every 60 seconds (including IPv6 and native nftables)**, on the desktop edition too, instead of once at startup.
-- **Improved: Link Guard.** The 50 ms packet-wait sleep was replaced with `poll(2)`, the queue length is 4096, and the TCP ClientHello is reassembled from sequence numbers (up to 8192 bytes). In block mode, an option (`linkGuard.blockQuic`, off by default) rejects UDP/443 (QUIC) so clients fall back to TCP.
-- **Improved: fanotify on-access scanning.** Permission events are limited to execution (`FAN_OPEN_EXEC_PERM`); `open` is a notification (`fanotify_open_perm` restores the old behavior). Executables already scanned clean are cached for 60 s and the daemon's own children are excluded. A warning is shown when `/home` is on the same filesystem as `/`.
-- **Changed: BadUSB guard.** An unapproved keyboard is no longer released after the 3-minute approval wait (`usb_keyboard_timeout_release` restores the old behavior). Hot-plug is detected immediately from `/dev/input`. A USB descriptor fingerprint (trust on first use) detects a different device claiming an already-approved VID:PID.
-- **Changed (security): IPC calls that change state are accepted only from root or from a UID with a local login session.** Read-only calls are unchanged. A refusal returns a fixed code and is shown in the GUI (10-language notification) and the CLI (ja/en). The CLI's `airgap enable/disable` also reported success without reading the reply; that is fixed.
-- **Improved: honeytoken decoy files no longer break real tools.** The AWS decoy no longer uses the `[default]` profile and the Docker decoy no longer targets Docker Hub (it uses a non-existent registry name). Decoys are created with mode 0600. Access by the OpenSSH clients (`ssh`, `scp`, `sftp`, …) and by RoamSwitch itself is recognized by executable path and no longer raises a false alarm. The accessing process is identified at event time with notify-class fanotify. Decoys planted by older versions are migrated on start (real files are never touched).
-- **Improved: external commands are launched by absolute path**, removing audit-log noise from failed `PATH` lookups. `/proc/net/route` is parsed directly and unnecessary command launches were reduced.
-- **Fixed: the advanced settings dropped unknown keys on save.** The GUI gains checkboxes for QUIC blocking, synchronous scanning on open, and keyboard auto-release (10 languages).
-
-### 1.10.3
-
-- **Improved: repeated identical notifications are now suppressed.** A notification with the same
-  title and body is not shown as a pop-up or queued over IPC again for 10 minutes; it is still
-  recorded in the notification history (every one is kept). Low-urgency notifications go to the
-  history only. Dangerous-Docker-configuration notifications are likewise suppressed for the same
-  image and the same reason (a new reason notifies immediately).
-- **Fixed: DNS tunneling detection false-flagged `clamav.net` TXT responses (freshclam's
-  definition check).** These TXT queries are now exempt (NULL records and high-entropy responses
-  are still detected as before). The re-notification interval now grows in steps
-  (300 → 600 → 1200 → 1800 s), and the notification text and timeline now include the target
-  apex domain.
-- **Improved: YARA false positives on development build output (under `target/debug` and
-  `target/release`) no longer raise a notification or an approval request.** When ClamAV does not
-  agree and nothing was blocked from executing, the hit is recorded in the history only. Hits that
-  ClamAV disagrees with in the same directory and the same family are collapsed to one per 30
-  minutes.
-- **Improved: on Arch-based distributions, the "automatic security updates" diagnostic is now
-  treated as "not applicable" (no score penalty).** Unattended `pacman -Syu` on a rolling release
-  can leave the system unbootable through partial upgrades and is officially discouraged. If you
-  have enabled automatic updates yourself, it is evaluated as usual. Behavior on non-Arch
-  distributions is unchanged.
-- **Fixed: removed hard-coded developer home-directory paths.** When `HOME` was unset, the MCP
-  server's config-file lookup and the app's scan targets fell back to a fixed path. UIDs whose
-  user name cannot be resolved are now skipped instead of running commands as a fixed user name.
-
-### 1.10.2
-
-- **Fixed: Server Edition's unknown-port-exposure guard could permanently, wrongly block the
-  co-located RoamSwitch Sensor's own pairing control port (50543), depending on startup
-  timing.** If this guard's baseline scan for "ports not yet known to be exposed" happened to run
-  moments before the Sensor started listening on its control port, it flagged the Sensor's own
-  port as a newly-seen, suspicious listener and blocked it — with no way to clear it short of
-  restarting the daemon. Ports the firewall already always allows (`ssh_ports`, `allowed_ports`)
-  are now exempt from this guard's auto-block, regardless of scan timing.
-
-### 1.10.1
-
-- **Fixed: a program that rebinds to a random ephemeral UDP port through an interpreter (like
-  `wsdd`) was treated as a different port on every restart, repeating the notification endlessly.**
-  Introduced a fingerprint that excludes the port (executable path + script arguments); only the
-  first occurrence raises a desktop notification, and further occurrences with the same fingerprint
-  are recorded to the notification history only. Individual incident records (for the MCP history)
-  are still written every time.
-
-### 1.10.0
-
-- **Add: DNS tunneling / exfiltration detection** (Client and Server Edition). Watches this host's own
-  outbound DNS queries for the suspicious shapes DNS-tunneling tools (iodine, dnscat2, …) rely on — long,
-  high-entropy labels, or TXT/NULL query types — and alerts (and records to the incident timeline) once a
-  burst crosses a threshold within a short window. Never inspects non-DNS traffic, and a stalled or
-  crashed detector can never delay DNS resolution. Server Edition gets a new `dns_tunnel_detect_enabled`
-  config key (on by default).
-- **Add: forensic evidence bundles** (Client and Server Edition). When a containment action fires (a
-  ransomware canary trip, a critical eBPF detection, …), a process list, recently-modified files, and a
-  SHA-256 manifest are captured automatically.
-- **Add: deception / credential honeytokens** (Client and Server Edition). Realistic-looking decoy files
-  are placed at `.aws/credentials`, `.ssh/id_rsa`, `.docker/config.json`, and similar paths (with a cascade
-  of related decoys); any real access is detected and alerted on immediately.
-- **Add: vulnerability scan staleness (pass_age) is now visible.** For each active-verification probe
-  (`scan-vulns --confirm`), the last recorded result and the days elapsed since are available from
-  `roamswitch vuln-status`, the GUI app's Ports tab, and an MCP tool.
-- **Add: health-check items now carry NIST CSF 2.0 / CIS Controls v8 mappings** (Client and Server
-  Edition) — useful for audits and business/compliance conversations. Only confidently-mappable items get
-  a control number; uncertain ones are left blank rather than guessed.
-- **Fix: CPU usage could pin itself at high levels indefinitely in rare cases.** The malware guard (YARA)
-  asking ClamAV for a second opinion spawns `clamdscan`, whose own file-open was re-detected by the
-  on-access monitor, causing the notification pipeline to re-trigger itself in a self-sustaining loop.
-  `clamdscan` (and `clamscan`/`clamd`) are now excluded from on-access monitoring.
-- **Improve: `credential_watch` (off by default) now allowlists `ansible`/`python3`/`python`**, reducing
-  false positives from common infrastructure-as-code tooling.
-- **Add: four new AI-agent triage skills for `roamswitch-mcp`** (the MCP server), covering port-anomaly,
-  active-vulnerability-scan, package-CVE, and ransomware/incident-timeline prioritization — a consistent
-  procedure an AI agent can follow when triaging RoamSwitch's findings.
+- **New detection and recording** (1.10.0): DNS tunneling and exfiltration detection (it looks only at DNS queries this host sends itself and never blocks name resolution; Server Edition: `dns_tunnel_detect_enabled`). A forensic evidence bundle saved when containment fires on a ransomware canary or a critical eBPF detection (process list, recent file changes, a SHA-256 manifest). Decoy files (honeytokens) placed at `.aws/credentials`, `.ssh/id_rsa`, `.docker/config.json` and similar. The age of the last active vulnerability check (`roamswitch vuln-status`). A NIST CSF 2.0 and CIS Controls v8 mapping for each health check. Four triage skills for roamswitch-mcp.
+- **Honeytoken and evidence-bundle fixes** (1.10.4, 1.10.5): so the decoys do not break real tools, the AWS decoy no longer uses `[default]` and the Docker decoy points at a registry name that does not exist. Permissions are 0600, and access by OpenSSH clients and by RoamSwitch itself is recognized by executable path and not reported. The 1.10.0 to 1.10.4 packages did not contain `roamswitch-honeytokens` or `roamswitch-incident-capture`, so the decoys and the evidence bundle never ran. 1.10.5 ships both in the client and server packages, and CI now fails a build that lacks them. A new health check, "helper programs installed" (27 client items, 33 server items), was added. Also fixed: the systemd sandbox blocked decoy creation (Server), and FIM reported RoamSwitch's own decoy as a new file.
+- **Isolation (Air-Gap) and host defense** (Server, 1.10.5): host isolation cut off the management SSH it was meant to keep (the isolation output chain priority moved from -300 to -100). Port 22 was opened even with `preserve_ssh_on_isolation=false`. For a high-confidence isolation, the operator's acknowledgement (`roamswitch server ack`) was ignored once the cause looked gone. Evidence is now collected before the cut on more paths: host-wide Air-Gap, escalation of a per-process isolation, and canary tampering. At startup it warns when the maintenance SSH port stays open to every address during isolation, and when egress blocking is on but the feed is empty. New settings: `honeytokens_enabled`, and `harden_userns_enabled` (a permanent ban on unprivileged user namespaces, which breaks rootless containers, so it can be turned off).
+- **Security fixes** (1.10.4 to 1.10.6): IPC calls that change state are limited to root and to users with a local login session (1.10.4). The root daemon read `~/.config/roamswitch/config.json` under `/home/*` without checking the owner and followed symlinks when writing; settings that stop a guard are now accepted only from root or from a UID with a local login session (1.10.5). The daemon now runs inside a systemd sandbox (`systemd-analyze security` went from 9.3 to 5.4, 1.10.6). `rustls` was updated to 0.23.45 (RUSTSEC-2026-0285, 1.10.6). An investigation agent that runs as root with permission checks skipped is refused (Server, 1.10.5). External commands are started by absolute path (1.10.4).
+- **Malware detection (ClamAV, fanotify, USB)** (1.10.0, 1.10.3, 1.10.4, 1.10.6): a fallback had hidden failures of `clamdscan --fdpass`, and a USB disk scan treated exit code 2 (the scan failed) as malware and ran `umount -f`; both are fixed, and a self-test of the detection path with EICAR was added (26 client items, 32 server items). fanotify now blocks only on exec (`FAN_OPEN_EXEC_PERM`) and only notifies on `open`. The BadUSB guard no longer releases an unapproved keyboard after the 3-minute approval wait. The daily update could not refresh ClamAV signatures because of `NoNewPrivileges=yes` (1.10.6). Also fixed: `clamdscan`'s own file opens feeding back into notifications and pinning the CPU (1.10.0), and YARA false positives on development build output (1.10.3).
+- **Network, DNS, Docker, Link Guard** (1.10.1 to 1.10.4): DNS enforcement ran `resolvectl` every 3 seconds and kept flushing the DNS cache; it now runs only when the state changes. The Docker protection (`DOCKER-USER`) repairs itself every 60 seconds. Link Guard waits for packets with `poll(2)`, uses a queue length of 4096 and reassembles the ClientHello from TCP sequence numbers; block mode has an option to block UDP/443 (QUIC), `linkGuard.blockQuic`, off by default. Fixed: DNS tunneling detection flagged `clamav.net` TXT answers (1.10.3); the unknown-exposed-port guard could permanently block the control port (50543) of a Sensor on the same host, depending on startup timing (Server, 1.10.2); and programs such as `wsdd` that rebind to a new ephemeral UDP port on every restart caused endless repeat notifications (1.10.1).
+- **Notifications and health checks** (1.10.3, 1.10.4): a notification with the same title and body is kept out of the popup and the IPC queue for 10 minutes and only recorded in the history. Low-urgency notifications go to the history only. On Arch-based systems the "automatic security updates" check counts as not applicable (an unattended `pacman -Syu` on a rolling release can cause a partial upgrade). Removed the places that fell back to a hard-coded developer home path when `HOME` was unset. Fixed the advanced settings dropping unknown keys when saving.
+- **Packages and tests** (1.10.5, 1.10.6): apt and rpm keep the latest 3 versions of each package (previously 1). The pentest suite was rerun on 2026-09-25 (Docker Desktop, Ubuntu 24.04 containers: 19 of 19 server items and 11 of 11 client items passed; the Frag Gap mitigation and SSH during isolation were also checked on a real VM). Tests now check that the Link Guard packet parsers do not panic on hostile input (1.10.6).
 
 ### 1.9.39 - 1.9.94 (summarized)
 
@@ -354,140 +251,16 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 - **Fixed: port scans over IPv6 were never detected.** The line parser cut an IPv6 address at its own colons.
 - **Added: a notification, in 10 languages, when the VPN cannot connect because its tools are not pinned yet** (before, it was only in the log).
 
-## 1.10.4
+## 1.10.0 - 1.10.4 (summarized)
 
-- **Changed (Mac): the Sensor control connection never falls back to plaintext.** A Sensor paired before TLS support is refused until its certificate fingerprint is pinned.
-- **Added (Mac): while an isolation is active the menu bar shows whether it is full or degraded and what caused it.**
-- **Changed (Mac, security): the root helper no longer runs Homebrew's VPN tools directly.** Anything running as your user can rewrite `/opt/homebrew`, so running `wg-quick`, `wg`, `wireguard-go`, bash and the Tailscale CLI from there as root handed that user a path to root. You now pin them once (after a confirmation): they are copied, with the libraries they load, to a root-only folder with their SHA-256 hashes recorded, verified before every run, and only those copies are executed. A connection is refused until the tools are pinned, and the menu asks you to pin them again after a Homebrew upgrade (10 languages).
-- **Added (Mac): a window that explains the isolation state and how to release it** (menu: "Isolation state and how to release it…"): full or degraded, the cause, what to check for that cause before releasing, and a release button that works without Pro (10 languages).
-- **Fixed (security): the helper (root) now enforces a floor on which processes it will signal.** `terminateProcess` refuses the helper itself, OS daemons under `/System/`, `/usr/libexec/`, `/usr/sbin/` and `/sbin/`, and RoamSwitch's own binaries. Ordinary tools such as `/bin/bash` and `/usr/bin/curl` can still be stopped.
-- **Fixed (security): `setSecureDNSServers` accepted any string as a DNS server.** Only IPv4/IPv6 literals are accepted now.
-- **Fixed (security): the WireGuard import used a substring blacklist (`postup`, `table`, ...).** It is now an allowlist of plain tunnel keys, so a legitimate config that merely mentions "table" in a comment is no longer refused and unknown directives are always refused.
-- **Added: a menu-bar hint on a network that is not trusted while neither the VPN auto-connect nor the ARP/NDP lock is on.**
+Everything in these releases, grouped by topic. The full text of each entry is in the git history of this file.
 
-## 1.10.3
-
-- **Fixed: the credential honeytokens (added in 1.10.0) could break real tools and trigger false alarms
-  on themselves.** The ssh decoy moved from the default `~/.ssh/id_rsa` to `id_rsa_backup`, a name ssh does
-  not look for by default (with mode 0600 a normal ssh run raised a false alarm, and with 0644 it printed a
-  permissions warning). The AWS decoy is now a `[backup-admin]` profile instead of `[default]`, the Docker
-  decoy points at a non-existent internal registry instead of Docker Hub, and decoys are planted with mode
-  0600. Decoys planted by an older version are migrated to the new content (the old `id_rsa` decoy is
-  removed; real files are never touched).
-- **Fixed: honeytoken self-alarms.** After monitoring was re-enabled, the app's own read could be judged
-  suspicious against a stale baseline time, so the baseline is now cleared on stop and re-taken on start.
-  An access from RoamSwitch itself, or from the ssh tools in `/usr/bin/` (for the ssh decoy only), is no
-  longer treated as suspicious. If the accessing executable's path can't be determined, it still warns as
-  before.
-- **Fixed: the secret-leak audit (SecretLeakScanning) read the honeytoken decoy files and triggered the
-  very detection it sits beside.** It now skips only files whose path and byte size match a decoy (a real
-  file with the same name is still audited).
-- **Improved: identical threat notifications are no longer repeated for 10 minutes.** The sound and banner
-  for a threat notification with the same content are suppressed for 10 minutes (a changed body notifies
-  as usual; the notification history still records every occurrence, and isolation-state notices are
-  exempt). Same design as the Linux edition's notification-flood fix.
-
-## 1.10.2
-
-- **Fixed: reachability checking for a Tailscale exit node (`tailscale ping`) misjudged an exit
-  node that was working fine over a DERP relay as "unreachable," disconnecting even a legitimate
-  manual connection.** `tailscale ping` returns a non-zero exit code whenever a direct (P2P)
-  connection isn't established, even if a relayed pong actually came back. Since the check relied
-  on the exit code alone, this wrongly tore down working exit-node connections on networks that
-  could only reach the node via a DERP relay (e.g. away from home). Confirmed on a real device that
-  a real pong still produced a false result, and fixed it to also check stdout for "pong from".
-- **Fixed: once a Tailscale exit-node connection attempt on any network backed out due to a failure
-  (unreachable / route unconfirmed), auto-connect stopped working on every subsequent network, not
-  just the one where it failed.** The suppression flag set on backout was never reset except on app
-  relaunch, so it carried over across unrelated network changes. It's now reset whenever a genuine
-  network change is detected (an explicit manual "Connect now" intent is left untouched).
-- **Fixed: browser credential-access monitoring kept a history record even when the accessing
-  process couldn't be identified (which happens on nearly every browser quit and has nothing to do
-  with an actual threat), even after the notification itself was already suppressed for this case.**
-  Simplified so that an unattributed access does nothing at all — no notification, no record (a real
-  attacking process is normally caught while it's actually running, so this doesn't reduce coverage).
-- **Changed: aligned the VPN auto-connect trigger level with the Linux edition.** Auto-connect now
-  fires only at "Maximum lockdown," not "Standard protection (balanced)" (both WireGuard and
-  Tailscale). An explicit manual connect via "Connect now" still stays up regardless of level.
-- **i18n: added the 9 missing language translations for the Tailscale notification strings
-  (route-not-protected / network-recovery-failed) introduced in the previous update.**
-
-## 1.10.1
-
-- **Fixed: a program that rebinds to a random ephemeral UDP port through an interpreter (like
-  `wsdd`) was treated as a different port on every restart, repeating the notification endlessly
-  (ported from the Linux edition's fix, same design).** Introduced a fingerprint that excludes the
-  port (executable path + script arguments); only the first occurrence raises an alert, and further
-  occurrences with the same fingerprint are recorded to the notification history only.
-- **Fixed: general-purpose entropy-based ransomware detection (added in 1.10.0) could miss a
-  genuinely malicious process when a benign background process (such as Spotlight's mdworker) was
-  also present.** Whether a process is safe is now decided while candidate processes are being
-  collected, so if even one unsafe process is found, it is always the one flagged — even alongside
-  benign processes in the same snapshot.
-- **Fixed: credential honeytokens (added in 1.10.0) silently stopped monitoring after an app
-  restart that happened after the honeytoken files had already been created.** On restart, a file
-  is now resumed for monitoring whenever it's recognized as a honeytoken this app planted earlier.
-- **Fixed: the process-execution recorder's DYLD_INSERT_LIBRARIES detection (added in 1.10.0)
-  false-positived on every Xcode debug run.** The check now looks at whether the injected library
-  itself lives somewhere trustworthy (system locations, inside Xcode.app), rather than at the
-  signature of the binary being executed.
-- **Fixed: Link Guard's brand-impersonation (homograph) detection had never worked at all for two
-  brands, Apple and PayPal.** A character-normalization bug always remapped the letter "l" to
-  another character, which made matching those two brand names structurally impossible. Also fixed
-  a gap where swapping in a single look-alike character (`app1e.com`) went undetected, and added
-  detection for a brand name combined with a word like "security" or "support" in a newly
-  registered domain (`microsoft-security-alert.com`) — especially useful for domains too new for
-  threat feeds to have caught yet.
-- **Fixed: Web/mail download protection (instant scanning of files downloaded via a browser or mail
-  app) had never actually run, due to an internal issue right at startup.** The timing of a one-time
-  folder-access notice shown on first launch could crash the app during its own startup sequence.
-  This — not a detection-accuracy problem — is why things like the EICAR test detection for this
-  feature didn't fire.
-- **Fixed: if the gateway MAC address lookup happened to fail right at launch, it stayed stuck as
-  unresolved from then on, leaving "Register current network as trusted" unresponsive.** The retry
-  now also covers that first, right-at-launch failure, and keeps self-healing in the background
-  until it resolves.
-- **Fixed: the Tailscale Exit Node feature only trusted tailscaled's own self-reported "connected"
-  state, without verifying traffic was actually flowing through the exit node.** `tailscaled` itself
-  has a known macOS bug where the OS's default route can stay on the physical network after an exit
-  node is set, which meant RoamSwitch could show "protected" while nothing was actually protected — a
-  silent failure. The real OS default route is now independently verified; the exit node is
-  disconnected and a notification shown if it's never established. Also fixed a case where backing
-  out of a broken connection didn't stop auto-retry, causing the notification to repeat, and a case
-  where the network-recovery step after disconnecting (a DHCP renew) reported success purely from a
-  command's exit code without confirming a real address had actually been obtained — left unfixed,
-  this could leave the Mac with no internet connectivity at all.
-- **Fixed: browser credential-store monitoring falsely flagged legitimate access by Chrome/Brave-family
-  helper processes (renderer, GPU, etc.) as suspicious.** It read process names from `lsof`'s
-  human-readable output, which truncates long names (e.g. "Google Chrome Helper (Renderer)"),
-  breaking the allowlist match. Switched to `lsof`'s untruncated machine-readable output.
-
-## 1.10.0
-
-- **Added: general-purpose entropy-based ransomware detection.** Alongside decoy-file tampering, it
-  analyzes the entropy (randomness) of writes to the Documents, Desktop, Downloads, and Pictures
-  folders, and detects when a large number of apparently-encrypted files are written in a short
-  time — catching encryption even in places with no decoy file. On detection, it triggers the same
-  emergency network block as the existing ransomware detection (Pro, on by default).
-- **Added: forensic evidence bundle.** When an emergency network block fires, it automatically saves
-  a snapshot of the process list, network connections, and recently changed files, with SHA-256
-  hashes.
-- **Added: credential honeytokens.** Plants decoy credential files at `~/.aws/credentials`,
-  `~/.ssh/id_rsa`, and `~/.docker/config.json`, and notifies you if they're accessed (Pro, on by
-  default; never overwrites an existing real file).
-- **Added: browser credential-access watch.** Notifies you when a process other than the browser
-  itself accesses saved passwords/cookies in Chrome, Firefox, and similar browsers (off by default
-  even within Pro; opt in from Settings).
-- **Added: two more detection rules for the process-execution recorder.** Now detects python3, perl,
-  ruby, php, or pwsh inline one-liners where a base64/eval decode and a `curl`/`wget`/etc. call
-  appear on the same line, and dylib injection via the `DYLD_INSERT_LIBRARIES` environment variable
-  (Pro).
-- **Added: you can now check how long it's been since each vulnerability scan probe last ran.** For
-  each item in the active vulnerability scan, the last recorded result and the days elapsed since
-  are available from the MCP tools.
-- **Added: NIST CSF 2.0 / CIS Controls v8 mappings for the health-check (18-item) diagnostics.**
-  Useful for audit compliance and business use explanations.
-- **Added: four AI-agent triage skill documents to roamswitch-mcp (the MCP server).**
+- **New detection** (1.10.0): generic entropy-based ransomware detection (it analyzes the entropy of writes to Documents, Desktop, Downloads and Pictures, so it also catches encryption where no decoy exists; Pro, on by default). A forensic evidence bundle at emergency network isolation (process list, network connections, recently changed files, with SHA-256). Credential decoys (honeytokens at `~/.aws/credentials`, `~/.ssh/id_rsa`, `~/.docker/config.json`; Pro, on by default). Monitoring of access to browser credentials (off by default, even in Pro). Two process-execution rules (base64/eval with curl/wget in inline scripts, and `DYLD_INSERT_LIBRARIES`). The age of the last vulnerability check. A NIST CSF 2.0 and CIS Controls v8 mapping for each health check. Four triage skills for roamswitch-mcp.
+- **Decoy and ransomware-detection fixes** (1.10.1, 1.10.3): because the decoys broke real tools, the ssh decoy is now `id_rsa_backup`, the AWS decoy uses `[backup-admin]`, and the Docker decoy points at an internal registry name that does not exist, all written with 0600. Fixed: false alarms from RoamSwitch's own reads when monitoring was re-enabled, the secret-leak audit reading the decoys and triggering detection, and monitoring stopping silently after an app restart. Also fixed (1.10.1): entropy-based ransomware detection missing a real attack because of a harmless resident process (such as Spotlight's mdworker), and the `DYLD_INSERT_LIBRARIES` rule firing on every debug run from Xcode.
+- **Tailscale and VPN** (1.10.1, 1.10.2, 1.10.4): the Exit Node trusted tailscaled's own report and never checked the real OS default route; if the route is not established it now drops the selection and notifies. Network recovery after a disconnect (DHCP renewal) reported success from a command's exit code alone; fixed (1.10.1). `tailscale ping` misjudged a healthy Exit Node behind a DERP relay as unreachable and disconnected it, and a single back-out disabled auto-connect on every later network; both fixed (1.10.2). VPN auto-connect now matches the Linux edition and runs only at "Maximum Lockdown" (1.10.2). The root helper no longer runs Homebrew VPN tools directly; it runs only a root-owned copy that you "pinned" after review, checked with SHA-256 on every run (1.10.4).
+- **Link protection, download protection, startup** (1.10.1): brand-impersonation (homoglyph) detection never worked for Apple and PayPal (it now also catches one-character swaps such as `app1e.com` and brand-plus-word domains such as `microsoft-security-alert.com`). Web and mail download protection crashed at startup because of when the first-launch folder-access prompt was shown, so it never ran. Also fixed: a failed gateway MAC lookup right after launch stuck and made "trust the current network" unresponsive, and browser-credential monitoring flagged Chrome helper processes (the `lsof` output was truncating names).
+- **Notifications and windows** (1.10.1 to 1.10.4): threat notifications with the same content are silenced (sound and banner) for 10 minutes; the notification history keeps all of them. A repeating notification for the same port is shown only the first time (`wsdd`, 1.10.1). Browser-credential monitoring does nothing, not even a history entry, when it cannot identify the accessing process (1.10.2). During isolation the menu bar shows whether it is full or degraded and why, and there is a new "Isolation status and how to release it..." window. On an untrusted network with both VPN auto-connect and ARP/NDP pinning off, a hint is shown (1.10.4).
+- **Security fixes** (1.10.4): control traffic with a Sensor never falls back to plaintext (a Sensor paired before TLS support cannot connect until its certificate fingerprint is registered). The root helper has a floor on which processes it may signal (it refuses itself, OS daemons such as those under `/System/`, and RoamSwitch's own binaries). `setSecureDNSServers` accepts only IPv4/IPv6 addresses, and WireGuard import accepts only plain tunnel keys.
 
 ## 1.9.6 - 1.9.54 (summarized)
 
