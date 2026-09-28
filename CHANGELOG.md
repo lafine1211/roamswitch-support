@@ -219,6 +219,13 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 
 ## RoamSwitch for Mac
 
+## 1.10.9
+
+- **Fixed: a threat-detection notification could play its sound without ever showing a banner.** Every threat notification requested a "Critical Alerts"-only sound without the entitlement that makes it work (RoamSwitch does not have that entitlement). Unified on the regular sound.
+- **Fixed: eight features, including "Active Vulnerability Verification" and "Auto-isolate on a suspicious Terminal command (ClickFix protection)", showed no explanation or confirmation when turned on or off, unlike every other similar toggle.** Added a confirmation dialog to each, explaining what it actually does (10 languages).
+- **Improved: each row in the menu bar's "Exposed Ports" list now shows 🔒/🌐 for whether that specific port is actually blocked or still open.** Previously only the overall firewall state at the top was shown, with no way to read an individual port's real status.
+- **Fixed: the alert for an unauthenticated database or similar service exposed externally did not account for ports already individually isolated via Dev Server Isolator.** The "Exposed Ports" checks in the health dashboard, the menu list and the MCP server were already fixed in the previous release; this alert had the same gap left over. Isolated ports are now excluded.
+
 ## 1.10.8
 
 - **Added: detects when a local ransomware-recovery snapshot is deleted by anything other than RoamSwitch itself or an Apple process.** The same technique as Windows's `vssadmin delete shadows` (MITRE ATT&CK T1490).
@@ -232,11 +239,7 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 - **Added: the "Recovery from Ransomware" file picker now points at the snapshot's real contents, with a preview.** It used to show only the current contents of your home directory, so a deleted file itself could not be selected (only the folder it used to be in), and you could not see inside the snapshot. A new XPC call lets the helper keep a snapshot mounted, and the picker now points at that real mount. A preview pane shows the selected item's icon, size, kind and modified date (9 languages).
 - **Fixed: the overall health check for "macOS accessory-connection protection" had a branch that could never run, always showing "not applicable" on Intel Macs.** RoamSwitch is Apple Silicon only; Intel Macs are already unsupported (documented in the README). The branch was removed, and the check now always reads the real setting. The same Intel Mac wording was also removed from the knowledge base (10 languages).
 
-## 1.10.6
-
-- **Fixed: when you isolated a port by hand and the privileged helper failed, the window kept showing it as "isolated".** The result was never checked. On failure the display is now reverted and the reason is shown (10 languages). This follows the same bug found on a real RoamSwitch OS machine on the Linux side.
-
-## 1.10.0 - 1.10.5 (summarized)
+## 1.10.0 - 1.10.6 (summarized)
 
 Everything in these releases, grouped by topic. The full text of each entry is in the git history of this file.
 
@@ -261,6 +264,10 @@ Everything in these releases, grouped by topic. The full text of each entry is i
 - **Changed (security): the helper runs inside a sandbox from start-up, inherited by the programs it starts.** The kernel refuses running a program from a place a user or a download can write to, and writing LaunchDaemons, system programs, sudoers, PAM, sshd or the user database. Nothing the helper's operations use is denied.
 - **Fixed: port scans over IPv6 were never detected.** The line parser cut an IPv6 address at its own colons.
 - **Added: a notification, in 10 languages, when the VPN cannot connect because its tools are not pinned yet** (before, it was only in the log).
+
+**1.10.6:**
+
+- **Fixed: when you isolated a port by hand and the privileged helper failed, the window kept showing it as "isolated".** The result was never checked. On failure the display is now reverted and the reason is shown (10 languages). This follows the same bug found on a real RoamSwitch OS machine on the Linux side.
 
 **1.10.0 - 1.10.4:**
 
