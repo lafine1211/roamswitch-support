@@ -130,6 +130,7 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 - **Added: detects when a local ransomware-recovery snapshot (btrfs/LVM) is deleted or thinned by anything other than RoamSwitch itself or a known third-party snapshot manager (snapper, timeshift).** The same technique as Windows's `vssadmin delete shadows` (MITRE ATT&CK T1490). Verified against a real captured exec pipeline, not just hand-built test fixtures.
 - **Fixed: the notification for the detection above showed the previous rule's label instead of its own.** A missing entry in the label-mapping table when a new rule is added; fixed in all 10 languages.
 - **Improved: the ransomware recovery screen's description now states the real scope (each login user's home directory only)** instead of the vaguer "data on btrfs/LVM", which read as covering more than it actually protects.
+- **Fixed: the tray menu's language switcher was missing Italian and Portuguese.** The main window's language setting and the i18n catalog itself already supported all 10 languages, but the tray menu's hand-written item list was never updated with these two, so they weren't selectable there.
 
 ### 1.10.10
 
