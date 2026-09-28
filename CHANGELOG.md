@@ -125,6 +125,12 @@ setup instructions.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.10.11
+
+- **Added: detects when a local ransomware-recovery snapshot (btrfs/LVM) is deleted or thinned by anything other than RoamSwitch itself or a known third-party snapshot manager (snapper, timeshift).** The same technique as Windows's `vssadmin delete shadows` (MITRE ATT&CK T1490). Verified against a real captured exec pipeline, not just hand-built test fixtures.
+- **Fixed: the notification for the detection above showed the previous rule's label instead of its own.** A missing entry in the label-mapping table when a new rule is added; fixed in all 10 languages.
+- **Improved: the ransomware recovery screen's description now states the real scope (each login user's home directory only)** instead of the vaguer "data on btrfs/LVM", which read as covering more than it actually protects.
+
 ### 1.10.10
 
 - **Added: the "Recovery & Uninstall" restore path is now a real GTK file picker instead of a free-text field.** It calls roamswitch-os's mount-for-browsing/unmount-browse and points the dialog straight at the snapshot's actual contents, so a deleted file can be selected directly. A preview pane (icon, size, kind, modified date) was added too (10 languages).
@@ -143,12 +149,7 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 - **Fixed: the client package dependencies now include `conntrack-tools` (Arch), `bluez` and `lsof`.** The Arch package had no `conntrack-tools` dependency (the deb and the PKGBUILD had it). `bluez` (Bluetooth protection, `bluetoothctl`) and `lsof` (a helper for the port list) are recommended in deb and rpm, and optional dependencies on Arch.
 - **Fixed (Server): the alert for a stopped eBPF guard told you to run a command that does not exist, `roamswitch-cli health`** (10 languages). The executable is `roamswitch` and it has no `health` verb. It now points to `roamswitch status --server`, which really checks whether Falco or Tetragon is running. A test now makes sure alert texts never name a nonexistent command.
 
-### 1.10.8
-
-- **Fixed: RoamSwitch's own processes could trigger a Critical false positive just by opening a decoy file.** When the daemon's helpers such as `roamswitch-mcp-forensic` opened the decoys several times in a short window, from the second event on the process was already exiting when the event was read, so its executable path could not be resolved and it missed the allow-list (in QEMU: 3 alerts on the first run, 9 on the second). The path resolved for the same PID and the same start time within the last 10 seconds is now reused; if the PID was reused by another process the start time differs and the cache is not used.
-- **Fixed: the Server's investigation-agent report and the "agent handoff failed" notification did not name the host or its IP address.** Every other alert does, so on a fleet of servers you could not tell which machine a report was about. The notifications (10 languages) and the "Agent Investigation Result" section appended to the report file now carry the host name and IP address.
-
-### 1.10.0 - 1.10.7 (summarized)
+### 1.10.0 - 1.10.8 (summarized)
 
 Everything in these releases, grouped by topic (Client and Server Edition unless marked). The full text of each entry is in the git history of this file.
 
@@ -164,6 +165,8 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 - **Recovery and uninstall** (1.10.7): a new tab in the main window. `roamswitch emergency-restore` and the tray menu put isolation, firewall rules, the gateway pin, DNS and connection tracking back; `roamswitch uninstall` does that first and then removes the decoys and the files setup added. Both refuse without an explicit acknowledgement when the gateway is not the trusted one or the isolation's cause is not verified gone. Also fixed a low-resolution screen hiding the tray's submenus.
 - **Ransomware: partial-encryption detection** (1.10.7): detects the technique used by LockBit-style families, where 16 of every 32 bytes are encrypted (94% of simulated files, 0.01% false positives on ordinary files). Three other patterns are still only counted in shadow mode.
 - **Security fixes (continued)** (1.10.7): fixed a changed gateway MAC alone being read as a move to another network, a release adopting whatever gateway was present as the new trusted one, the isolation record being lost on every service restart, and the ransomware burst check exempting any process whose name matched the allowlist regardless of its actual executable (renaming a process was enough to slip past it). The Link Guard's packet parser no longer runs as root; it runs in a sandboxed, privilege-dropped child process.
+- **Decoy-file false positive** (1.10.8): RoamSwitch's own processes could trigger a Critical false positive just by opening a decoy file. The path resolved for the same PID and start time within the last 10 seconds is now reused for allow-list checks.
+- **Server investigation-agent reports** (1.10.8): the report and the "agent handoff failed" notification now carry the host name and IP address, so a fleet of servers can be told apart.
 
 ### 1.9.39 - 1.9.94 (summarized)
 
@@ -215,6 +218,14 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 
 ## RoamSwitch for Mac
 
+## 1.10.8
+
+- **Added: detects when a local ransomware-recovery snapshot is deleted by anything other than RoamSwitch itself or an Apple process.** The same technique as Windows's `vssadmin delete shadows` (MITRE ATT&CK T1490).
+- **Fixed: the menu bar's health check list showed the same ⚠️ warning icon for an item that could not be determined (e.g. macOS Accessory Connection Protection before a first check) as for an actual failure.** The full dashboard already distinguished these; the menu bar now shows ➖ for "could not determine", matching it.
+- **Fixed: the "Exposed Ports" check kept counting a port as exposed even after it had been individually isolated via Dev Server Isolator.** Isolated ports are now excluded (including from the MCP server's `get_security_report`), matching the precision of the Linux edition.
+- **Improved: the knowledge base description of "Process Execution Recording" had fallen behind by two detection-rule additions.** Added the missing three rules in all 10 languages, and added a test that fails if this happens again.
+- **Improved: the "Ransomware Recovery" screen now explains what a snapshot actually covers (this Mac's entire writable area, not the OS itself) and where the file picker starts from (your Home folder).**
+
 ## 1.10.7
 
 - **Added: the "Recovery from Ransomware" file picker now points at the snapshot's real contents, with a preview.** It used to show only the current contents of your home directory, so a deleted file itself could not be selected (only the folder it used to be in), and you could not see inside the snapshot. A new XPC call lets the helper keep a snapshot mounted, and the picker now points at that real mount. A preview pane shows the selected item's icon, size, kind and modified date (9 languages).
@@ -224,7 +235,11 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 
 - **Fixed: when you isolated a port by hand and the privileged helper failed, the window kept showing it as "isolated".** The result was never checked. On failure the display is now reverted and the reason is shown (10 languages). This follows the same bug found on a real RoamSwitch OS machine on the Linux side.
 
-## 1.10.5
+## 1.10.0 - 1.10.5 (summarized)
+
+Everything in these releases, grouped by topic. The full text of each entry is in the git history of this file.
+
+**1.10.5:**
 
 - **Changed: the license signing key was replaced, and the app accepts the old and the new public key.** The private half of the previous key was lost with the license backend's environment. Licenses activated before keep verifying (the earlier key is still accepted); new activations are signed with the new key, so **an older version of the app cannot activate a new license: upgrade to this version first**.
 - **Fixed: a crafted Mach-O file could stop the root helper.** When you pin a Homebrew tool (WireGuard, Tailscale), the helper reads the tool's Mach-O header; a 64-bit fat header whose slice offset is beyond the range of `Int` made the conversion trap and the helper exit. Found by a new test that feeds the root-side parsers broken and random input (Mach-O, WireGuard configuration, ARP table, addresses, the frames of the parse worker; about 80,000 inputs with a fixed seed). It could only stop the helper, not run code.
@@ -246,9 +261,7 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 - **Fixed: port scans over IPv6 were never detected.** The line parser cut an IPv6 address at its own colons.
 - **Added: a notification, in 10 languages, when the VPN cannot connect because its tools are not pinned yet** (before, it was only in the log).
 
-## 1.10.0 - 1.10.4 (summarized)
-
-Everything in these releases, grouped by topic. The full text of each entry is in the git history of this file.
+**1.10.0 - 1.10.4:**
 
 - **New detection** (1.10.0): generic entropy-based ransomware detection (it analyzes the entropy of writes to Documents, Desktop, Downloads and Pictures, so it also catches encryption where no decoy exists; Pro, on by default). A forensic evidence bundle at emergency network isolation (process list, network connections, recently changed files, with SHA-256). Credential decoys (honeytokens at `~/.aws/credentials`, `~/.ssh/id_rsa`, `~/.docker/config.json`; Pro, on by default). Monitoring of access to browser credentials (off by default, even in Pro). Two process-execution rules (base64/eval with curl/wget in inline scripts, and `DYLD_INSERT_LIBRARIES`). The age of the last vulnerability check. A NIST CSF 2.0 and CIS Controls v8 mapping for each health check. Four triage skills for roamswitch-mcp.
 - **Decoy and ransomware-detection fixes** (1.10.1, 1.10.3): because the decoys broke real tools, the ssh decoy is now `id_rsa_backup`, the AWS decoy uses `[backup-admin]`, and the Docker decoy points at an internal registry name that does not exist, all written with 0600. Fixed: false alarms from RoamSwitch's own reads when monitoring was re-enabled, the secret-leak audit reading the decoys and triggering detection, and monitoring stopping silently after an app restart. Also fixed (1.10.1): entropy-based ransomware detection missing a real attack because of a harmless resident process (such as Spotlight's mdworker), and the `DYLD_INSERT_LIBRARIES` rule firing on every debug run from Xcode.
