@@ -199,13 +199,16 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 
 ## RoamSwitch for Mac
 
+## 1.10.12
+
+- **Added: a Security Activity Log screen.** It lets you search and filter across everything RoamSwitch has detected so far (ransomware containment, ARP spoofing, port anomalies, ClickFix protection, recorded process execution, and more), with a time-series chart whose bars you can click to narrow the list to that time window (reachable from the menu bar).
+- **Ran a false-positive/alert-fatigue audit and fixed 27 findings.** Highlights: the ransomware protection's emergency containment banner (decoy-file tampering, high-entropy write bursts) now names the affected file and the suspected process (previously this was captured internally but never shown). ClickFix protection now sends a notify-only alert instead of cutting the network when a command matches a known installer's pattern (e.g. sh.rustup.rs). The risky-Docker-container notification now has a 24-hour cooldown so the same container no longer re-notifies on every restart. Link protection now states which signal triggered it (a known threat-feed match, a TLS fingerprint match, or brand-impersonation similarity). The Pickle-format AI model file (.pt/.pkl/.ckpt, etc.) download warning now includes where the file came from, and its wording was softened. Many other notifications (ARP spoofing, port anomalies, USB detections) now include more of what's needed to judge them — the old/new MAC address, the executable's path, sample targeted ports, and more.
+
 ## 1.10.11
 
 - **Fixed: the NDP pin of the gateway's IPv6 router never actually took effect.** Passing a link-local address (fe80::…) to `ndp -s` without its interface exits 0 but only creates an expired entry that is not pinned (confirmed on a real Mac running macOS 27). The old code looked only at the exit status and reported the pin as done. The pin is now made with the interface (`fe80::…%en0`) and checked afterwards for `permanent`; if it cannot be confirmed, it counts as a failure.
 - **Fixed: the gateway ARP/NDP pin deleted and re-added the entry on every policy re-evaluation, even when it was already pinned.** The gateway's entry vanished for a moment each time. When the entry is already pinned to the same MAC, nothing is done.
 - **Fixed: the code that collects the pin targets left the output pipe of each external command open and waited for the command to exit before reading its output.** That could grow the number of open file descriptors in the app itself, so the pipes are now closed after use and the output is read before waiting for the exit.
-- **Added: a Security Activity Log screen.** It lets you search and filter across everything RoamSwitch has detected so far (ransomware containment, ARP spoofing, port anomalies, ClickFix protection, recorded process execution, and more), with a time-series chart whose bars you can click to narrow the list to that time window (reachable from the menu bar).
-- **Ran a false-positive/alert-fatigue audit and fixed 27 findings.** Highlights: the ransomware protection's emergency containment banner (decoy-file tampering, high-entropy write bursts) now names the affected file and the suspected process (previously this was captured internally but never shown). ClickFix protection now sends a notify-only alert instead of cutting the network when a command matches a known installer's pattern (e.g. sh.rustup.rs). The risky-Docker-container notification now has a 24-hour cooldown so the same container no longer re-notifies on every restart. Link protection now states which signal triggered it (a known threat-feed match, a TLS fingerprint match, or brand-impersonation similarity). The Pickle-format AI model file (.pt/.pkl/.ckpt, etc.) download warning now includes where the file came from, and its wording was softened. Many other notifications (ARP spoofing, port anomalies, USB detections) now include more of what's needed to judge them — the old/new MAC address, the executable's path, sample targeted ports, and more.
 
 ## 1.10.10
 
@@ -215,16 +218,11 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 - **Fixed: the "Critical Path FIM" could report `/etc/hosts` or `/etc/ssh/sshd_config` as "deleted" when another process merely made them unreadable for a moment.** A file that really does not exist is judged immediately; only a file that exists but cannot be read is retried a few times at short intervals.
 - **Fixed: the order of items in the "Active Vulnerability Verification" status changed from run to run when several items were checked on the same day.** The status window also now explains what active verification does, that "unverified" does not mean "safe", and that this screen itself does not run a scan (9 languages).
 
-## 1.10.9
-
-- **Fixed: a threat-detection notification could play its sound without ever showing a banner.** Every threat notification requested a "Critical Alerts"-only sound without the entitlement that makes it work (RoamSwitch does not have that entitlement). Unified on the regular sound.
-- **Fixed: eight features, including "Active Vulnerability Verification" and "Auto-isolate on a suspicious Terminal command (ClickFix protection)", showed no explanation or confirmation when turned on or off, unlike every other similar toggle.** Added a confirmation dialog to each, explaining what it actually does (10 languages).
-- **Improved: each row in the menu bar's "Exposed Ports" list now shows 🔒/🌐 for whether that specific port is actually blocked or still open.** Previously only the overall firewall state at the top was shown, with no way to read an individual port's real status.
-- **Fixed: the alert for an unauthenticated database or similar service exposed externally did not account for ports already individually isolated via Dev Server Isolator.** The "Exposed Ports" checks in the health dashboard, the menu list and the MCP server were already fixed in the previous release; this alert had the same gap left over. Isolated ports are now excluded.
-
-## 1.10.0 - 1.10.8 (summarized)
+## 1.10.0 - 1.10.9 (summarized)
 
 Everything in these releases, grouped by topic. The full text of each entry is in the git history of this file.
+
+**1.10.9:** a threat-detection notification could play its sound without ever showing a banner, because every threat notification requested a "Critical Alerts"-only sound without the entitlement that makes it work (unified on the regular sound). Eight features, including "Active Vulnerability Verification" and ClickFix protection's auto-isolate, gained a confirmation dialog when turned on or off (10 languages). Each row in the menu bar's "Exposed Ports" list now shows 🔒/🌐 for whether that port is actually blocked. The unauthenticated-database exposure alert now excludes ports already isolated via Dev Server Isolator.
 
 **1.10.5:**
 
