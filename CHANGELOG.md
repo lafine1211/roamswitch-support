@@ -125,6 +125,13 @@ setup instructions.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.10.12
+
+- **Fixed: right after resuming from suspend (closing the laptop lid), a false "protection is not responding" alert could appear.** The guard liveness check uses the wall clock, which keeps advancing during suspend, so the first monitoring cycle after resume treated the last heartbeat as missing for the whole suspend time. A gap far beyond the monitor loop's own call interval (normally 3 seconds) is now treated as a resume from suspend: every guard's timestamp is reset before normal checks continue.
+- **Fixed: the order of items in the active-verification status changed from run to run when several items were checked on the same day.** The age was truncated to whole days, so every item from the same day tied. It now compares second-level timestamps.
+- **Improved: the active-verification status now explains what active verification does** (GUI in 10 languages, CLI in Japanese and English). It sends real requests to see whether something is actually exploitable, not merely whether a port is open; "unverified / undeterminable" does not mean "safe"; and this screen itself does not run a scan.
+- **Fixed: in the popular-npm-packages feed, the manifest URL did not match the published file name.** Following a path that does not exist returned the home page, which the client showed as a false SHA-256 mismatch warning (possible tampering). It now points at the file name that is really published, verified by downloading it from production.
+
 ### 1.10.11
 
 - **Added: detects when a local ransomware-recovery snapshot (btrfs/LVM) is deleted or thinned by anything other than RoamSwitch itself or a known third-party snapshot manager (snapper, timeshift).** The same technique as Windows's `vssadmin delete shadows` (MITRE ATT&CK T1490). Verified against a real captured exec pipeline, not just hand-built test fixtures.
@@ -141,16 +148,7 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 - **Fixed: external commands the resident daemon calls on its periodic cycle (bluetoothctl, nmcli, lsof, conntrack, mokutil, iwctl, wpa_cli) had no time limit.** On a real RoamSwitch OS machine with bluetoothd not running, `bluetoothctl discoverable off` did not return even after 1h41m, and every lock-requiring IPC — including port blocking — jammed behind the cycle's shared lock (the GUI looked unresponsive). Commands that exceed the limit now have their child process killed and return a timeout.
 - **Changed: the AUR (roamswitch-bin) publish job is now skipped by default** (AUR has stopped new registrations and the SSH key can no longer be fetched). To resume, set the repository variable `AUR_PUBLISH_ENABLED=true` and rerun the job.
 
-### 1.10.9
-
-- **Fixed: blocking a port reported success even when it could not be applied to nftables, and the window closed without looking at the result.** Found on RoamSwitch OS, where pressing the button did nothing. The daemon now returns the real outcome, and on failure the window shows the reason, separating "could not connect" from "could not apply" (10 languages).
-- **Fixed: the Wi-Fi security check (open, weak encryption) always said "unknown" on systems that use iwd.** RoamSwitch OS uses iwd and systemd-networkd, so neither `nmcli` nor `wpa_supplicant` exists. When `nmcli` and `wpa_cli` give nothing, the connected SSID and security type are now read from `iwctl station show` and passed to the existing classification.
-- **Improved: the OS-hardening check now gives a dedicated message when a Validity fingerprint sensor is on the USB bus but the stock driver does not support it** (10 languages). On a real ThinkPad (138a:0090) it said "not present on VMs or desktops, so this is not a problem".
-- **Fixed: some tabs in the main window were cut off at 1280 pixels wide.** When the tab row overflows, you can now scroll it with arrows.
-- **Fixed: the client package dependencies now include `conntrack-tools` (Arch), `bluez` and `lsof`.** The Arch package had no `conntrack-tools` dependency (the deb and the PKGBUILD had it). `bluez` (Bluetooth protection, `bluetoothctl`) and `lsof` (a helper for the port list) are recommended in deb and rpm, and optional dependencies on Arch.
-- **Fixed (Server): the alert for a stopped eBPF guard told you to run a command that does not exist, `roamswitch-cli health`** (10 languages). The executable is `roamswitch` and it has no `health` verb. It now points to `roamswitch status --server`, which really checks whether Falco or Tetragon is running. A test now makes sure alert texts never name a nonexistent command.
-
-### 1.10.0 - 1.10.8 (summarized)
+### 1.10.0 - 1.10.9 (summarized)
 
 Everything in these releases, grouped by topic (Client and Server Edition unless marked). The full text of each entry is in the git history of this file.
 
@@ -168,6 +166,8 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 - **Security fixes (continued)** (1.10.7): fixed a changed gateway MAC alone being read as a move to another network, a release adopting whatever gateway was present as the new trusted one, the isolation record being lost on every service restart, and the ransomware burst check exempting any process whose name matched the allowlist regardless of its actual executable (renaming a process was enough to slip past it). The Link Guard's packet parser no longer runs as root; it runs in a sandboxed, privilege-dropped child process.
 - **Decoy-file false positive** (1.10.8): RoamSwitch's own processes could trigger a Critical false positive just by opening a decoy file. The path resolved for the same PID and start time within the last 10 seconds is now reused for allow-list checks.
 - **Server investigation-agent reports** (1.10.8): the report and the "agent handoff failed" notification now carry the host name and IP address, so a fleet of servers can be told apart.
+- **Port-block result and Wi-Fi detection** (1.10.9): blocking a port reported success even when it could not be applied to nftables, and the window did not look at the result; on failure it now shows the reason, separating "could not connect" from "could not apply". On systems that use iwd (RoamSwitch OS) the Wi-Fi security check always said "unknown", so the connected SSID and security type are now read from `iwctl station show`.
+- **Checks, window and packages** (1.10.9): a dedicated message when a Validity fingerprint sensor on USB is not supported by the stock driver (10 languages). Main-window tabs that were cut off at 1280 pixels wide now scroll with arrows. Client dependencies now include `conntrack-tools` (Arch), `bluez` and `lsof`. The Server Edition's stopped-eBPF-guard alert no longer points at a command that does not exist; it now says `roamswitch status --server`.
 
 ### 1.9.39 - 1.9.94 (summarized)
 
@@ -219,6 +219,14 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 
 ## RoamSwitch for Mac
 
+## 1.10.10
+
+- **Fixed: the privileged helper showed "Helper not connected", and restarting, reinstalling or approving it again did not help.** Every time the helper ran an external command (arp, ndp, networksetup, launchctl and others) it left the output pipe open, so open file descriptors grew with each network change until the limit (256) was reached, after which every connection from the app was refused. Even when the helper was approved, the menu showed "⚠️ Approve the helper…". Pipes are now closed explicitly after use.
+- **Fixed: even when the network had not changed, the firewall (block all and stealth mode) and DNS were rewritten about every 2 seconds.** Writing the settings makes macOS announce a network configuration change, and the app answered that by writing the settings again. A setting that already has the wanted value is no longer written.
+- **Fixed: a large output from an external command could stall the helper.** It waited for the command to exit before reading its output, so once the pipe was full the command could not write and never finished. It now reads the output first and then waits for the exit.
+- **Fixed: the "Critical Path FIM" could report `/etc/hosts` or `/etc/ssh/sshd_config` as "deleted" when another process merely made them unreadable for a moment.** A file that really does not exist is judged immediately; only a file that exists but cannot be read is retried a few times at short intervals.
+- **Fixed: the order of items in the "Active Vulnerability Verification" status changed from run to run when several items were checked on the same day.** The status window also now explains what active verification does, that "unverified" does not mean "safe", and that this screen itself does not run a scan (9 languages).
+
 ## 1.10.9
 
 - **Fixed: a threat-detection notification could play its sound without ever showing a banner.** Every threat notification requested a "Critical Alerts"-only sound without the entitlement that makes it work (RoamSwitch does not have that entitlement). Unified on the regular sound.
@@ -234,12 +242,7 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 - **Improved: the knowledge base description of "Process Execution Recording" had fallen behind by two detection-rule additions.** Added the missing three rules in all 10 languages, and added a test that fails if this happens again.
 - **Improved: the "Ransomware Recovery" screen now explains what a snapshot actually covers (this Mac's entire writable area, not the OS itself) and where the file picker starts from (your Home folder).**
 
-## 1.10.7
-
-- **Added: the "Recovery from Ransomware" file picker now points at the snapshot's real contents, with a preview.** It used to show only the current contents of your home directory, so a deleted file itself could not be selected (only the folder it used to be in), and you could not see inside the snapshot. A new XPC call lets the helper keep a snapshot mounted, and the picker now points at that real mount. A preview pane shows the selected item's icon, size, kind and modified date (9 languages).
-- **Fixed: the overall health check for "macOS accessory-connection protection" had a branch that could never run, always showing "not applicable" on Intel Macs.** RoamSwitch is Apple Silicon only; Intel Macs are already unsupported (documented in the README). The branch was removed, and the check now always reads the real setting. The same Intel Mac wording was also removed from the knowledge base (10 languages).
-
-## 1.10.0 - 1.10.6 (summarized)
+## 1.10.0 - 1.10.7 (summarized)
 
 Everything in these releases, grouped by topic. The full text of each entry is in the git history of this file.
 
@@ -268,6 +271,11 @@ Everything in these releases, grouped by topic. The full text of each entry is i
 **1.10.6:**
 
 - **Fixed: when you isolated a port by hand and the privileged helper failed, the window kept showing it as "isolated".** The result was never checked. On failure the display is now reverted and the reason is shown (10 languages). This follows the same bug found on a real RoamSwitch OS machine on the Linux side.
+
+**1.10.7:**
+
+- **Added: the "Recovery from Ransomware" file picker now points at the snapshot's real contents, with a preview.** It used to show only the current contents of your home directory, so a deleted file itself could not be selected. The helper now keeps the snapshot open through new mount/unmount XPC calls, and a preview shows the selected item's icon, size, kind and modification date (9 languages).
+- **Fixed: the overall health check for "macOS accessory-connection protection" had a branch that could never run, always showing "not applicable" on Intel Macs.** Intel Macs are already unsupported, so the branch was removed.
 
 **1.10.0 - 1.10.4:**
 
