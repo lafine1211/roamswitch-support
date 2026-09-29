@@ -117,6 +117,13 @@ setup instructions.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.10.14
+
+- **Added: PersonalSOC (a personal security operations center) is now bundled in the packages (deb, rpm, tarball, AUR)**. It is a separate app that gathers this device's logs and defense status, read-only, into a report (it has its own icon and launches from the app list). It can also pull in what RoamSwitch has detected. It supports 10 languages and is open source under Apache-2.0. See the [PersonalSOC](https://lafine.net/personalsoc) page for details.
+- The deb and rpm packages install WebKitGTK (libwebkit2gtk-4.1) automatically. On Arch (AUR), install `webkit2gtk-4.1` as an optional dependency. The Server Edition does not include it.
+- PersonalSOC is updated with RoamSwitch's packages (the Linux edition has no in-app updater).
+- PersonalSOC's LLM integration is optional and off by default. When enabled, detection details and similar information may be sent to an external service through the LLM command you chose. RoamSwitch itself is unchanged (it sends nothing externally).
+
 ### 1.10.13
 
 - **Added: a Security Activity Log tab.** It lets you search and filter across everything RoamSwitch has detected so far (ARP, FIM, port anomalies, recorded process execution, notification history, and more), with a time-series bar chart whose bars you can click to narrow the list to that time window.
@@ -209,6 +216,13 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 ---
 
 ## RoamSwitch for Mac
+
+## 1.10.14
+
+- **Added: PersonalSOC now has an in-app updater (Mac)**. In Settings under Updates, it connects to lafine.net to fetch the latest version information only when you press "Check for updates" (nothing about this device or its logs is sent). If a newer version exists you can download and install it. The downloaded file is verified with a signature before it is installed, and nothing is installed if the check fails. It is a separate mechanism from RoamSwitch's own in-app updater (Sparkle). For now only Apple Silicon (M1 and later) is covered.
+- **Changed: removed the fixed "Response" section from PersonalSOC reports**. It was the same sentence in every report. When the LLM proposes a response, it appears inside its audit report.
+- **Fixed: in PersonalSOC in English and other languages, chart legends and axis labels overlapped or were cut off**. Also fixed the "Recent events" text in reports being cut in the middle of a word.
+- PersonalSOC is now 0.1.1. If 0.1.0 is already installed, installing the new DMG updates it. From 0.1.1 on you can update from inside the app.
 
 ## 1.10.13
 
