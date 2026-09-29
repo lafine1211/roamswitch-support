@@ -19,6 +19,10 @@ development — see
 <https://lafine.net/roamswitch-sensor-manual.html> for current status and
 setup instructions.
 
+### 0.3.12
+
+- **Ran a false-positive/alert-fatigue audit and fixed 6 findings.** The detectors whose volume can spike (outbound fan-out, outbound flood, malicious-destination contact, IoT device behaviour) sent an empty destination identifier, so when a *different* device tripped the same kind of detection it could be silently suppressed as if it were still in cooldown (notifications now carry the correct MAC address). Those detectors' severity, and the DNS-tunneling detector's severity, are now downgraded for a device that's already registered in the device inventory (with an operator note). ARP event webhook/syslog notifications now carry the same context (vendor, registration status, history) the TUI/CLI already showed.
+
 ### 0.3.11
 
 - **Improve: the fingerprint field on the manual-pairing screen now explains itself.** Since the shown
@@ -33,31 +37,7 @@ setup instructions.
   `--fingerprint`. `sensor-cli issue-code` also prints the command to run on the endpoint (with this
   Sensor's own IP and fingerprint).
 
-### 0.3.9
-
-- **Add: the control API now speaks TLS 1.3 with certificate pinning.** Until now, pairing codes
-  and audit results crossed the LAN in plaintext. The Sensor holds a self-signed certificate and
-  the RoamSwitch client pins its fingerprint. The pairing request binds that fingerprint with a
-  signature, so a man in the middle cannot complete pairing. `control.tls` is
-  `off` / `optional` / `required` (default `optional`). In `optional` mode, clients that do not
-  speak TLS yet still connect in plaintext, with a warning in the TUI and CLI while they do.
-  Switch to `required` once every client is updated. `sensor-cli tls show|rotate`, `pairing show`.
-- **Change: replay protection.** Signed requests now carry a timestamp (±300 seconds) and a
-  one-time value. The old format is accepted only while `control.allow_legacy_signatures` is on,
-  and warns each time. Pairing brute force is locked out per source and globally, and request
-  lines are capped at 64 KiB.
-- **Add: the TUI now covers every function of the CLI and daemon.** View and edit all 25 config
-  keys, TLS status and certificate rotation, manual pairing, a test notification, the passive
-  capture / IoT behaviour / network threat / IoT advisory event views, collector management, and
-  filtered exports. Ten languages; reports and exports are also rendered in ten languages.
-- **Add**: a bind address (`control.bind_addr`), a switch to stop the CVE-map and NSE-database
-  fetch (`updates.fetch_cve_map`), and a distinction between hosts that run RoamSwitch but are not
-  paired and unknown devices (a per-device summary can optionally be sent to the collector).
-- **Compatibility**: the RoamSwitch Mac app does not speak the Sensor's TLS or the new signatures
-  yet. It keeps pairing as before while `control.tls=optional` and
-  `allow_legacy_signatures=true` (both defaults). The Linux client speaks TLS from 1.9.90.
-
-### 0.2.1 - 0.3.8
+### 0.2.1 - 0.3.9
 
 - **Better network inventory** (0.2.1 to 0.2.7): always-on tracking of the network
   layout, plus extended detection (botnet/DDoS participation, DNS tunneling). An active
@@ -76,6 +56,7 @@ setup instructions.
 - **Broader active audits** (0.3.5): Elasticsearch, CouchDB, VNC, RDP and SMB added.
 - **Slow ARP sweeps detected** (0.3.8): a long window notifies once 64 distinct targets are reached within 24 hours (a 2.5 s-per-address sweep fired at the 64th target). Requests for hosts known to be alive do not count toward it, and the number of tracked MAC addresses, targets per MAC and the live-host table are capped, so a flood of spoofed sources cannot grow memory without bound.
 - **Repository size** (0.3.7): the apt and rpm repositories had kept every past version, so they were cut to the latest one (1.10.5 and later keep the latest three).
+- **Control API TLS support, replay protection, and a fuller TUI** (0.3.9): the control API now speaks TLS 1.3 with certificate pinning (`control.tls`, default `optional`). Signed requests carry a timestamp (±300s) and a one-time value, with pairing brute force locked out per source and globally. The TUI now covers every function of the CLI and daemon (config editing, TLS management, manual pairing, event views, 10 languages). Added a bind-address setting, a switch to stop the CVE-map fetch, and a distinction between unpaired and unknown devices.
 
 ### 0.2.0
 
@@ -125,6 +106,11 @@ setup instructions.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.10.13
+
+- **Added: a Security Activity Log tab.** It lets you search and filter across everything RoamSwitch has detected so far (ARP, FIM, port anomalies, recorded process execution, notification history, and more), with a time-series bar chart whose bars you can click to narrow the list to that time window.
+- **Ran a false-positive/alert-fatigue audit and fixed 44 findings in the desktop edition and 7 in the server edition.** Highlights: fixed lockfile monitoring's "unreadable" verdict being treated at the same severity as tampering (a transient read race could be mistaken for tampering). Link protection now states which signal triggered it (a known threat-feed match, a TLS fingerprint match, or homograph similarity). Isolation-release checks now distinguish "the threat is still active" from "we simply couldn't complete a check" in what's shown. The gateway-MAC-change warning (which can also fire on an ordinary router reboot) now always includes the old MAC, the new MAC, and the target IP. Exec detection (the curl|sh pattern and others) now includes the download URL, the executed command, the parent process, and more. On the server edition, the risky-Docker-container notification now has deduplication, and the crash-loop/CPU-saturation headline wording softens when there's no corroborating evidence.
+
 ### 1.10.12
 
 - **Fixed: right after resuming from suspend (closing the laptop lid), a false "protection is not responding" alert could appear.** The guard liveness check uses the wall clock, which keeps advancing during suspend, so the first monitoring cycle after resume treated the last heartbeat as missing for the whole suspend time. A gap far beyond the monitor loop's own call interval (normally 3 seconds) is now treated as a resume from suspend: every guard's timestamp is reset before normal checks continue.
@@ -140,18 +126,11 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 - **Improved: the ransomware recovery screen's description now states the real scope (each login user's home directory only)** instead of the vaguer "data on btrfs/LVM", which read as covering more than it actually protects.
 - **Fixed: the tray menu's language switcher was missing Italian and Portuguese.** The main window's language setting and the i18n catalog itself already supported all 10 languages, but the tray menu's hand-written item list was never updated with these two, so they weren't selectable there.
 
-### 1.10.10
-
-- **Added: the "Recovery & Uninstall" restore path is now a real GTK file picker instead of a free-text field.** It calls roamswitch-os's mount-for-browsing/unmount-browse and points the dialog straight at the snapshot's actual contents, so a deleted file can be selected directly. A preview pane (icon, size, kind, modified date) was added too (10 languages).
-- **Added: on RoamSwitch OS (the OS-integrated build), `roamswitch uninstall` can no longer be run directly by the user** (and is removed from Help). The app is part of the OS. The standalone build behaves as before; the scripted cleanup path (`--scripted`) is unchanged.
-- **Fixed: on RoamSwitch OS (the OS-integrated build), upgrade detection only looked at the standalone package names (roamswitch-bin/roamswitch) and could not see updates.** It now also checks the OS-integrated package name (roamswitch-linux-os-integration) and the OS tooling (roamswitch-os).
-- **Changed: on RoamSwitch OS (the OS-integrated build), the uninstall button and tray item are no longer shown** (the app is part of the OS). The standalone build shows them as before.
-- **Fixed: external commands the resident daemon calls on its periodic cycle (bluetoothctl, nmcli, lsof, conntrack, mokutil, iwctl, wpa_cli) had no time limit.** On a real RoamSwitch OS machine with bluetoothd not running, `bluetoothctl discoverable off` did not return even after 1h41m, and every lock-requiring IPC — including port blocking — jammed behind the cycle's shared lock (the GUI looked unresponsive). Commands that exceed the limit now have their child process killed and return a timeout.
-- **Changed: the AUR (roamswitch-bin) publish job is now skipped by default** (AUR has stopped new registrations and the SSH key can no longer be fetched). To resume, set the repository variable `AUR_PUBLISH_ENABLED=true` and rerun the job.
-
-### 1.10.0 - 1.10.9 (summarized)
+### 1.10.0 - 1.10.10 (summarized)
 
 Everything in these releases, grouped by topic (Client and Server Edition unless marked). The full text of each entry is in the git history of this file.
+
+- **Recovery UI file picker, OS-integrated-build differentiation, external command timeouts** (1.10.10): the "Recovery & Uninstall" restore path became a real file picker instead of free text (10 languages). On RoamSwitch OS (the OS-integrated build), `roamswitch uninstall` and its button/tray item are hidden (the app is part of the OS), and upgrade detection now also covers the OS-integrated package name. External commands the resident daemon calls now have a time limit (fixes bluetoothctl jamming every lock-requiring IPC, including port blocking, for 1h41m when bluetoothd wasn't running). The AUR publish job is now skipped by default (AUR has stopped new registrations).
 
 - **New detection and recording** (1.10.0): DNS tunneling and exfiltration detection (it looks only at DNS queries this host sends itself and never blocks name resolution; Server Edition: `dns_tunnel_detect_enabled`). A forensic evidence bundle saved when containment fires on a ransomware canary or a critical eBPF detection (process list, recent file changes, a SHA-256 manifest). Decoy files (honeytokens) placed at `.aws/credentials`, `.ssh/id_rsa`, `.docker/config.json` and similar. The age of the last active vulnerability check (`roamswitch vuln-status`). A NIST CSF 2.0 and CIS Controls v8 mapping for each health check. Four triage skills for roamswitch-mcp.
 - **Honeytoken and evidence-bundle fixes** (1.10.4, 1.10.5): so the decoys do not break real tools, the AWS decoy no longer uses `[default]` and the Docker decoy points at a registry name that does not exist. Permissions are 0600, and access by OpenSSH clients and by RoamSwitch itself is recognized by executable path and not reported. The 1.10.0 to 1.10.4 packages did not contain `roamswitch-honeytokens` or `roamswitch-incident-capture`, so the decoys and the evidence bundle never ran. 1.10.5 ships both in the client and server packages, and CI now fails a build that lacks them. A new health check, "helper programs installed" (27 client items, 33 server items), was added. Also fixed: the systemd sandbox blocked decoy creation (Server), and FIM reported RoamSwitch's own decoy as a new file.
@@ -225,6 +204,8 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 - **Fixed: the NDP pin of the gateway's IPv6 router never actually took effect.** Passing a link-local address (fe80::…) to `ndp -s` without its interface exits 0 but only creates an expired entry that is not pinned (confirmed on a real Mac running macOS 27). The old code looked only at the exit status and reported the pin as done. The pin is now made with the interface (`fe80::…%en0`) and checked afterwards for `permanent`; if it cannot be confirmed, it counts as a failure.
 - **Fixed: the gateway ARP/NDP pin deleted and re-added the entry on every policy re-evaluation, even when it was already pinned.** The gateway's entry vanished for a moment each time. When the entry is already pinned to the same MAC, nothing is done.
 - **Fixed: the code that collects the pin targets left the output pipe of each external command open and waited for the command to exit before reading its output.** That could grow the number of open file descriptors in the app itself, so the pipes are now closed after use and the output is read before waiting for the exit.
+- **Added: a Security Activity Log screen.** It lets you search and filter across everything RoamSwitch has detected so far (ransomware containment, ARP spoofing, port anomalies, ClickFix protection, recorded process execution, and more), with a time-series chart whose bars you can click to narrow the list to that time window (reachable from the menu bar).
+- **Ran a false-positive/alert-fatigue audit and fixed 27 findings.** Highlights: the ransomware protection's emergency containment banner (decoy-file tampering, high-entropy write bursts) now names the affected file and the suspected process (previously this was captured internally but never shown). ClickFix protection now sends a notify-only alert instead of cutting the network when a command matches a known installer's pattern (e.g. sh.rustup.rs). The risky-Docker-container notification now has a 24-hour cooldown so the same container no longer re-notifies on every restart. Link protection now states which signal triggered it (a known threat-feed match, a TLS fingerprint match, or brand-impersonation similarity). The Pickle-format AI model file (.pt/.pkl/.ckpt, etc.) download warning now includes where the file came from, and its wording was softened. Many other notifications (ARP spoofing, port anomalies, USB detections) now include more of what's needed to judge them — the old/new MAC address, the executable's path, sample targeted ports, and more.
 
 ## 1.10.10
 
