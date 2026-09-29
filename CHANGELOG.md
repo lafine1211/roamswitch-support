@@ -220,6 +220,12 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 
 ## RoamSwitch for Mac
 
+## 1.10.11
+
+- **Fixed: the NDP pin of the gateway's IPv6 router never actually took effect.** Passing a link-local address (fe80::…) to `ndp -s` without its interface exits 0 but only creates an expired entry that is not pinned (confirmed on a real Mac running macOS 27). The old code looked only at the exit status and reported the pin as done. The pin is now made with the interface (`fe80::…%en0`) and checked afterwards for `permanent`; if it cannot be confirmed, it counts as a failure.
+- **Fixed: the gateway ARP/NDP pin deleted and re-added the entry on every policy re-evaluation, even when it was already pinned.** The gateway's entry vanished for a moment each time. When the entry is already pinned to the same MAC, nothing is done.
+- **Fixed: the code that collects the pin targets left the output pipe of each external command open and waited for the command to exit before reading its output.** That could grow the number of open file descriptors in the app itself, so the pipes are now closed after use and the output is read before waiting for the exit.
+
 ## 1.10.10
 
 - **Fixed: the privileged helper showed "Helper not connected", and restarting, reinstalling or approving it again did not help.** Every time the helper ran an external command (arp, ndp, networksetup, launchctl and others) it left the output pipe open, so open file descriptors grew with each network change until the limit (256) was reached, after which every connection from the app was refused. Even when the helper was approved, the menu showed "⚠️ Approve the helper…". Pipes are now closed explicitly after use.
@@ -235,15 +241,7 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 - **Improved: each row in the menu bar's "Exposed Ports" list now shows 🔒/🌐 for whether that specific port is actually blocked or still open.** Previously only the overall firewall state at the top was shown, with no way to read an individual port's real status.
 - **Fixed: the alert for an unauthenticated database or similar service exposed externally did not account for ports already individually isolated via Dev Server Isolator.** The "Exposed Ports" checks in the health dashboard, the menu list and the MCP server were already fixed in the previous release; this alert had the same gap left over. Isolated ports are now excluded.
 
-## 1.10.8
-
-- **Added: detects when a local ransomware-recovery snapshot is deleted by anything other than RoamSwitch itself or an Apple process.** The same technique as Windows's `vssadmin delete shadows` (MITRE ATT&CK T1490).
-- **Fixed: the menu bar's health check list showed the same ⚠️ warning icon for an item that could not be determined (e.g. macOS Accessory Connection Protection before a first check) as for an actual failure.** The full dashboard already distinguished these; the menu bar now shows ➖ for "could not determine", matching it.
-- **Fixed: the "Exposed Ports" check kept counting a port as exposed even after it had been individually isolated via Dev Server Isolator.** Isolated ports are now excluded (including from the MCP server's `get_security_report`), matching the precision of the Linux edition.
-- **Improved: the knowledge base description of "Process Execution Recording" had fallen behind by two detection-rule additions.** Added the missing three rules in all 10 languages, and added a test that fails if this happens again.
-- **Improved: the "Ransomware Recovery" screen now explains what a snapshot actually covers (this Mac's entire writable area, not the OS itself) and where the file picker starts from (your Home folder).**
-
-## 1.10.0 - 1.10.7 (summarized)
+## 1.10.0 - 1.10.8 (summarized)
 
 Everything in these releases, grouped by topic. The full text of each entry is in the git history of this file.
 
@@ -277,6 +275,12 @@ Everything in these releases, grouped by topic. The full text of each entry is i
 
 - **Added: the "Recovery from Ransomware" file picker now points at the snapshot's real contents, with a preview.** It used to show only the current contents of your home directory, so a deleted file itself could not be selected. The helper now keeps the snapshot open through new mount/unmount XPC calls, and a preview shows the selected item's icon, size, kind and modification date (9 languages).
 - **Fixed: the overall health check for "macOS accessory-connection protection" had a branch that could never run, always showing "not applicable" on Intel Macs.** Intel Macs are already unsupported, so the branch was removed.
+
+**1.10.8:**
+
+- **Added: detects when a local ransomware-recovery snapshot is deleted by anything other than RoamSwitch itself or an Apple process** (the same technique as Windows's `vssadmin delete shadows`, MITRE ATT&CK T1490).
+- **Fixed: the health check list showed the same ⚠️ for an item that could not be determined as for a real failure** (it now shows ➖), and the "Exposed Ports" check kept counting ports already isolated via Dev Server Isolator (including in the MCP server's `get_security_report`).
+- **Improved: the knowledge base description of "Process Execution Recording" now lists the three detection rules that were missing (10 languages), with a test that fails if this happens again, and the "Ransomware Recovery" screen explains what a snapshot covers.**
 
 **1.10.0 - 1.10.4:**
 
