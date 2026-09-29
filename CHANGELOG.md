@@ -210,6 +210,12 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 
 ## RoamSwitch for Mac
 
+## 1.10.13
+
+- **Added: PersonalSOC (a personal security operations center) is now bundled in the DMG**. It is a separate app that gathers this device's logs and defense status, read-only, into a report (it has its own icon and launches on its own, apart from RoamSwitch). It can also pull in what RoamSwitch has detected. It supports 10 languages and is open source under Apache-2.0. See the [PersonalSOC](https://lafine.net/personalsoc) page for details.
+- PersonalSOC is not updated by the in-app updater (Sparkle). It updates when you install a new DMG.
+- PersonalSOC's LLM integration is optional and off by default. When enabled, detection details and similar information may be sent to an external service through the LLM command you chose. RoamSwitch itself is unchanged (it sends nothing externally).
+
 ## 1.10.12
 
 - **Added: a Security Activity Log screen.** It lets you search and filter across everything RoamSwitch has detected so far (ransomware containment, ARP spoofing, port anomalies, ClickFix protection, recorded process execution, and more), with a time-series chart whose bars you can click to narrow the list to that time window (reachable from the menu bar).
