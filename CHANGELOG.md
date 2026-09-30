@@ -30,6 +30,10 @@ development — see
 <https://lafine.net/roamswitch-sensor-manual.html> for current status and
 setup instructions.
 
+### 0.3.13
+
+- **Audit report dates are now easy to read**. HTML and Markdown reports showed raw UTC strings such as `2026-09-19T08:00:03.415602838+00:00`. They now show this machine's local time in each language's order, with the weekday and the UTC offset (English: "Sat, 2026-09-19 17:00:03 (UTC+9)"). The "Generated (UTC)" heading is now just "Generated". CSV is meant for machines and stays in UTC as before.
+
 ### 0.3.12
 
 - **Ran a false-positive/alert-fatigue audit and fixed 6 findings.** The detectors whose volume can spike (outbound fan-out, outbound flood, malicious-destination contact, IoT device behaviour) sent an empty destination identifier, so when a *different* device tripped the same kind of detection it could be silently suppressed as if it were still in cooldown (notifications now carry the correct MAC address). Those detectors' severity, and the DNS-tunneling detector's severity, are now downgraded for a device that's already registered in the device inventory (with an operator note). ARP event webhook/syslog notifications now carry the same context (vendor, registration status, history) the TUI/CLI already showed.
