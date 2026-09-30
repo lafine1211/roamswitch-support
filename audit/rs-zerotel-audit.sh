@@ -48,7 +48,8 @@ set -u
 
 # ------------------------------------------------------------------ config ----
 APP="/Applications/RoamSwitch.app"
-BID="com.tetsuharu.RoamSwitch"
+# Bundle id: read from the installed app (or override with RS_BUNDLE_ID); never hard-coded.
+BID="${RS_BUNDLE_ID:-$(defaults read "$APP/Contents/Info" CFBundleIdentifier 2>/dev/null || true)}"
 MCP_BIN="$APP/Contents/MacOS/RoamSwitchMCPServer"
 HELPER_BIN="$APP/Contents/MacOS/RoamSwitchHelper"
 
@@ -161,11 +162,14 @@ prep() {
   for app in "OneDrive" "Dropbox" "Google Drive" "Backblaze" "Box" "Creative Cloud"; do
     osascript -e "quit app \"$app\"" 2>/dev/null || true
   done
-  pkill -if 'OneDrive|Dropbox|Google Drive|backblaze' 2>/dev/null || true
+  # exact process-name match (-x), no substring/regex matching that could hit unrelated processes
+  for pn in "OneDrive" "Dropbox" "Google Drive" "Backblaze"; do
+    pkill -x "$pn" 2>/dev/null || true
+  done
   sleep 3
 
   say "3/5 launchctl bootout non-Apple user agents (reverts on reboot)"
-  launchctl list | awk 'NR>1 && $3 ~ /\./ && $3 !~ /^com\.apple\./ && $3 !~ /^application\./ && $3 !~ /roamswitch/ && $3 !~ /com\.tetsuharu/ {print $3}' \
+  launchctl list | awk 'NR>1 && $3 ~ /\./ && $3 !~ /^com\.apple\./ && $3 !~ /^application\./ && $3 !~ /roamswitch/ && (own == "" || index($3, own) != 1) {print $3}' own="${BID%.*}" \
     | sort -u > "$OUTDIR/bootout-candidates.txt"
   if [ ! -s "$OUTDIR/bootout-candidates.txt" ]; then
     say "  no candidates (already quiet)"
@@ -185,6 +189,9 @@ prep() {
   fi
 
   say "4/5 quiet Apple cloud / analytics"
+  # Save the pre-run state so prep-restore can put back exactly what was there.
+  softwareupdate --schedule > "$OUTDIR/prep-softwareupdate-was.txt" 2>&1 || true
+  defaults read com.apple.lookup.shared LookupSuggestionsDisabled 2>/dev/null > "$OUTDIR/prep-lookup-was.txt" || echo "unset" > "$OUTDIR/prep-lookup-was.txt"
   sudo softwareupdate --schedule off >/dev/null 2>&1 && say "  softwareupdate auto-check: off" || warn "  softwareupdate --schedule off failed"
   if [ -f "$ANALYTICS_PLIST" ]; then
     sudo defaults read "$ANALYTICS_PLIST" AutoSubmit 2>/dev/null > "$OUTDIR/prep-analytics-was.txt" || echo "unset" > "$OUTDIR/prep-analytics-was.txt"
@@ -214,13 +221,33 @@ TXT
 }
 
 prep_restore() {
-  say "restoring what prep changed (where possible)"
-  sudo softwareupdate --schedule on >/dev/null 2>&1 && say "  softwareupdate auto-check: on" || true
-  local was; was=$(cat "$OUTDIR/prep-analytics-was.txt" 2>/dev/null || echo "")
-  if [ "$was" = "1" ] && [ -f "$ANALYTICS_PLIST" ]; then
-    sudo defaults write "$ANALYTICS_PLIST" AutoSubmit -bool true && say "  Mac Analytics auto-submit: restored"
+  say "restoring what prep changed (where possible, to the state saved before prep)"
+  # softwareupdate: only re-enable if it was on before prep ran
+  if grep -qi 'turned on' "$OUTDIR/prep-softwareupdate-was.txt" 2>/dev/null; then
+    sudo softwareupdate --schedule on >/dev/null 2>&1 && say "  softwareupdate auto-check: on (was on)" || true
+  elif [ -f "$OUTDIR/prep-softwareupdate-was.txt" ]; then
+    say "  softwareupdate auto-check: left off (was off before prep)"
+  else
+    warn "  no saved softwareupdate state in $OUTDIR: left unchanged"
   fi
-  defaults delete com.apple.lookup.shared LookupSuggestionsDisabled 2>/dev/null || true
+  # Analytics: restore the recorded value (1 -> true, 0 -> false, unset -> delete)
+  if [ -f "$OUTDIR/prep-analytics-was.txt" ] && [ -f "$ANALYTICS_PLIST" ]; then
+    local was; was=$(cat "$OUTDIR/prep-analytics-was.txt" 2>/dev/null)
+    case "$was" in
+      1) sudo defaults write "$ANALYTICS_PLIST" AutoSubmit -bool true && say "  Mac Analytics auto-submit: restored (on)";;
+      0) say "  Mac Analytics auto-submit: left off (was off)";;
+      *) sudo defaults delete "$ANALYTICS_PLIST" AutoSubmit 2>/dev/null && say "  Mac Analytics auto-submit: restored (unset)" || true;;
+    esac
+  fi
+  # Lookup suggestions: restore the recorded value, or delete if it was unset
+  if [ -f "$OUTDIR/prep-lookup-was.txt" ]; then
+    local lw; lw=$(cat "$OUTDIR/prep-lookup-was.txt")
+    case "$lw" in
+      1) defaults write com.apple.lookup.shared LookupSuggestionsDisabled -bool true 2>/dev/null || true;;
+      0) defaults write com.apple.lookup.shared LookupSuggestionsDisabled -bool false 2>/dev/null || true;;
+      *) defaults delete com.apple.lookup.shared LookupSuggestionsDisabled 2>/dev/null || true;;
+    esac
+  fi
   warn "launchctl bootout reverts on reboot. Re-enable iCloud Drive / Private Relay in the GUI (list in $OUTDIR/booted-out.txt)."
 }
 
