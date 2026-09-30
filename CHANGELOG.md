@@ -10,6 +10,19 @@ independently. Older releases are summarized in ranges.
 
 ## PersonalSOC
 
+### 0.1.2
+
+- **Added: PersonalSOC reads more from RoamSwitch's MCP**. Package CVE matches, the status of active vulnerability checks, what Sensor found when it audited this device from outside, protections switched off in settings, honeytoken, browser-credential and ransomware-write detections, recovery-snapshot readiness and preserved evidence (Mac), and an active Air-Gap (Linux) now show up as findings in the report.
+- **Added: Gatekeeper denials on Mac, as an optional source** (off by default), because reading them takes about 10 seconds. You can turn it on in settings.
+- **Changed: the LLM command's own tools are switched off at launch where possible**. `claude` starts with its built-in tools and MCP off, and `opencode` starts with every permission denied. `agy` and `codex` cannot be locked, so Settings shows "Tools cannot be locked" and using them requires a confirmation in Settings.
+- **Fixed: the XProtect check matched process names (`XProtectRemediator*`) and treated harmless logs as suspected malware**.
+- **Fixed: `codex` did not run in an empty temporary folder**.
+
+### 0.1.1
+
+- **Added: in-app updater (Mac)**. It fetches the latest version information only when you press "Check for updates" in Settings, and installs only after verifying the signature.
+- **Changed: removed the fixed "Response" section from reports**. **Fixed: chart legends and axis labels overlapping in English and other languages**.
+
 ### 0.1.0
 
 - **New: "PersonalSOC", a personal security operations center**. It gathers this device's logs and defense status, read-only, into a report. It ships with RoamSwitch for Mac (DMG) and RoamSwitch for Linux (deb, rpm, tarball, AUR) as a separate app with its own icon. Open source under Apache-2.0.
@@ -127,6 +140,8 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 - **Fixed: log-audit notifications were reporting changes caused by the OS's normal operation, causing alert fatigue.** Only security-relevant anomalies (failed authentication such as `Failed password`, `Invalid user` or a sudo failure; AppArmor denials; segfaults; malware detections) now reach desktop notifications, server notifications and the notification history. Everything else stays in `roamswitch audit-logs`, the on-screen list and MCP.
 - **Fixed: the "detection saturated by a SYN flood" warning within about 25 minutes after a Sensor audit was requested is now worded calmly as most likely caused by the audit, and its urgency is lowered** (client edition). Port-scan detection already used calm wording through a source IP and MAC match. Outside that window nothing changes, and audits a Sensor starts on its own are not covered. The Server Edition does not request audits, so it is unchanged.
 
+- **The bundled PersonalSOC is now 0.1.2**. It reads more from RoamSwitch's MCP and starts LLM commands with their own tools switched off where possible (see the PersonalSOC 0.1.2 entry).
+
 ### 1.10.14
 
 - **Added: PersonalSOC (a personal security operations center) is now bundled in the packages (deb, rpm, tarball, AUR)**. It is a separate app that gathers this device's logs and defense status, read-only, into a report (it has its own icon and launches from the app list). It can also pull in what RoamSwitch has detected. It supports 10 languages and is open source under Apache-2.0. See the [PersonalSOC](https://lafine.net/personalsoc) page for details.
@@ -219,6 +234,8 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 - **Fixed: for about 25 minutes after a Sensor audit was requested, port-scan detections from the Sensor's address and the "detection saturated by a SYN flood" warning (which has no source address) were shown with attack-like wording.** Within that window they are now worded calmly as most likely caused by the audit (and still recorded). Outside it nothing changes, and audits the Sensor starts on its own are not covered.
 - **Fixed: log-audit notifications were reporting changes caused by the OS's normal operation, causing alert fatigue.** Only security-relevant anomalies, such as failed authentication or XProtect detections, reach notifications and the notification history. Everything else appears only in the audit window.
 - **Improved: the Full Disk Access guidance is now consistent.** The privileged helper's permission is decided by "RoamSwitch" in the System Settings list (there is no separate helper entry). If it is not listed, add `/Applications/RoamSwitch.app` with "+". The screen text, the help and the knowledge base were updated in 10 languages.
+
+- **The bundled PersonalSOC is now 0.1.2**. It reads more from RoamSwitch's MCP and starts LLM commands with their own tools switched off where possible (see the PersonalSOC 0.1.2 entry).
 
 ## 1.10.14
 
