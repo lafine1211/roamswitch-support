@@ -134,12 +134,15 @@ setup instructions.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.10.16
+
+- **The bundled PersonalSOC is now 0.1.2**. It reads more from RoamSwitch's MCP (package CVE matches, the status of active vulnerability checks, Sensor's outside audit results, protections switched off in settings, recovery readiness and more) and starts LLM commands with their own tools switched off where possible. Using `agy` or `codex`, whose tools cannot be locked, now requires a confirmation in Settings. See the PersonalSOC 0.1.2 entry for details.
+
 ### 1.10.15
 
 - **Added: the honeytokens now include `~/.pypirc` and `~/.env.backup`.** They target scans for PyPI tokens, .env files and AI API keys. `~/.npmrc` is not used, because npm reads it on every run. Uninstall removes only the files that carry the marker.
 - **Fixed: log-audit notifications were reporting changes caused by the OS's normal operation, causing alert fatigue.** Only security-relevant anomalies (failed authentication such as `Failed password`, `Invalid user` or a sudo failure; AppArmor denials; segfaults; malware detections) now reach desktop notifications, server notifications and the notification history. Everything else stays in `roamswitch audit-logs`, the on-screen list and MCP.
 - **Fixed: the "detection saturated by a SYN flood" warning within about 25 minutes after a Sensor audit was requested is now worded calmly as most likely caused by the audit, and its urgency is lowered** (client edition). Port-scan detection already used calm wording through a source IP and MAC match. Outside that window nothing changes, and audits a Sensor starts on its own are not covered. The Server Edition does not request audits, so it is unchanged.
-- **The bundled PersonalSOC is now 0.1.2**. It reads more from RoamSwitch's MCP and starts LLM commands with their own tools switched off where possible (see the PersonalSOC 0.1.2 entry).
 
 ### 1.10.14
 
