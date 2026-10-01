@@ -10,6 +10,14 @@ independently. Older releases are summarized in ranges.
 
 ## PersonalSOC
 
+### 0.1.4
+
+- **Fixed: secret masking in logs and detections now also covers quoted JSON (`"token": "abc"`) and `Authorization`, `Bearer` and `Basic` headers.** Before, only a value right after `=` or `:` was masked.
+- **Fixed: log lines can no longer close the data fence handed to the LLM by containing the lookalike characters `<<<` and `>>>`.**
+- **Fixed: scheduled runs (Mac) now work in folders whose path contains spaces or non-ASCII characters.** An app opened straight from the DMG (Gatekeeper translocation, where the app is run from a temporary location) is not registered, and you are asked to move it to the Applications folder (10 languages). If saving the settings fails, the registration is rolled back.
+- **Fixed: when an LLM command times out, the child processes it started are terminated too.**
+- **Changed: `opencode` is no longer treated as having its tools locked, because we have not yet confirmed that the setting really takes effect.** Using it now requires the confirmation in Settings, as with `agy` and `codex` (the README is updated).
+
 ### 0.1.3
 
 - **Fixed: when an LLM's reply contained raw line breaks or invalid escapes and could not be read as JSON, it is now repaired and parsed again.**
@@ -139,12 +147,39 @@ setup instructions.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.10.18
+
+- **Fixed (security): the daemon followed symbolic links when it placed decoys (canary files and honeytokens) in a user's folders.** A user could leave a link to a file that does not exist, and the root daemon would create an arbitrary file at the link's target and hand it to the user, which could lead to privilege escalation. Decoys are now created without following any link, and none is placed where a link is in the way.
+- **Fixed (security): blocking a file's execution before it runs (fanotify) did not work when the daemon ran as a systemd service.** Inside the service's mount namespace, executions by host processes never reached the daemon. It now watches at the filesystem level, and we confirmed under the real service that execution of a flagged suspicious script is denied. The scan exclusions can also no longer be bypassed by faking a process name or by a partial path match.
+- **Fixed (security): closed paths that exposed other users' information, allowed actions on their processes, or let a user load the daemon.** `get_canary_status` returns only the caller's own home and counts for the rest, except to administrators (root, and the sudo, wheel and roamswitch groups). `kill_process` refuses a process the caller does not own. An IPC line is limited to 1 MiB and a non-root user to 16 simultaneous connections. Refusals are remembered briefly so an external command is not started every time.
+- **Fixed: switching the firewall profile could leave the host without rules in the middle of the switch or when it failed.** The switch is now one atomic batch (Air-Gap too).
+- **Fixed: the pending-approvals record (`approvals.json`) could lose entries when updated concurrently, or be read half-written.**
+- **Fixed: the event-forwarding output file is now limited to places only root can write (every ancestor owned by root).** This closes a way for a user to make root append to or rename an arbitrary file through the settings. `/var/log/roamswitch/` on Ubuntu works too. When a path is refused, the reason appears in `roamswitch forward status`.
+- **Fixed: interface names and radio types passed to the DNS settings and to rfkill are validated, and values that would be read as options are refused.** Temporary-file creation in the updater was hardened, and an unparseable `generated` value is now rejected.
+- **Added: the Client now sends a proof of possession of the key (PoP) when pairing with a Sensor.** A newer Sensor uses it to stop someone else's public key from being registered over a connection without a certificate pin.
+- **Fixed: the notification for a failed quarantine now shows the reason in 10 languages when it was refused because there is no login session.**
+- **The bundled PersonalSOC is now 0.1.4** (see PersonalSOC 0.1.4).
+
 ### 1.10.17
 
 - **Improved: the calm wording of alerts during a Sensor audit now returns to normal as soon as the report arrives** (client edition). Before, it stayed calm for a fixed 25 minutes from the request. The 25 minutes is now only an upper bound for when no report ever comes. Reports are fetched every 5 minutes, so the normal wording returns at most about 5 minutes after the audit finishes.
 - **The bundled PersonalSOC is now 0.1.3.** It repairs malformed LLM replies and relabels the Gatekeeper source (see PersonalSOC 0.1.3).
 
-### 1.10.16
+### 1.10.17
+
+- **Fixed (security): the link guard let a hostname with a trailing dot (`evil.com.`) through.** Hostnames are normalized before the block decision.
+- **Fixed (security): a scanned file's name containing a line break and a fake detection line could make RoamSwitch quarantine any file of the user's.** Before quarantining, only the detected paths are scanned again, and only what is really detected is quarantined.
+- **Fixed (security): the privileged helper now verifies the link guard's threat feed by signature before publishing it.** Before, the feed was verified at download and then used as-is from a place the user can write, so a program of the same user could empty the feed to disable the link guard, or add hosts. If verification fails, the previous feed is kept and protection is not removed. A feed older than the recorded one, replayed with its genuine signed manifest, is refused too.
+- **Fixed (security): in MCP exec-log search, secrets in command lines can no longer be guessed from whether a search matches.** Searches run on the masked text, and the app itself now masks output and rate-limits searches (so another program of the same user cannot read the raw records through the relay). The masking now covers API keys such as `sk-svcacct-`, tokens from GitHub, GitLab, npm, Slack and Google, `mysql -ppassword`, `DB_PASS=` and similar. Verifying the exec log's integrity chain now detects a rewritten sealed segment and a deleted oldest segment.
+- **Fixed: when importing a WireGuard configuration failed, the saved endpoint was overwritten with that of the rejected configuration.** Also fixed: when `wg-quick up` failed, the previous kill switch was not restored and traffic stayed blocked.
+- **Fixed: state is now saved atomically** (kill switch, port protection, Sensor pairings and others). An interruption can no longer bring the app back from a corrupted state with the kill switch off.
+- **Fixed: a malware scan could hang when its output was large.**
+- **Fixed: the Mac now sends a proof of possession of the key (PoP) when pairing with a Sensor.** The control-channel signature version once confirmed is saved, and no fallback to an older signature format is made over a connection without a certificate pin.
+- **Fixed: a TLS ClientHello split across several records is now inspected, up to 16 KB.**
+- **Fixed: the check of the SSH remote-login state, DNS restoration (disabled services and others), restarting port-scan detection, and the handling of symbolic links when the exec recorder checks plists.**
+- **The bundled PersonalSOC is now 0.1.4** (see PersonalSOC 0.1.4). If 0.1.1 or later is installed, you can update from inside the app.
+
+## 1.10.16
 
 - **The bundled PersonalSOC is now 0.1.2**. It reads more from RoamSwitch's MCP (package CVE matches, the status of active vulnerability checks, Sensor's outside audit results, protections switched off in settings, recovery readiness and more) and starts LLM commands with their own tools switched off where possible. Using `agy` or `codex`, whose tools cannot be locked, now requires a confirmation in Settings. See the PersonalSOC 0.1.2 entry for details.
 
@@ -154,14 +189,7 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 - **Fixed: log-audit notifications were reporting changes caused by the OS's normal operation, causing alert fatigue.** Only security-relevant anomalies (failed authentication such as `Failed password`, `Invalid user` or a sudo failure; AppArmor denials; segfaults; malware detections) now reach desktop notifications, server notifications and the notification history. Everything else stays in `roamswitch audit-logs`, the on-screen list and MCP.
 - **Fixed: the "detection saturated by a SYN flood" warning within about 25 minutes after a Sensor audit was requested is now worded calmly as most likely caused by the audit, and its urgency is lowered** (client edition). Port-scan detection already used calm wording through a source IP and MAC match. Outside that window nothing changes, and audits a Sensor starts on its own are not covered. The Server Edition does not request audits, so it is unchanged.
 
-### 1.10.14
-
-- **Added: PersonalSOC (a personal security operations center) is now bundled in the packages (deb, rpm, tarball, AUR)**. It is a separate app that gathers this device's logs and defense status, read-only, into a report (it has its own icon and launches from the app list). It can also pull in what RoamSwitch has detected. It supports 10 languages and is open source under Apache-2.0. See the [PersonalSOC](https://lafine.net/personalsoc) page for details.
-- The deb and rpm packages install WebKitGTK (libwebkit2gtk-4.1) automatically. On Arch (AUR), install `webkit2gtk-4.1` as an optional dependency. The Server Edition does not include it.
-- PersonalSOC is updated with RoamSwitch's packages (the Linux edition has no in-app updater).
-- PersonalSOC's LLM integration is optional and off by default. When enabled, detection details and similar information may be sent to an external service through the LLM command you chose. RoamSwitch itself is unchanged (it sends nothing externally).
-
-### 1.10.0 - 1.10.13 (summarized)
+### 1.10.0 - 1.10.14 (summarized)
 
 Everything in these releases, grouped by topic (Client and Server Edition unless marked). The full text of each entry is in the git history of this file.
 
@@ -173,6 +201,7 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 - **Network, DNS, Docker, link guard** (1.10.1–1.10.4): DNS enforcement no longer flushes the DNS cache every 3 seconds (it runs only when the state changes). The Docker protection self-heals every 60 seconds. The link guard's packet wait and queue length were revised, and it reassembles the ClientHello from TCP sequence numbers. An option to block UDP/443 (QUIC) was added (`linkGuard.blockQuic`, off by default). Fixed: a `clamav.net` false positive in DNS tunneling detection, the Sensor control port (50543) being blocked permanently on a co-located host (Server Edition), and an endless repeat of notifications for programs that bind a different UDP port on every restart.
 - **Notifications, diagnostics, UI** (1.10.3, 1.10.4, 1.10.9, 1.10.11): identical notifications are only recorded in the history for 10 minutes. On Arch-based systems the "automatic security updates" check is "not applicable". Fixed: port blocking reporting success even when nftables was not updated, Wi-Fi safety always being "unknown" on iwd systems (RoamSwitch OS), guidance for Validity fingerprint sensors, and tabs cut off at 1280 px. The tray language switcher gained Italian and Portuguese, and the ransomware-recovery screen now describes its real scope (the logged-in user's home only, 1.10.11).
 - **Recovery, uninstall, upgrade** (1.10.7, 1.10.10): a dedicated tab in the main window, and `roamswitch emergency-restore` plus a tray menu entry undo isolation, firewall, gateway pinning, DNS and connection tracking. `roamswitch uninstall` does this first and then removes the decoys and files it added. The license signing key was regenerated (both old and new public keys are accepted). Three GUI upgrade problems were fixed: stopping on one unreachable mirror, reporting success when nothing changed, and not restarting the app. The restore path is now a real file picker (1.10.10).
+- **PersonalSOC bundled** (1.10.14): a separate app that gathers this machine's logs and defense status read-only into a report is now bundled in the packages (deb, rpm, tarball, AUR). 10 languages, Apache-2.0. Its LLM integration is optional and off by default. The Server edition does not include it.
 - **Packages, tests, other** (1.10.5–1.10.10): apt and rpm keep the latest three versions of each package. The pentest suite was re-run (Server 19/19, Client 11/11). External commands called by the resident daemon now have a time limit (a `bluetoothctl` that did not answer for 1 hour 41 minutes on a system without bluetoothd stalled IPC). RoamSwitch OS hides the uninstall entry points. The Server investigation-agent report now includes the host name and IP address.
 - **Activity log and false-positive audit** (1.10.13): a Security Activity Log tab to search and filter past detections (ARP, FIM, port anomalies, recorded process execution, notification history and more). An alert-fatigue audit fixed 44 findings in the desktop edition and 7 in the server edition: lockfile monitoring's "unreadable" verdict is no longer treated as tampering, notifications for link protection, isolation-release checks, gateway-MAC changes and exec detection now carry more to judge them by (the triggering signal, old and new MAC, the download source), and the server edition's Docker notification is deduplicated.
 - **Resume from suspend, diagnostics, feed** (1.10.12): fixed a false "protection is not responding" alert right after resuming from suspend (a gap far beyond the monitor loop's interval is treated as a resume, and every guard's timestamp is reset). Also fixed the order and explanation of the active-verification status, a UDP-listener notification record that grew without limit, and the popular-npm-packages feed's manifest URL not matching the published file name, which showed a false SHA-256 mismatch warning.
@@ -249,13 +278,7 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 - **Fixed: in PersonalSOC in English and other languages, chart legends and axis labels overlapped or were cut off**. Also fixed the "Recent events" text in reports being cut in the middle of a word.
 - PersonalSOC is now 0.1.1. If 0.1.0 is already installed, installing the new DMG updates it. From 0.1.1 on you can update from inside the app.
 
-## 1.10.13
-
-- **Added: PersonalSOC (a personal security operations center) is now bundled in the DMG**. It is a separate app that gathers this device's logs and defense status, read-only, into a report (it has its own icon and launches on its own, apart from RoamSwitch). It can also pull in what RoamSwitch has detected. It supports 10 languages and is open source under Apache-2.0. See the [PersonalSOC](https://lafine.net/personalsoc) page for details.
-- PersonalSOC is not updated by the in-app updater (Sparkle). It updates when you install a new DMG.
-- PersonalSOC's LLM integration is optional and off by default. When enabled, detection details and similar information may be sent to an external service through the LLM command you chose. RoamSwitch itself is unchanged (it sends nothing externally).
-
-## 1.10.0 - 1.10.12 (summarized)
+## 1.10.0 - 1.10.13 (summarized)
 
 The contents of these releases, grouped by theme. The full text of each entry is in this file's git history.
 
@@ -269,6 +292,7 @@ The contents of these releases, grouped by theme. The full text of each entry is
 - **Privileged-helper resource leak and busy loop** (1.10.10, 1.10.11): fixed pipes for external-command output not being closed, so open file descriptors reached the limit (256) and the app showed "helper not connected"; the firewall and DNS being rewritten roughly every 2 seconds; the helper possibly stalling on large output; and the gateway pinning being deleted and re-added on every re-evaluation even when already pinned.
 - **NDP pinning and diagnostics** (1.10.10, 1.10.11): pinning the IPv6 router's NDP entry did not actually work (`ndp -s` without an interface returns exit code 0 but does not pin). It now pins with `fe80::…%en0` and verifies afterwards. Also fixed: critical-file tamper monitoring reporting "deleted" for a file that was merely unreadable for a moment because of a race, and the ordering of the "proven vulnerability check" status.
 - **Activity log and false-positive audit** (1.10.12): a Security Activity Log screen to search and filter past detections. An alert-fatigue audit fixed 27 findings: the ransomware emergency-containment banner now names the affected file and the suspected process, ClickFix protection only notifies when a command matches a known installer's pattern, the risky-Docker-container notification has a 24-hour cooldown, link protection states its triggering signal, and the Pickle-format AI model download warning shows where the file came from.
+- **PersonalSOC bundled** (1.10.13): a separate app that gathers this machine's logs and defense status read-only into a report is now bundled in the DMG. 10 languages, Apache-2.0. Its LLM integration is optional and off by default. It is not updated by the in-app updater (Sparkle) but by a new DMG (from 0.1.1 it also has its own updater).
 
 ## 1.9.6 - 1.9.54 (summarized)
 
