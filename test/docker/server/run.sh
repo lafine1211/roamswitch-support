@@ -9,6 +9,14 @@ FAIL=0
 pass() { echo -e "     \x1b[32m[PASS]\x1b[0m $1"; PASS=$((PASS+1)); }
 fail() { echo -e "     \x1b[31m[FAIL]\x1b[0m $1"; FAIL=$((FAIL+1)); }
 
+# A PID lookup that came back empty (decoy failed to start) must fail the step instead of
+# letting `kill -0 ""` fail in the "right" direction and read as a PASS.
+need_pid() { # label value
+    if [[ "$2" =~ ^[0-9]+$ ]]; then return 0; fi
+    fail "$1: test process PID could not be found (fixture did not start), check skipped"
+    return 1
+}
+
 echo "========================================================"
 echo "🛡️  RoamSwitch Server Edition — Docker Self-Check Suite"
 echo "========================================================"
@@ -164,18 +172,22 @@ echo "[TEST 6] guard.yaml on_critical: real decoy process + kill_process:true...
 # isolation instead, so a root decoy would never reach the kill_process step tested here.
 docker exec -d --user nobody "$TARGET_CONT" bash -c "exec -a fake_exploit sleep 3600"
 sleep 1
-EXPLOIT_PID=$(docker exec "$TARGET_CONT" pgrep -f "fake_exploit" | head -n1)
+EXPLOIT_PID=$(docker exec "$TARGET_CONT" pgrep -f "fake_exploit" | head -n1 || true)
+if need_pid "TEST 6" "$EXPLOIT_PID"; then
 docker exec "$TARGET_CONT" bash -c "echo '{\"priority\":\"Critical\",\"rule\":\"fake_kernel_exploit\",\"time\":\"2026-09-07T00:00:00Z\",\"output_fields\":{\"proc.name\":\"fake_exploit\",\"proc.pid\":$EXPLOIT_PID,\"user.name\":\"attacker\"}}' | socat - UNIX-CONNECT:/run/roamswitch/events.sock"
 sleep 2
 if log | grep -q "eBPF Security Event Received"; then pass "Daemon logged the injected Critical event."; else fail "Daemon did not log the injected event."; fi
 if docker exec "$TARGET_CONT" bash -c "kill -0 $EXPLOIT_PID" 2>/dev/null; then fail "kill_process:true did not terminate the offending PID."; else pass "on_critical (isolate + kill_process) terminated the offending PID."; fi
+fi
 
 echo ""
 echo "[TEST 7] Protected-process safety rail: real sshd must survive a Critical alert..."
-SSHD_PID=$(docker exec "$TARGET_CONT" pgrep -x sshd | head -n1)
+SSHD_PID=$(docker exec "$TARGET_CONT" pgrep -x sshd | head -n1 || true)
+if need_pid "TEST 7" "$SSHD_PID"; then
 docker exec "$TARGET_CONT" bash -c "echo '{\"priority\":\"Critical\",\"rule\":\"fake_kernel_exploit\",\"time\":\"2026-09-07T00:00:00Z\",\"output_fields\":{\"proc.name\":\"sshd\",\"proc.pid\":$SSHD_PID,\"user.name\":\"root\"}}' | socat - UNIX-CONNECT:/run/roamswitch/events.sock"
 sleep 2
 if docker exec "$TARGET_CONT" bash -c "kill -0 $SSHD_PID" 2>/dev/null; then pass "sshd survived — protected-process list honoured."; else fail "sshd was killed/frozen! Protected-process exclusion failed."; fi
+fi
 
 echo ""
 echo "[TEST 8] guard.yaml on_emergency: host-wide Air-Gap, SSH lockout prevention..."
@@ -184,17 +196,24 @@ echo "[TEST 8] guard.yaml on_emergency: host-wide Air-Gap, SSH lockout preventio
 # within seconds and the SSH check could pass after the release instead of during it.
 docker exec -d --user nobody "$TARGET_CONT" bash -c "exec -a fake_ransom sleep 3600"
 sleep 1
-RANSOM_PID=$(docker exec "$TARGET_CONT" pgrep -f "fake_ransom" | head -n1)
+RANSOM_PID=$(docker exec "$TARGET_CONT" pgrep -f "fake_ransom" | head -n1 || true)
+RANSOM_OK=0; need_pid "TEST 8" "$RANSOM_PID" && RANSOM_OK=1
+if [ "$RANSOM_OK" -eq 1 ]; then
 docker exec "$TARGET_CONT" bash -c "echo '{\"priority\":\"Emergency\",\"rule\":\"fake_ransomware_c2\",\"time\":\"2026-09-07T00:00:00Z\",\"output_fields\":{\"proc.name\":\"fake_ransom\",\"proc.pid\":$RANSOM_PID,\"user.name\":\"attacker\"}}' | socat - UNIX-CONNECT:/run/roamswitch/events.sock"
 sleep 2
 if docker exec "$ATTACKER_CONT" curl -s -m 2 "http://$TARGET_IP:80/" >/dev/null; then fail "Target still reachable after an Emergency alert!"; else pass "Air-Gap isolation engaged."; fi
 if tcp_reachable "$TARGET_IP" 22; then pass "SSH stayed reachable during Air-Gap (preserve_ssh_on_isolation)."; else fail "SSH was cut off during Air-Gap!"; fi
+fi
 
 echo ""
 echo "[TEST 9] The Air-Gap is released once its cause is verified gone, with no ACK (safety_timer_secs=5)..."
+if [ "$RANSOM_OK" -ne 1 ]; then
+    fail "TEST 9 skipped: no Air-Gap was engaged in TEST 8 (no fixture PID)"
+else
 docker exec "$TARGET_CONT" kill -9 "$RANSOM_PID" 2>/dev/null || true
 sleep 20
 if curl_reachable "$TARGET_IP" 80; then pass "Air-Gap released after the cause was verified cleared."; else fail "Air-Gap was NOT released although its cause is gone."; fi
+fi
 
 echo ""
 echo "[TEST 10] Safety timer: 'roamswitch server ack' suppresses auto-restore..."

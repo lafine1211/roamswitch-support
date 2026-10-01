@@ -2,6 +2,20 @@
 # Destructive self-test for the RoamSwitch daemon, run inside a --privileged
 # container. Exit 0 = all green.
 set -u
+
+# Container guard: this script flushes nftables, mounts tmpfs over /home and /tmp and starts a
+# firewall-modifying daemon. Refuse to run anywhere but inside a container.
+in_container() {
+  [ -f /.dockerenv ] && return 0
+  [ -f /run/.containerenv ] && return 0
+  grep -qE '(docker|containerd|kubepods|libpod)' /proc/1/cgroup 2>/dev/null && return 0
+  return 1
+}
+if ! in_container; then
+  echo "REFUSING TO RUN: this is a destructive test (nft flush, tmpfs mounts) and must run inside the Docker test container, not on a host." >&2
+  exit 2
+fi
+
 PASS=0; FAIL=0
 ok(){ echo "  ✅ $*"; PASS=$((PASS+1)); }
 no(){ echo "  ❌ $*"; FAIL=$((FAIL+1)); }
@@ -37,9 +51,13 @@ sleep 2
 
 echo
 echo "== T-AirGap: enable / self-heal / bound / disable =="
+NET_BEFORE=$(have_net)
+[ "$NET_BEFORE" = yes ] || echo "  (note: no outbound network in this container even before the air-gap; the 'blocked' check is skipped)"
 ipc enable_air_gap >/dev/null; sleep 1
 [ "$(airgap_on)" = yes ] && ok "enable_air_gap installs output drop policy" || no "no output drop policy after enable"
-[ "$(have_net)" = no ] && ok "traffic blocked under air-gap" || no "traffic still flows under air-gap"
+if [ "$NET_BEFORE" = yes ]; then
+  [ "$(have_net)" = no ] && ok "traffic blocked under air-gap" || no "traffic still flows under air-gap"
+fi
 nft delete table inet roamswitch 2>/dev/null           # external clobber
 sleep 5
 [ "$(airgap_on)" = yes ] && ok "air-gap re-asserted after external clobber" || no "air-gap NOT re-asserted"
@@ -68,14 +86,16 @@ else
   echo "  ⚠️  fanotify marks accepted but no events delivered (tmpfs/overlayfs) —"
   echo "     entropy-burst detection is validated on a real fs on the host instead."
 fi
-if [ -e /home/tester/.faprobe ]; then
-  ok "EICAR probe file left in place"
-  rm -f /home/tester/.faprobe
-elif [ "$(ls /home/*/.local/share/roamswitch/quarantine/ 2>/dev/null | grep -c faprobe)" -gt 0 ]; then
-  ok "EICAR probe file detected and secured in quarantine vault"
-else
-  ok "EICAR probe file detected by fanotify guard"
+if [ "$FANOTIFY_LIVE" = yes ]; then
+  if [ -e /home/tester/.faprobe ]; then
+    ok "EICAR probe file left in place"
+  elif [ "$(ls /home/*/.local/share/roamswitch/quarantine/ 2>/dev/null | grep -c faprobe)" -gt 0 ]; then
+    ok "EICAR probe file detected and secured in quarantine vault"
+  else
+    no "EICAR probe file vanished without being left in place or quarantined"
+  fi
 fi
+rm -f /home/tester/.faprobe
 
 echo
 echo "== T-Entropy: shred allow-listed; real burst caught; criticals never frozen =="
@@ -95,7 +115,13 @@ if grep -q "RANSOMWARE BURST" /var/log/rsd.log; then
   ok "single-process high-entropy burst detected"
   frozen_pid=$(grep -oP 'Process PID \K[0-9]+' /var/log/rsd.log | tail -1)
   fc=$(cat /proc/"$frozen_pid"/comm 2>/dev/null || echo gone)
-  case "$fc" in dockerd|containerd*|systemd|runc) no "froze a critical proc ($fc)!";; *) ok "froze the offending worker, not a critical daemon (comm=$fc)";; esac
+  if [ -z "$frozen_pid" ]; then
+    no "burst was logged but no frozen PID could be read from the log"
+  elif [ "$frozen_pid" = "$BURST_PID" ] || [ "$fc" = "python3" ]; then
+    ok "froze the offending worker, not a critical daemon (pid=$frozen_pid comm=$fc)"
+  else
+    no "froze an unexpected process (pid=$frozen_pid comm=$fc), expected the burst worker (pid $BURST_PID)"
+  fi
   kill -CONT "$frozen_pid" 2>/dev/null || true
   kill -9 "$BURST_PID" 2>/dev/null || true
 elif [ "$FANOTIFY_LIVE" = yes ]; then
@@ -135,7 +161,7 @@ else
   elif [ "$(ls /home/*/.local/share/roamswitch/quarantine/ 2>/dev/null | grep -c eicar)" -gt 0 ]; then
     ok "EICAR detected and safely secured in vault"
   else
-    ok "EICAR handled by detection guard"
+    no "EICAR file is gone and not in the vault (neither left alone nor quarantined)"
   fi
 fi
 
@@ -164,6 +190,9 @@ else
 fi
 
 vault=$(ls -d /home/*/.local/share/roamswitch/quarantine 2>/dev/null | head -1)
+if [ "$FANOTIFY_LIVE" = yes ] && { [ -z "$vault" ] || [ "$(ls "$vault" 2>/dev/null | wc -l)" -eq 0 ]; }; then
+  no "no quarantine vault content although a confirmed quarantine was performed"
+fi
 if [ -n "$vault" ] && [ "$(ls "$vault" 2>/dev/null | wc -l)" -gt 0 ]; then
   vp=$(stat -c '%a' "$vault"); [ "$vp" = 700 ] && ok "vault dir is 0700" || no "vault dir is $vp (want 700)"
   f=$(find "$vault" -maxdepth 1 -type f ! -name 'metadata*' | head -1)
@@ -174,4 +203,4 @@ echo
 echo "=============================="
 echo " PASS=$PASS  FAIL=$FAIL"
 echo "=============================="
-[ "$FAIL" = 0 ]
+[ "$FAIL" = 0 ] && [ "$PASS" -gt 0 ]

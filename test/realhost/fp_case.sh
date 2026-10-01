@@ -1,8 +1,12 @@
 #!/bin/bash
 # Genuine allowlisted tools writing many high-entropy files must NOT be frozen. usage: fp_case.sh NAME COMMAND...
 name=$1; shift; ts=$(date +%s)
+# NAME is interpolated into an rm -rf path: only a plain token is allowed
+case "$name" in ""|*[!A-Za-z0-9_-]*) echo "usage: fp_case.sh NAME COMMAND... (NAME = [A-Za-z0-9_-]+)" >&2; exit 2;; esac
 d=$HOME/Downloads/fp_$name; rm -rf "$d"; mkdir -p "$d"
-D="$d" setsid bash -c "$*" > /tmp/fp_$$.out 2>&1 < /dev/null &
+out=$(mktemp "${TMPDIR:-/tmp}/fp_case.XXXXXX") || exit 1
+trap 'rm -f "$out"' EXIT
+D="$d" setsid bash -c "$*" > "$out" 2>&1 < /dev/null &
 pid=$!; sleep 12
 state=$(ps -o stat= -p $pid 2>/dev/null | tr -d ' ')
 files=$(ls "$d" 2>/dev/null | wc -l)

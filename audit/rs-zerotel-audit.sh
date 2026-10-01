@@ -88,25 +88,48 @@ resolve_into_allowlist() {
   dig +short "$host" AAAA 2>/dev/null | grep -E '^[0-9a-f:]+$' >> "$OUTDIR/allowlist-ips.txt"
 }
 
+# Exact host or a true subdomain: "lafine.net" and "x.lafine.net" match, "evillafine.net" does not.
+# $1 = host (lower-cased, trailing dot already in the pattern if wanted), $2.. = domains.
+host_in() {
+  local h="$1"; shift
+  local d
+  for d in "$@"; do
+    case "$h" in "$d"|*."$d") return 0;; esac
+  done
+  return 1
+}
+
+# First SNI recorded for an IP (exact column match, not a substring grep).
+sni_for_ip() {
+  awk -F'\t' -v ip="$1" '$1==ip {print tolower($2); exit}' "$OUTDIR/tls-sni.txt" 2>/dev/null
+}
+
+# tshark -> "time<TAB>dst<TAB>port" for TCP SYNs and UDP datagrams, IPv4 and IPv6 alike.
+flows_from_pcap() {
+  tshark -r "$1" -Y '(tcp.flags.syn==1 && tcp.flags.ack==0) || udp' -T fields \
+    -e frame.time_utc -e ip.dst -e ipv6.dst -e tcp.dstport -e udp.dstport 2>/dev/null \
+    | awk -F'\t' '{d=($2!=""?$2:$3); p=($4!=""?$4:$5); if (d!="") print $1 "\t" d "\t" p}'
+}
+
 classify_ip() {
   local ip="$1" ptr org sni
   if grep -qxF "$ip" "$OUTDIR/allowlist-ips.txt" 2>/dev/null; then echo "EXPECTED(lafine/clamav)"; return; fi
-  # this machine's own LAN / loopback address
-  case "$ip" in 127.*|10.*|192.168.*|169.254.*|172.1[6-9].*|172.2[0-9].*|172.3[01].*) echo "LOCAL($ip)"; return;; esac
+  # this machine's own LAN / loopback address (IPv4 and IPv6 link-local / ULA / loopback)
+  case "$ip" in 127.*|10.*|192.168.*|169.254.*|172.1[6-9].*|172.2[0-9].*|172.3[01].*|::1|fe80:*|[Ff][CcDd]??:*) echo "LOCAL($ip)"; return;; esac
   case "$ip" in 17.*) echo "APPLE(17/8)"; return;; esac
   # SNI seen for this IP in the capture (an Apple host can sit on AWS/Akamai IPs)
-  sni=$(grep -F "$ip"$'\t' "$OUTDIR/tls-sni.txt" 2>/dev/null | awk -F'\t' '{print $2}' | head -1)
-  case "$sni" in
-    *.apple.com|*.icloud.com|*.mzstatic.com|*.aaplimg.com|tether.edge.apple) echo "APPLE(sni=$sni)"; return;;
-    *lafine.net) echo "EXPECTED(sni=$sni)"; return;;
-    *clamav*) echo "CLAMAV(sni=$sni)"; return;;
-  esac
-  ptr=$(dig +short -x "$ip" 2>/dev/null | head -1)
-  case "$ptr" in
-    *apple.com.|*icloud.com.|*aaplimg.com.|*apple-dns.net.|*push.apple.com.) echo "APPLE($ptr)"; return;;
-    *lafine.net.) echo "EXPECTED($ptr)"; return;;
-    *clamav*|*.clamav.net.) echo "CLAMAV($ptr)"; return;;
-  esac
+  sni=$(sni_for_ip "$ip")
+  if [ -n "$sni" ]; then
+    if host_in "$sni" apple.com icloud.com mzstatic.com aaplimg.com || [ "$sni" = "tether.edge.apple" ]; then echo "APPLE(sni=$sni)"; return; fi
+    if host_in "$sni" lafine.net; then echo "EXPECTED(sni=$sni)"; return; fi
+    if host_in "$sni" clamav.net; then echo "CLAMAV(sni=$sni)"; return; fi
+  fi
+  ptr=$(dig +short -x "$ip" 2>/dev/null | head -1 | tr 'A-Z' 'a-z')
+  if [ -n "$ptr" ]; then
+    if host_in "$ptr" apple.com. icloud.com. aaplimg.com. apple-dns.net.; then echo "APPLE($ptr)"; return; fi
+    if host_in "$ptr" lafine.net.; then echo "EXPECTED($ptr)"; return; fi
+    if host_in "$ptr" clamav.net.; then echo "CLAMAV($ptr)"; return; fi
+  fi
   org=$(whois "$ip" 2>/dev/null | grep -iE 'OrgName|org-name|netname|descr' | head -1 | sed 's/^[^:]*: *//')
   case "$org" in *[Aa]pple*) echo "APPLE($org)"; return;; esac
   for a in $EXTRA_ALLOW; do case "$ptr$org$sni" in *"$a"*) echo "ALLOWED-EXTRA($a)"; return;; esac; done
@@ -152,12 +175,13 @@ prep() {
   sudo lsof -nP -i 2>/dev/null       > "$OUTDIR/prep-lsof.txt"   || true
   launchctl list                     > "$OUTDIR/prep-launchctl.txt" || true
 
-  say "2/5 quit GUI apps (except Finder)"
+  say "2/5 quit GUI apps (except Finder and terminal / editor hosts)"
   osascript -e 'tell application "System Events" to get name of (every process whose background only is false)' \
     > "$OUTDIR/prep-apps-before.txt" 2>/dev/null || true
   sed 's/, /\n/g' "$OUTDIR/prep-apps-before.txt" | sed 's/^/    /'
   if [ "$NO_MANUAL" -eq 0 ]; then local a=""; printf 'quit the above? [Y/n]: '; read a || true; [ "$a" = "n" ] && return 0; fi
-  osascript -e 'tell application "System Events" to quit (every process whose background only is false and name is not "Finder")' 2>/dev/null || true
+  # Never quit the terminal this script runs in (or the editor hosting it): that would kill the audit itself.
+  osascript -e 'tell application "System Events" to quit (every process whose background only is false and name is not in {"Finder", "Terminal", "iTerm2", "Ghostty", "WezTerm", "Alacritty", "kitty", "Warp", "Code", "Cursor"})' 2>/dev/null || true
   # menu-bar / background sync clients that "background only is false" misses
   for app in "OneDrive" "Dropbox" "Google Drive" "Backblaze" "Box" "Creative Cloud"; do
     osascript -e "quit app \"$app\"" 2>/dev/null || true
@@ -263,8 +287,7 @@ baseline() {
   sudo kill $tpid 2>/dev/null; kill $tpid 2>/dev/null; wait $tpid 2>/dev/null || true
 
   say "classifying baseline destinations"
-  tshark -r "$OUTDIR/baseline.pcap" -Y 'tcp.flags.syn==1 && tcp.flags.ack==0' -T fields -e ip.dst 2>/dev/null \
-    | sort -u > "$OUTDIR/baseline-dsts.txt"
+  flows_from_pcap "$OUTDIR/baseline.pcap" | cut -f2 | sort -u > "$OUTDIR/baseline-dsts.txt"
   : > "$OUTDIR/baseline-owners.txt"
   local bad=0
   while read ip; do
@@ -389,10 +412,12 @@ JSON
   # a foreign socket = an established connection whose remote end is not this host
   local foreign
   foreign=$(grep -F -- '->' "$OUTDIR/mcp-sockets.txt" \
-            | grep -vE '\->(127\.0\.0\.1|\[?::1\]?|localhost)[:.]' \
+            | grep -vE -- '->(127\.[0-9]+\.[0-9]+\.[0-9]+|\[::1\]|localhost):[0-9]+' \
             | sort -u || true)
   local ntools
-  ntools=$(grep -c '"result"' "$OUTDIR/mcp-output.jsonl" || echo 0)
+  # grep -c prints 0 AND exits 1 on no match, so "|| echo 0" would yield "0\n0"
+  ntools=$(grep -c '"result"' "$OUTDIR/mcp-output.jsonl" 2>/dev/null) || true
+  ntools=${ntools:-0}
   say "MCP responses: $ntools  (expected 9: initialize + tools/list + resources/list + 6 calls)"
   : > "$OUTDIR/.mcp-verdict"
   if [ -n "$foreign" ]; then
@@ -445,23 +470,25 @@ analyze() {
 
   : > syn-dsts.txt
   for f in cap-*.pcap; do [ -e "$f" ] || continue
-    tshark -r "$f" -Y 'tcp.flags.syn==1 && tcp.flags.ack==0' -T fields -e frame.time_utc -e ip.dst -e tcp.dstport 2>/dev/null >> syn-dsts.txt
+    flows_from_pcap "$f" >> syn-dsts.txt
   done
   sort -u -o syn-dsts.txt syn-dsts.txt
 
   : > tls-sni.txt
   for f in cap-*.pcap; do [ -e "$f" ] || continue
-    tshark -r "$f" -Y 'tls.handshake.type==1' -T fields -e ip.dst -e tls.handshake.extensions_server_name 2>/dev/null >> tls-sni.txt
+    tshark -r "$f" -Y 'tls.handshake.type==1' -T fields -e ip.dst -e ipv6.dst -e tls.handshake.extensions_server_name 2>/dev/null \
+      | awk -F'\t' '{d=($1!=""?$1:$2); if (d!="") print d "\t" $3}' >> tls-sni.txt
   done
   sort -u -o tls-sni.txt tls-sni.txt
 
   # process-attributed foreign flows for our 3 binaries (from the lsof loop)
   awk '$2 ~ /^RoamSwitch/ {
     for (i=1;i<=NF;i++) if ($i ~ /->/) { split($i,a,"->"); print $2, a[2] }
-  }' lsof.log 2>/dev/null | grep -vE '127\.0\.0\.1|\[?::1\]?' | sort -u > proc-flows.txt
+  }' lsof.log 2>/dev/null | grep -vE ' (127\.[0-9]+\.[0-9]+\.[0-9]+|\[::1\]):[0-9*]+$' | sort -u > proc-flows.txt
 
   if [ -e pktap.pcap ]; then
-    tshark -r pktap.pcap -T fields -e ip.dst -e tcp.dstport 2>/dev/null | sort -u > pktap-dsts.txt || true
+    tshark -r pktap.pcap -T fields -e ip.dst -e ipv6.dst -e tcp.dstport -e udp.dstport 2>/dev/null \
+      | awk -F'\t' '{d=($1!=""?$1:$2); p=($3!=""?$3:$4); if (d!="") print d "\t" p}' | sort -u > pktap-dsts.txt || true
   fi
 
   if [ -s lulu.log ]; then
@@ -528,9 +555,9 @@ analyze() {
     [ "$proc" = "RoamSwitch" ] || continue
     ip=$(echo "$dst" | sed -E 's/:[0-9]+$//; s/^\[//; s/\]$//')
     cls=$(classify_ip "$ip")
-    sni=$(grep -F "$ip" tls-sni.txt 2>/dev/null | awk '{print $2}' | head -1)
+    sni=$(sni_for_ip "$ip")
     case "$cls" in EXPECTED*) continue;; esac
-    case "$sni" in *lafine.net) continue;; esac
+    host_in "$sni" lafine.net && continue
     fail=1; reason="$reason RoamSwitch->${ip}(${sni:-$cls})-review;"
   done < proc-flows.txt
 
@@ -641,8 +668,11 @@ MD
   say "findings: $OUTDIR/FINDINGS.md"
 }
 
+KEEP_MONITORS=0
 cleanup() {
   [ -n "${SUDO_KEEPALIVE:-}" ] && kill "$SUDO_KEEPALIVE" 2>/dev/null
+  # the `monitors` subcommand must leave its monitors running for a later `stop`
+  [ "$KEEP_MONITORS" -eq 1 ] && return 0
   [ -d "${OUTDIR:-/nonexistent}" ] && for f in "$OUTDIR"/.pid.*; do
     [ -f "$f" ] && { sudo kill "$(cat "$f")" 2>/dev/null; rm -f "$f"; }
   done
@@ -685,8 +715,8 @@ case "$CMD" in
   prep)          preflight; prep;;
   prep-restore)  [ -d "$OUTDIR" ] || warn "no --outdir given: only a subset can be restored"; prep_restore;;
   baseline)      preflight; env_snapshot; baseline;;
-  monitors)      preflight; start_monitors; say "stop with: $0 stop --outdir $OUTDIR";;
-  stop)          stop_monitors;;
+  monitors)      preflight; start_monitors; KEEP_MONITORS=1; say "monitors keep running after this script exits. stop with: $0 stop --outdir $OUTDIR";;
+  stop)          [ -d "$OUTDIR" ] || die "point --outdir at the run dir that 'monitors' printed"; stop_monitors;;
   sparkle)       preflight; trigger_sparkle;;
   mcp)           preflight; env_snapshot; exercise_mcp;;
   analyze)       [ -d "$OUTDIR" ] || die "point --outdir at an existing run dir"; analyze; findings_summary;;

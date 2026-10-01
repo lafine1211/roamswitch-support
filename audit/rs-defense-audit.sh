@@ -25,10 +25,13 @@ set -u
 
 VERSION="1.4.8"
 APP_PATH="/Applications/RoamSwitch.app"
-HELPER_BIN="/Library/PrivilegedHelperTools/com.tetsuharu.RoamSwitch.Helper"
+HELPER_LABEL="com.tetsuharu.RoamSwitch.Helper"
+HELPER_BIN="/Library/PrivilegedHelperTools/$HELPER_LABEL"
 MCP_BIN="$APP_PATH/Contents/MacOS/RoamSwitchMCPServer"
 TEAM_ID="GV76B6G4YU"
 OUTDIR=""
+OVERALL=""
+MCP_INIT='{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"defense-audit","version":"1"}}}'
 
 # ------------------------------------------------------------------ styling ---
 say()  { printf '\033[36m==>\033[0m %s\n' "$*"; }
@@ -48,6 +51,8 @@ init_outdir() {
     OUTDIR="$HOME/rs-defense-audit/run-$ts"
   fi
   mkdir -p "$OUTDIR"
+  # a stale result from an earlier run in the same dir must never be reported as this run's
+  rm -f "$OUTDIR"/result_*.txt
   say "Audit output directory: $OUTDIR"
 }
 
@@ -123,18 +128,24 @@ if rejected {
 }
 SWIFT
 
+  # The probe cannot tell "helper rejected me" from "helper is not installed" (both invalidate the
+  # connection), so a not-installed helper must be ruled out first or it would be a false PASS.
+  if [ ! -e "$HELPER_BIN" ] || ! launchctl print "system/$HELPER_LABEL" >/dev/null 2>&1; then
+    warn "Privileged helper is not installed/loaded ($HELPER_LABEL): XPC boundary NOT tested."
+    echo "SKIPPED (helper not installed)" > "$OUTDIR/result_xpc.txt"
+    return 0
+  fi
+
   # Compile ad-hoc binary (without valid Apple Developer ID / Team ID signature)
   swiftc "$src" -o "$bin" > "$log" 2>&1 || {
     warn "Swift compilation failed. Check Xcode Command Line Tools."
-    echo "FAIL" >> "$OUTDIR/result_xpc.txt"
+    echo "FAIL (probe did not compile)" > "$OUTDIR/result_xpc.txt"
     return 1
   }
 
   say "Attempting XPC connection from unauthorized client to $HELPER_BIN..."
-  set +e
   "$bin" >> "$log" 2>&1
   local ret=$?
-  set -e
 
   if [ $ret -eq 0 ]; then
     pass "Privileged helper correctly rejected unauthorized XPC caller (audit_token / Team ID check passed)"
@@ -143,8 +154,8 @@ SWIFT
     fail "Privileged helper ACCEPTED unauthorized XPC caller!"
     echo "FAIL" > "$OUTDIR/result_xpc.txt"
   else
-    warn "Helper not active or did not respond (return code: $ret). Verify helper installation."
-    echo "SKIPPED" > "$OUTDIR/result_xpc.txt"
+    warn "Helper did not respond (return code: $ret). Verify helper installation."
+    echo "INCONCLUSIVE (no response, rc=$ret)" > "$OUTDIR/result_xpc.txt"
   fi
 }
 
@@ -158,30 +169,38 @@ test_pf_airgap() {
   say "Inspecting active pf anchors..."
   sudo pfctl -s Anchors 2>&1 | tee "$log" | grep -E "com.tetsuharu.roamswitch" || true
 
-  # Check loopback policy
+  # Check loopback policy: refused (7) or answered (0) means loopback works; a timeout (28) means it is dropped.
   say "Verifying loopback connectivity policy..."
-  if curl -s --connect-timeout 2 http://127.0.0.1:80 >/dev/null 2>&1 || [ $? -eq 7 ]; then
+  curl -s --connect-timeout 2 http://127.0.0.1:80 >/dev/null 2>&1
+  local lo_rc=$?
+  local lo_ok=0
+  if [ $lo_rc -eq 0 ] || [ $lo_rc -eq 7 ]; then
     pass "Loopback interface (127.0.0.1) policy is responsive (Connection Refused / OK)"
+    lo_ok=1
+  else
+    fail "Loopback 127.0.0.1 did not answer (curl rc=$lo_rc): loopback may be blocked"
   fi
 
   # Check outbound drop simulation under air-gap if enabled
   if sudo pfctl -s rules -a "com.tetsuharu.roamswitch/airgap" 2>/dev/null | grep -q "block drop"; then
     say "Air-Gap anchor is ACTIVE. Verifying fail-closed outbound drop..."
-    set +e
     curl -I --connect-timeout 2 https://1.1.1.1 >/dev/null 2>&1
     local ret=$?
-    set -e
-    if [ $ret -ne 0 ]; then
-      pass "All outbound traffic strictly dropped under Air-Gap (fail-closed verified)"
-      echo "PASS" > "$OUTDIR/result_pf.txt"
-    else
+    if [ $ret -eq 0 ]; then
       fail "Outbound traffic passed through while Air-Gap was active!"
       echo "FAIL" > "$OUTDIR/result_pf.txt"
+    elif [ $ret -eq 28 ] && [ $lo_ok -eq 1 ]; then
+      # a silent drop shows up as a connect timeout; DNS/route errors (6/7) would not prove the pf drop
+      pass "Outbound connection timed out under Air-Gap (consistent with pf block drop)"
+      echo "PASS" > "$OUTDIR/result_pf.txt"
+    else
+      warn "Outbound failed with curl rc=$ret, which does not by itself show a pf drop"
+      echo "INCONCLUSIVE (curl rc=$ret)" > "$OUTDIR/result_pf.txt"
     fi
   else
-    say "Air-Gap anchor currently inactive. Verifying ruleset syntax..."
-    echo "PASS (Ruleset valid, Air-Gap dormant)" > "$OUTDIR/result_pf.txt"
-    pass "pf ruleset anchor structure verified"
+    warn "Air-Gap anchor is inactive: the fail-closed drop was NOT exercised."
+    if [ $lo_ok -eq 1 ]; then echo "SKIPPED (Air-Gap dormant; only loopback checked)" > "$OUTDIR/result_pf.txt"
+    else echo "FAIL (loopback unresponsive)" > "$OUTDIR/result_pf.txt"; fi
   fi
 }
 
@@ -194,31 +213,43 @@ test_port_anomaly() {
   local loop_port=18889
 
   say "Starting test listeners on port $test_port (0.0.0.0) and $loop_port (127.0.0.1)..."
-  python3 -m http.server "$test_port" --bind 0.0.0.0 >/dev/null 2>&1 &
+  # serve an EMPTY directory: http.server would otherwise list the current directory on 0.0.0.0
+  mkdir -p "$OUTDIR/empty-web"
+  python3 -m http.server "$test_port" --bind 0.0.0.0 -d "$OUTDIR/empty-web" >/dev/null 2>&1 &
   local pid_global=$!
-  python3 -m http.server "$loop_port" --bind 127.0.0.1 >/dev/null 2>&1 &
+  python3 -m http.server "$loop_port" --bind 127.0.0.1 -d "$OUTDIR/empty-web" >/dev/null 2>&1 &
   local pid_local=$!
 
   sleep 1
 
-  say "Verifying listening sockets detection..."
-  lsof -i -P -n | grep -E ":$test_port|:$loop_port" | tee "$log"
+  say "Verifying listening sockets with lsof (ground truth)..."
+  lsof -nP -iTCP -sTCP:LISTEN | grep -E ":$test_port|:$loop_port" | tee "$log"
+  local lsof_global=0 lsof_local=0
+  grep -Eq "(\*|0\.0\.0\.0):$test_port " "$log" && lsof_global=1
+  grep -Eq "127\.0\.0\.1:$loop_port " "$log" && lsof_local=1
 
-  if [ -x "$MCP_BIN" ]; then
-    say "Querying RoamSwitchMCPServer exposed_ports tool..."
+  if [ $lsof_global -ne 1 ] || [ $lsof_local -ne 1 ]; then
+    fail "Test listeners are not in the expected state (global=$lsof_global local=$lsof_local); nothing to assert against"
+    echo "INCONCLUSIVE (test listeners not up)" > "$OUTDIR/result_port.txt"
+  elif [ -x "$MCP_BIN" ]; then
+    say "Querying RoamSwitchMCPServer get_exposed_ports tool..."
     local mcp_res
-    mcp_res=$(echo '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"get_exposed_ports","arguments":{"includeLocalOnly":true}}}' | "$MCP_BIN" 2>/dev/null || true)
+    mcp_res=$({ printf '%s\n' "$MCP_INIT" '{"jsonrpc":"2.0","method":"notifications/initialized"}' \
+      '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"get_exposed_ports","arguments":{"includeLocalOnly":true}}}'; sleep 3; } \
+      | "$MCP_BIN" 2>/dev/null || true)
     echo "$mcp_res" >> "$log"
-    if echo "$mcp_res" | grep -q "\"port\":$test_port"; then
-      pass "MCP server correctly detected globally exposed port $test_port"
+    # The tool result is JSON embedded as a STRING in the content text, so the quotes arrive backslash-escaped
+    # (\"port\":18888). Match with or without the escaping.
+    if echo "$mcp_res" | grep -Eq "port\\\\?\"? *: *$test_port([^0-9]|$)"; then
+      pass "MCP server detected globally exposed port $test_port"
       echo "PASS" > "$OUTDIR/result_port.txt"
     else
-      warn "Port $test_port detection via MCP returned non-standard format or was not indexed immediately"
-      echo "PASS (lsof verified)" > "$OUTDIR/result_port.txt"
+      fail "MCP server did not report the globally exposed port $test_port (lsof confirms it is listening)"
+      echo "FAIL (MCP missed port $test_port)" > "$OUTDIR/result_port.txt"
     fi
   else
-    pass "Global vs Localhost socket distinction verified via system diagnostics"
-    echo "PASS" > "$OUTDIR/result_port.txt"
+    warn "MCP binary missing: only lsof was checked, detection by RoamSwitch NOT tested"
+    echo "SKIPPED (no MCP binary; lsof only)" > "$OUTDIR/result_port.txt"
   fi
 
   kill "$pid_global" "$pid_local" 2>/dev/null || true
@@ -238,37 +269,55 @@ test_mcp_readonly() {
 
   say "Querying tools/list to enforce Read-Only invariant..."
   local tools_json
-  tools_json=$(echo '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}' | "$MCP_BIN" 2>/dev/null || true)
+  tools_json=$({ printf '%s\n' "$MCP_INIT" '{"jsonrpc":"2.0","method":"notifications/initialized"}' \
+    '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}'; sleep 3; } | "$MCP_BIN" 2>/dev/null || true)
   echo "$tools_json" > "$log"
 
+  local all_names
+  all_names=$(echo "$tools_json" | grep -oE '"name" *: *"[^"]+"' | sed -E 's/.*: *"([^"]+)"/\1/')
+  local total_count
+  total_count=$(printf '%s\n' "$all_names" | grep -c . || true)
+  if [ "${total_count:-0}" -lt 2 ]; then
+    # an empty/garbled catalog would otherwise "pass" with 0 mutating tools
+    fail "tools/list returned no usable tool catalog; the invariant could not be checked"
+    echo "INCONCLUSIVE (no tool catalog)" > "$OUTDIR/result_mcp.txt"
+    return 1
+  fi
+
+  # Mutating verbs as a name PREFIX. Read-only scanners named run_*_scan are intentionally excluded.
+  local forbidden
+  forbidden=$(printf '%s\n' "$all_names" | grep -E '^(enable|disable|set|write|delete|update|modify|change|exec|run)([_A-Z]|$)' | grep -vE '^run_.*_scan$' || true)
   local forbidden_count
-  forbidden_count=$(echo "$tools_json" | grep -oE '"name":"(enable|disable|set|write|delete|update|modify|change|exec|run)[^"]*"' | wc -l | tr -d ' ')
-  if [ "$forbidden_count" -eq 0 ]; then
-    pass "Read-Only Invariant Confirmed: 0 mutating tools found in MCP catalog"
+  forbidden_count=$(printf '%s\n' "$forbidden" | grep -c . || true)
+  if [ "${forbidden_count:-0}" -eq 0 ]; then
+    pass "Read-Only Invariant Confirmed: 0 mutating tools among $total_count in MCP catalog"
   else
-    fail "Read-Only Violation: Found $forbidden_count mutating tool(s) in MCP catalog!"
+    fail "Read-Only Violation: Found $forbidden_count mutating tool(s) in MCP catalog: $(echo $forbidden)"
     echo "FAIL" > "$OUTDIR/result_mcp.txt"
     return 1
   fi
 
-  say "Fuzz testing: Deeply nested JSON-RPC payload..."
-  local nested_json='{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"audit_url_safety","arguments":{"url":"'
+  say "Fuzz testing: Deeply nested JSON-RPC payload, then a follow-up request to prove it survived..."
+  # url is a genuinely nested OBJECT (60 levels), not a broken string
+  local nested_json='{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"audit_url_safety","arguments":{"url":'
+  local i
   for i in $(seq 1 60); do nested_json="${nested_json}{\"a\":"; done
   nested_json="${nested_json}\"http://example.com\""
   for i in $(seq 1 60); do nested_json="${nested_json}}"; done
-  nested_json="${nested_json}}}"
+  nested_json="${nested_json}}}}"
 
-  set +e
   local fuzz_res
-  fuzz_res=$(echo "$nested_json" | "$MCP_BIN" 2>&1)
+  fuzz_res=$({ printf '%s\n' "$MCP_INIT" '{"jsonrpc":"2.0","method":"notifications/initialized"}' "$nested_json" \
+    '{"jsonrpc":"2.0","id":4,"method":"tools/list","params":{}}'; sleep 3; } | "$MCP_BIN" 2>"$OUTDIR/test_mcp_fuzz_stderr.log")
   local fuzz_ret=$?
-  set -e
+  echo "$fuzz_res" >> "$log"
 
-  if [ $fuzz_ret -eq 0 ]; then
-    pass "Parser Robustness Confirmed: Malformed/pathological JSON safely rejected without crash"
+  # Survived = the server answered the request that came AFTER the hostile one.
+  if [ $fuzz_ret -eq 0 ] && echo "$fuzz_res" | grep -Eq '"id" *: *4[,}]'; then
+    pass "Parser Robustness Confirmed: pathological JSON handled and the server kept answering"
     echo "PASS" > "$OUTDIR/result_mcp.txt"
   else
-    fail "MCP server crashed on nested JSON payload (code: $fuzz_ret)!"
+    fail "MCP server crashed or stopped answering after the nested JSON payload (exit: $fuzz_ret)"
     echo "FAIL" > "$OUTDIR/result_mcp.txt"
   fi
 }
@@ -284,19 +333,20 @@ test_arp_anomaly() {
 
   local gw_ip
   gw_ip=$(netstat -nr -f inet | grep -E '^default' | awk '{print $2}' | head -n 1)
+  # NOTE: this only observes the gateway; it does not exercise RoamSwitch's ARP anomaly detection.
   if [ -n "$gw_ip" ]; then
     local gw_mac
-    gw_mac=$(arp -n "$gw_ip" 2>/dev/null | awk '{print $4}' | grep -E "^([0-9a-f]{1,2}:){5}[0-9a-f]{1,2}$" || true)
+    gw_mac=$(arp -n "$gw_ip" 2>/dev/null | awk '{print $4}' | grep -iE "^([0-9a-f]{1,2}:){5}[0-9a-f]{1,2}$" || true)
     if [ -n "$gw_mac" ]; then
-      pass "Default gateway ($gw_ip -> $gw_mac) properly resolved and monitored"
-      echo "PASS" > "$OUTDIR/result_arp.txt"
+      pass "Default gateway ($gw_ip -> $gw_mac) resolved in the ARP table (observation only)"
+      echo "PASS (observation only)" > "$OUTDIR/result_arp.txt"
     else
-      warn "Gateway IP ($gw_ip) found, but MAC not yet in ARP cache."
-      echo "PASS (Gateway detected)" > "$OUTDIR/result_arp.txt"
+      warn "Gateway IP ($gw_ip) found, but MAC not in ARP cache."
+      echo "INCONCLUSIVE (gateway MAC not resolved)" > "$OUTDIR/result_arp.txt"
     fi
   else
-    warn "No default gateway found (offline/host-only VM). ARP check recorded as isolated."
-    echo "PASS (Isolated environment)" > "$OUTDIR/result_arp.txt"
+    warn "No default gateway found (offline/host-only VM). ARP check not performed."
+    echo "SKIPPED (no default gateway)" > "$OUTDIR/result_arp.txt"
   fi
 }
 
@@ -313,6 +363,18 @@ generate_report() {
   local res_mcp; res_mcp=$(cat "$OUTDIR/result_mcp.txt" 2>/dev/null || echo "N/A")
   local res_arp; res_arp=$(cat "$OUTDIR/result_arp.txt" 2>/dev/null || echo "N/A")
 
+  # Overall verdict derived from the recorded results (never assumed).
+  local overall="PASS"
+  local r
+  for r in "$res_xpc" "$res_pf" "$res_port" "$res_mcp" "$res_arp"; do
+    case "$r" in
+      FAIL*) overall="FAIL"; break;;
+      PASS*) ;;
+      *) overall="INCOMPLETE";;
+    esac
+  done
+  OVERALL="$overall"
+
   cat > "$report" << EOF
 # RoamSwitch Defense & Penetration Verification Report
 
@@ -320,6 +382,10 @@ generate_report() {
 - **Target App**: $APP_PATH (RoamSwitch $VERSION)
 - **Host / VM**: $(uname -srm) / $(sw_vers -productVersion 2>/dev/null || echo "macOS")
 - **Audit Directory**: \`$OUTDIR\`
+
+## Overall verdict: **$overall**
+
+(PASS = every check passed; INCOMPLETE = no failure but at least one check was skipped, inconclusive or missing; FAIL = at least one check failed)
 
 ## Test Execution Summary
 
@@ -344,16 +410,16 @@ EOF
   cat > "$findings" << EOF
 # Summary of Security & Defense Audit Findings
 
-### Verification Overview
-This audit systematically tested RoamSwitch's 5 core defense boundaries on a live macOS environment:
+**Overall verdict: $overall**
 
-1. **Privileged Helper Authorization**: Calls from unapproved binaries (lacking Apple Developer ID / Team ID \`$TEAM_ID\`) were rejected immediately.
-2. **Firewall Fail-Closed Invariant**: Air-Gap containment rules supersede standard rules and enforce complete packet drop.
-3. **Port Anomaly Containment**: Globally bound listeners are distinguished from localhost sockets.
-4. **MCP Read-Only Protection**: The MCP server exposes zero state-mutating tools, preventing Confused Deputy exploits via LLMs.
-5. **Gateway Integrity**: The ARP table monitoring correctly inspects gateway MAC consistency.
+Per-check results (see report.md for the log artifacts). Only PASS lines count as verified;
+SKIPPED / INCONCLUSIVE mean the boundary was not actually exercised in this run.
 
-All tests completed successfully under macOS security constraints.
+1. Privileged Helper Authorization (unapproved caller, Team ID \`$TEAM_ID\`): $res_xpc
+2. Firewall Fail-Closed Invariant (Air-Gap drop): $res_pf
+3. Port Anomaly Containment (global vs localhost listeners, detected by the MCP server): $res_port
+4. MCP Read-Only Protection (no mutating tools; survives hostile JSON): $res_mcp
+5. Gateway Integrity (ARP table observation only): $res_arp
 EOF
 
   say "Report generated at: $report"
@@ -371,6 +437,7 @@ case "${1:-all}" in
     test_mcp_readonly
     test_arp_anomaly
     generate_report
+    [ "$OVERALL" = "FAIL" ] && exit 1
     ;;
   xpc)
     init_outdir; preflight_check; test_xpc_boundary
@@ -397,6 +464,7 @@ case "${1:-all}" in
     done
     [ -n "$OUTDIR" ] || die "--outdir is required for report subcommand"
     generate_report
+    [ "$OVERALL" = "FAIL" ] && exit 1
     ;;
   *)
     echo "Usage: $0 {all|xpc|pf|port|mcp|arp|report} [--outdir DIR]"
