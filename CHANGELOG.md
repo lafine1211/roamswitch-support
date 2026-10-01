@@ -165,21 +165,7 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 - **Improved: the calm wording of alerts during a Sensor audit now returns to normal as soon as the report arrives** (client edition). Before, it stayed calm for a fixed 25 minutes from the request. The 25 minutes is now only an upper bound for when no report ever comes. Reports are fetched every 5 minutes, so the normal wording returns at most about 5 minutes after the audit finishes.
 - **The bundled PersonalSOC is now 0.1.3.** It repairs malformed LLM replies and relabels the Gatekeeper source (see PersonalSOC 0.1.3).
 
-### 1.10.17
-
-- **Fixed (security): the link guard let a hostname with a trailing dot (`evil.com.`) through.** Hostnames are normalized before the block decision.
-- **Fixed (security): a scanned file's name containing a line break and a fake detection line could make RoamSwitch quarantine any file of the user's.** Before quarantining, only the detected paths are scanned again, and only what is really detected is quarantined.
-- **Fixed (security): the privileged helper now verifies the link guard's threat feed by signature before publishing it.** Before, the feed was verified at download and then used as-is from a place the user can write, so a program of the same user could empty the feed to disable the link guard, or add hosts. If verification fails, the previous feed is kept and protection is not removed. A feed older than the recorded one, replayed with its genuine signed manifest, is refused too.
-- **Fixed (security): in MCP exec-log search, secrets in command lines can no longer be guessed from whether a search matches.** Searches run on the masked text, and the app itself now masks output and rate-limits searches (so another program of the same user cannot read the raw records through the relay). The masking now covers API keys such as `sk-svcacct-`, tokens from GitHub, GitLab, npm, Slack and Google, `mysql -ppassword`, `DB_PASS=` and similar. Verifying the exec log's integrity chain now detects a rewritten sealed segment and a deleted oldest segment.
-- **Fixed: when importing a WireGuard configuration failed, the saved endpoint was overwritten with that of the rejected configuration.** Also fixed: when `wg-quick up` failed, the previous kill switch was not restored and traffic stayed blocked.
-- **Fixed: state is now saved atomically** (kill switch, port protection, Sensor pairings and others). An interruption can no longer bring the app back from a corrupted state with the kill switch off.
-- **Fixed: a malware scan could hang when its output was large.**
-- **Fixed: the Mac now sends a proof of possession of the key (PoP) when pairing with a Sensor.** The control-channel signature version once confirmed is saved, and no fallback to an older signature format is made over a connection without a certificate pin.
-- **Fixed: a TLS ClientHello split across several records is now inspected, up to 16 KB.**
-- **Fixed: the check of the SSH remote-login state, DNS restoration (disabled services and others), restarting port-scan detection, and the handling of symbolic links when the exec recorder checks plists.**
-- **The bundled PersonalSOC is now 0.1.4** (see PersonalSOC 0.1.4). If 0.1.1 or later is installed, you can update from inside the app.
-
-## 1.10.16
+### 1.10.16
 
 - **The bundled PersonalSOC is now 0.1.2**. It reads more from RoamSwitch's MCP (package CVE matches, the status of active vulnerability checks, Sensor's outside audit results, protections switched off in settings, recovery readiness and more) and starts LLM commands with their own tools switched off where possible. Using `agy` or `codex`, whose tools cannot be locked, now requires a confirmation in Settings. See the PersonalSOC 0.1.2 entry for details.
 
@@ -255,6 +241,20 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 ---
 
 ## RoamSwitch for Mac
+
+## 1.10.17
+
+- **Fixed (security): the link guard let a hostname with a trailing dot (`evil.com.`) through.** Hostnames are normalized before the block decision.
+- **Fixed (security): a scanned file's name containing a line break and a fake detection line could make RoamSwitch quarantine any file of the user's.** Before quarantining, only the detected paths are scanned again, and only what is really detected is quarantined.
+- **Fixed (security): the privileged helper now verifies the link guard's threat feed by signature before publishing it.** Before, the feed was verified at download and then used as-is from a place the user can write, so a program of the same user could empty the feed to disable the link guard, or add hosts. If verification fails, the previous feed is kept and protection is not removed. A feed older than the recorded one, replayed with its genuine signed manifest, is refused too.
+- **Fixed (security): in MCP exec-log search, secrets in command lines can no longer be guessed from whether a search matches.** Searches run on the masked text, and the app itself now masks output and rate-limits searches (so another program of the same user cannot read the raw records through the relay). The masking now covers API keys such as `sk-svcacct-`, tokens from GitHub, GitLab, npm, Slack and Google, `mysql -ppassword`, `DB_PASS=` and similar. Verifying the exec log's integrity chain now detects a rewritten sealed segment and a deleted oldest segment.
+- **Fixed: when importing a WireGuard configuration failed, the saved endpoint was overwritten with that of the rejected configuration.** Also fixed: when `wg-quick up` failed, the previous kill switch was not restored and traffic stayed blocked.
+- **Fixed: state is now saved atomically** (kill switch, port protection, Sensor pairings and others). An interruption can no longer bring the app back from a corrupted state with the kill switch off.
+- **Fixed: a malware scan could hang when its output was large.**
+- **Fixed: the Mac now sends a proof of possession of the key (PoP) when pairing with a Sensor.** The control-channel signature version once confirmed is saved, and no fallback to an older signature format is made over a connection without a certificate pin.
+- **Fixed: a TLS ClientHello split across several records is now inspected, up to 16 KB.**
+- **Fixed: the check of the SSH remote-login state, DNS restoration (disabled services and others), restarting port-scan detection, and the handling of symbolic links when the exec recorder checks plists.**
+- **The bundled PersonalSOC is now 0.1.4** (see PersonalSOC 0.1.4). If 0.1.1 or later is installed, you can update from inside the app.
 
 ## 1.10.16
 
