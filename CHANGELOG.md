@@ -56,6 +56,19 @@ development — see
 <https://lafine.net/roamswitch-sensor-manual.html> for current status and
 setup instructions.
 
+### 0.3.16
+
+- **Fixed (data protection): the collector's retention prune could delete the records after a bad line.** A single line with invalid UTF-8 stopped the read, and `scans.jsonl` and `events.jsonl` were replaced with the shortened content, losing every later record. Only the damaged line is skipped now and the other records are kept.
+- **Fixed (data protection): the collector reported success even when appending a record failed.** Only the state was saved, and the Sensor did not resend, so the record was lost. A failed append now returns a storage error and does not advance the state.
+- **Fixed: after a crash in the middle of an append, the next record was glued onto the torn fragment and became unreadable** (the collector's records and the audit log).
+- **Fixed (data protection): in the audit log, one line with invalid UTF-8 hid all later entries and made a sequence number get reused, and an unreadable log "verified" as empty and fine.** Only the bad line is skipped, an unreadable log counts as a failed verification, and a new chain is never started.
+- **Fixed (data protection): an evidence export could come out empty, like a clean "no scans, no devices" report, when a stored file was damaged.** The export is now aborted with an error when a stored file is damaged (the IPC has a new `strict` parameter that reads strictly; the TUI shows it in 10 languages and the CLI in Japanese and English).
+- **Fixed (security): the CLI's `export --out` and `scan report --out` followed symbolic links, kept an existing file's mode, and defaulted to 0644.** A symbolic link or a non-regular file is now refused (with the reason shown in Japanese or English), the file is written to a temporary file and then replaced, and the mode is 0600. Under sudo, a link planted in a shared directory could have redirected the write.
+- **Fixed (robustness): a crash in the middle of `tls rotate` (the key and certificate update) can no longer leave a mismatched key and certificate that stops the Sensor from starting.** The new key and certificate are written to temporary files, checked to match, and only then put in place. At startup, an interrupted rotation is either completed or discarded so that the pair is consistent (a working pair is never replaced by one that cannot be verified). When it cannot be recovered, the Sensor stops with an error as before and keeps the files.
+- **Fixed: when an older version saved a configuration or data written by a newer version, the newer fields were dropped** (after a downgrade). The configuration, trusted endpoints, scan history, device inventory, the ARP and passive baselines, the collector's per-Sensor state and the push cursor now keep unknown fields when saved (the audit log is unchanged because of its hash chain). When unknown fields are present, the keys of the configuration file are written in alphabetical order.
+- **Fixed: in the TUI, overwriting a credential file (`collector-token.txt`) did not tighten its mode to 0600, and a crash while creating the identity file could stop the next start.**
+- **Changed: the collector's state, `enrolled` and push-cursor files are written pretty-printed** (the content is the same).
+
 ### 0.3.15
 
 - **Fixed (data protection): when a state file was unreadable or corrupted, it was treated as empty and saved, wiping the other data.** With a corrupted file, a change such as a pairing or a new record replaced the valid data that was left (the list of trusted endpoints, for example) with just the one new entry. This affected the list of trusted endpoints, the scan history, the device inventory, the configuration (`config set`), the ARP and passive baselines, the audit log (a corrupted line was silently dropped), the collector's per-Sensor state, and the daemon's push position. Only a missing file is treated as empty. A file that exists but cannot be read is not rewritten: a copy is kept as `<file>.corrupt-<time>` (mode 0600, the three newest), and a change fails with a clear error.
@@ -82,11 +95,7 @@ setup instructions.
 
 - **Audit report dates are now easy to read**. HTML and Markdown reports showed raw UTC strings such as `2026-09-19T08:00:03.415602838+00:00`. They now show this machine's local time in each language's order, with the weekday and the UTC offset (English: "Sat, 2026-09-19 17:00:03 (UTC+9)"). The "Generated (UTC)" heading is now just "Generated". CSV is meant for machines and stays in UTC as before.
 
-### 0.3.12
-
-- **Ran a false-positive/alert-fatigue audit and fixed 6 findings.** The detectors whose volume can spike (outbound fan-out, outbound flood, malicious-destination contact, IoT device behaviour) sent an empty destination identifier, so when a *different* device tripped the same kind of detection it could be silently suppressed as if it were still in cooldown (notifications now carry the correct MAC address). Those detectors' severity, and the DNS-tunneling detector's severity, are now downgraded for a device that's already registered in the device inventory (with an operator note). ARP event webhook/syslog notifications now carry the same context (vendor, registration status, history) the TUI/CLI already showed.
-
-### 0.2.1 - 0.3.11
+### 0.2.1 - 0.3.12
 
 - **Better network inventory** (0.2.1 to 0.2.7): always-on tracking of the network
   layout, plus extended detection (botnet/DDoS participation, DNS tunneling). An active
@@ -108,6 +117,7 @@ setup instructions.
 - **Control API TLS support, replay protection, and a fuller TUI** (0.3.9): the control API now speaks TLS 1.3 with certificate pinning (`control.tls`, default `optional`). Signed requests carry a timestamp (±300s) and a one-time value, with pairing brute force locked out per source and globally. The TUI now covers every function of the CLI and daemon (config editing, TLS management, manual pairing, event views, 10 languages). Added a bind-address setting, a switch to stop the CVE-map fetch, and a distinction between unpaired and unknown devices.
 - **Pairing command guidance fixed** (0.3.10): the pairing command shown by the TUI and `sensor-cli issue-code` did not include the Sensor's own fingerprint (`--fingerprint`), so it always failed with Linux 1.9.90 and later clients. This is fixed.
 - **Manual pairing screen explanation improved** (0.3.11): it now says that the fingerprint field is for the GUI (Mac) input field.
+- **False-positive and alert-fatigue audit** (0.3.12): fixed 6 issues, including detections that spike in count (destination spread, destination concentration flood, malicious-destination contact, IoT behavior) sending an empty destination identity, so that the same kind of detection on another device was taken to be in cooldown and silently suppressed.
 
 ### 0.2.0
 
