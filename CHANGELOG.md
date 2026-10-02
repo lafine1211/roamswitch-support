@@ -56,6 +56,19 @@ development — see
 <https://lafine.net/roamswitch-sensor-manual.html> for current status and
 setup instructions.
 
+### 0.3.14
+
+- **Added (security): control API signatures now have a v3 that is bound to the Sensor's public key.** v1 and v2 did not say which Sensor a signature was for, so an intercepted signature could be reused on another path. A new install refuses v1 (`control.allow_legacy_signatures`) and refuses v2 (`control.allow_v2_signatures`) on a plaintext connection (existing installs keep their current values). We tested that a downgrade from v3 to v2 or v1 is refused. Mac 1.10.17 and later and Linux 1.10.18 and later send v3.
+- **Added (security): when pairing, the client now sends a proof of possession of its key (PoP).** Over a connection without a certificate pin, this stops someone who has a pairing code from registering another party's public key. The setting `control.require_pairing_pop` refuses a request without the proof (on for new installs, unchanged for existing ones). A wrong proof does not consume the pairing code. Mac 1.10.17 and later and Linux 1.10.18 and later send the proof, and we confirmed on a real Mac that the Sensor verifies it.
+- **Changed: the defaults for a new install are stricter.** The control API TLS is required (`control.tls=required`). When the configuration file is corrupted, the previous configuration is kept.
+- **Fixed (security): the local IPC is authorized per connection by the caller's uid.** Write operations and active scans are limited to root or the `roamswitch-sensor` group. `get_config` masks the webhook destination. We fixed a race where the administrator check depended on a reused PID after the peer disconnected (it now uses the uid and groups seen at connect time). A line length, a connection count and the number of pairing codes outstanding at once are now capped.
+- **Fixed (security): added protections against load on the control API.** A read timeout, limits on requests and simultaneous connections, a per-IP lockout, a per-key nonce limit and an expiry for pending audits. `last_addr` is updated only over TLS, and a change is recorded.
+- **Fixed (security): hardened the collector.** To stop an endless pre-authentication body read, all connections share a read budget (32 MiB) with a per-body deadline (20 s), and a stalled, timed-out or short body counts as a failure for the source IP. We also added per-IP connection limits, trusted-proxy support, replay rejection, a push limit, a default retention, streaming body reads, and a refusal of new `http://` settings.
+- **Added: a v2 of the push signature that is bound to the receiving collector.** It stops a replay to another collector. The operator sets `--collector-id` (or the environment variable `ROAMSWITCH_COLLECTOR_ID`) on the collector and `collector.collector_id` on the Sensor. `--require-collector-binding` refuses an unbound (v1) push (off by default).
+- **Fixed: a failed webhook notification could put the URL, which carries a secret token, into the error text.** Only the kind of error is shown.
+- **Fixed: persistence is more robust.** State files are written atomically and a corrupted one is moved aside. The private key is created exclusively with mode 0600. Control characters are stripped, and a failed append to the audit log is reported.
+- **Changed: the TUI settings screen has rows for the settings above** (10 languages).
+
 ### 0.3.13
 
 - **Audit report dates are now easy to read**. HTML and Markdown reports showed raw UTC strings such as `2026-09-19T08:00:03.415602838+00:00`. They now show this machine's local time in each language's order, with the weekday and the UTC offset (English: "Sat, 2026-09-19 17:00:03 (UTC+9)"). The "Generated (UTC)" heading is now just "Generated". CSV is meant for machines and stays in UTC as before.
@@ -70,15 +83,7 @@ setup instructions.
   command already includes `--fingerprint` (0.3.10), this field is now labeled as being for the GUI /
   Mac entry field specifically.
 
-### 0.3.10
-
-- **Fix: the pairing command shown to you failed when run as-is.** The TUI's `sudo roamswitch sensor pair
-  --addr … --code …` did not include the fingerprint, and Linux 1.9.90+ endpoints refuse to pair without
-  one, so running it exactly as shown always failed. With TLS on, the command now includes
-  `--fingerprint`. `sensor-cli issue-code` also prints the command to run on the endpoint (with this
-  Sensor's own IP and fingerprint).
-
-### 0.2.1 - 0.3.9
+### 0.2.1 - 0.3.10
 
 - **Better network inventory** (0.2.1 to 0.2.7): always-on tracking of the network
   layout, plus extended detection (botnet/DDoS participation, DNS tunneling). An active
@@ -98,6 +103,7 @@ setup instructions.
 - **Slow ARP sweeps detected** (0.3.8): a long window notifies once 64 distinct targets are reached within 24 hours (a 2.5 s-per-address sweep fired at the 64th target). Requests for hosts known to be alive do not count toward it, and the number of tracked MAC addresses, targets per MAC and the live-host table are capped, so a flood of spoofed sources cannot grow memory without bound.
 - **Repository size** (0.3.7): the apt and rpm repositories had kept every past version, so they were cut to the latest one (1.10.5 and later keep the latest three).
 - **Control API TLS support, replay protection, and a fuller TUI** (0.3.9): the control API now speaks TLS 1.3 with certificate pinning (`control.tls`, default `optional`). Signed requests carry a timestamp (±300s) and a one-time value, with pairing brute force locked out per source and globally. The TUI now covers every function of the CLI and daemon (config editing, TLS management, manual pairing, event views, 10 languages). Added a bind-address setting, a switch to stop the CVE-map fetch, and a distinction between unpaired and unknown devices.
+- **Pairing command guidance fixed** (0.3.10): the pairing command shown by the TUI and `sensor-cli issue-code` did not include the Sensor's own fingerprint (`--fingerprint`), so it always failed with Linux 1.9.90 and later clients. This is fixed.
 
 ### 0.2.0
 
