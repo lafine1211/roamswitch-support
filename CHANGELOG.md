@@ -158,6 +158,10 @@ setup instructions.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.10.21
+
+- **The bundled PersonalSOC is now 0.1.6.** The white margin around the app icon is gone (see PersonalSOC 0.1.6).
+
 ### 1.10.20
 
 - **The bundled PersonalSOC is now 0.1.5.** Settings is split into tabs by function and the message after a report is created is shorter (see PersonalSOC 0.1.5).

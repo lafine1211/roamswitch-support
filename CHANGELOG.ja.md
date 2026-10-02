@@ -149,6 +149,10 @@ Client / Server Edition）とのペアリングコード方式(固定IP+短命�
 Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）。
 詳しくは <https://lafine.net/linux>。
 
+### 1.10.21
+
+- **同梱のPersonalSOCを0.1.6にしました**。アプリのアイコンの周りの白い余白がなくなります(詳しくは、PersonalSOCの0.1.6の項)。
+
 ### 1.10.20
 
 - **同梱のPersonalSOCを0.1.5にしました**。設定画面が機能ごとのタブに分かれ、レポート作成後の案内が簡潔になります(詳しくは、PersonalSOCの0.1.5の項)。
