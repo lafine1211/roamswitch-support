@@ -56,6 +56,15 @@ development — see
 <https://lafine.net/roamswitch-sensor-manual.html> for current status and
 setup instructions.
 
+### 0.3.15
+
+- **Fixed (data protection): when a state file was unreadable or corrupted, it was treated as empty and saved, wiping the other data.** With a corrupted file, a change such as a pairing or a new record replaced the valid data that was left (the list of trusted endpoints, for example) with just the one new entry. This affected the list of trusted endpoints, the scan history, the device inventory, the configuration (`config set`), the ARP and passive baselines, the audit log (a corrupted line was silently dropped), the collector's per-Sensor state, and the daemon's push position. Only a missing file is treated as empty. A file that exists but cannot be read is not rewritten: a copy is kept as `<file>.corrupt-<time>` (mode 0600, the three newest), and a change fails with a clear error.
+- **Fixed (security): when the list of trusted endpoints cannot be read, nobody is trusted, the file is kept as it is, and pairing is refused** (reason `sensor_storage_unavailable`). The daemon does not crash. The pairing code is used up in that case, so issue a new one after repairing the file.
+- **Fixed: with a damaged private key, the TLS certificate was silently replaced and its fingerprint changed.** It now fails with an error instead (if only the certificate is missing and the key is left, it is recreated).
+- **Fixed: hardening of the collector.** When a Sensor's state was damaged, a replayed push was accepted and the state rebuilt from empty; it now returns 500 and keeps the state (the overview shows "stale"). When the token file cannot be read, an empty value is no longer written and an error is shown.
+- **Note: while a file is damaged, some detections stop.** With the ARP baseline, comparison and spoofing detection stop; with the passive baseline, new-device detection stops (malicious-IP matching continues). They resume once the file is repaired or deleted.
+- **Changed: the new errors are shown in 10 languages in the TUI and in Japanese and English in the CLI.**
+
 ### 0.3.14
 
 - **Added (security): control API signatures now have a v3 that is bound to the Sensor's public key.** v1 and v2 did not say which Sensor a signature was for, so an intercepted signature could be reused on another path. A new install refuses v1 (`control.allow_legacy_signatures`) and refuses v2 (`control.allow_v2_signatures`) on a plaintext connection (existing installs keep their current values). We tested that a downgrade from v3 to v2 or v1 is refused. Mac 1.10.17 and later and Linux 1.10.18 and later send v3.
@@ -77,13 +86,7 @@ setup instructions.
 
 - **Ran a false-positive/alert-fatigue audit and fixed 6 findings.** The detectors whose volume can spike (outbound fan-out, outbound flood, malicious-destination contact, IoT device behaviour) sent an empty destination identifier, so when a *different* device tripped the same kind of detection it could be silently suppressed as if it were still in cooldown (notifications now carry the correct MAC address). Those detectors' severity, and the DNS-tunneling detector's severity, are now downgraded for a device that's already registered in the device inventory (with an operator note). ARP event webhook/syslog notifications now carry the same context (vendor, registration status, history) the TUI/CLI already showed.
 
-### 0.3.11
-
-- **Improve: the fingerprint field on the manual-pairing screen now explains itself.** Since the shown
-  command already includes `--fingerprint` (0.3.10), this field is now labeled as being for the GUI /
-  Mac entry field specifically.
-
-### 0.2.1 - 0.3.10
+### 0.2.1 - 0.3.11
 
 - **Better network inventory** (0.2.1 to 0.2.7): always-on tracking of the network
   layout, plus extended detection (botnet/DDoS participation, DNS tunneling). An active
@@ -104,6 +107,7 @@ setup instructions.
 - **Repository size** (0.3.7): the apt and rpm repositories had kept every past version, so they were cut to the latest one (1.10.5 and later keep the latest three).
 - **Control API TLS support, replay protection, and a fuller TUI** (0.3.9): the control API now speaks TLS 1.3 with certificate pinning (`control.tls`, default `optional`). Signed requests carry a timestamp (±300s) and a one-time value, with pairing brute force locked out per source and globally. The TUI now covers every function of the CLI and daemon (config editing, TLS management, manual pairing, event views, 10 languages). Added a bind-address setting, a switch to stop the CVE-map fetch, and a distinction between unpaired and unknown devices.
 - **Pairing command guidance fixed** (0.3.10): the pairing command shown by the TUI and `sensor-cli issue-code` did not include the Sensor's own fingerprint (`--fingerprint`), so it always failed with Linux 1.9.90 and later clients. This is fixed.
+- **Manual pairing screen explanation improved** (0.3.11): it now says that the fingerprint field is for the GUI (Mac) input field.
 
 ### 0.2.0
 
