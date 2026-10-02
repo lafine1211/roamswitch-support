@@ -10,6 +10,10 @@ independently. Older releases are summarized in ranges.
 
 ## PersonalSOC
 
+### 0.1.6
+
+- **Changed: removed the margin around the app icon and made its background transparent.** It used to come with a white margin. The rounded square now fills the whole icon on Mac, Linux and in the app window.
+
 ### 0.1.5
 
 - **Changed: Settings is now split into tabs by function (Automatic status check, LLM integration, Updates, Display language).** The Updates tab appears only where updating is supported (Mac). The Save button still saves all settings together.
@@ -244,7 +248,7 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 
 ## 1.10.19
 
-- **The bundled PersonalSOC is now 0.1.5.** Settings is split into tabs by function and the message after a report is created is shorter (see PersonalSOC 0.1.5). If 0.1.1 or later is already installed, you can update from inside the app.
+- **The bundled PersonalSOC is now 0.1.6.** Settings is split into tabs by function, the message after a report is created is shorter, and the white margin around the app icon is gone (see PersonalSOC 0.1.5 and 0.1.6). If 0.1.1 or later is already installed, you can update from inside the app.
 
 ## 1.10.18
 
