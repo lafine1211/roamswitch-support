@@ -10,6 +10,12 @@ independently. Older releases are summarized in ranges.
 
 ## PathScope
 
+### 0.1.4
+
+- **Added: PathScope can now be bundled in RoamSwitch's Linux packages (deb, rpm and tarball) on Linux.** It installs a launcher entry and icons so that it opens from the application menu, the `pathscope` command, the `pathscope-gui` window and the Apache-2.0 texts. An install made by a package does not use Settings > Update; it says that updates come with that package's updates.
+- **Fixed: on Linux (WebKitGTK) in dark mode, a closed drop-down kept a white background and its text was unreadable.**
+- **Fixed: depending on the startup order, the text in the update section could stay as a raw key name.** It could happen when the update information arrived before the text catalog was loaded (on both Mac and Linux).
+
 ### 0.1.3
 
 - **Fixed: the German label for "unrestricted" is now "Uneingeschränkt".** The earlier "Unbegrenzt" reads as "unlimited in quantity". The settings screen now matches the wording on the website and in the EULA.
@@ -21,17 +27,16 @@ independently. Older releases are summarized in ranges.
 - **Fixed: with "unrestricted", the protection against instructions planted in config files (removing invisible characters, defusing the data fence marks) was also turned off.** It is now always applied, whatever the setting.
 - **Fixed: the result of "Fix everything?" is shown in plain sentences instead of internal wording.**
 
-### 0.1.1
+### 0.1.0 - 0.1.1 (summarized)
 
-- **Added: have an LLM read your config files to find easily missed risks (LLM assist).** Files such as sudoers, cron and scripts are written in many different styles, so a program alone cannot always read them. The LLM looks for entries that involve root privileges (for example, a sudo setting that needs no password, or a file that root runs periodically). Before anything it finds is used in the analysis, PathScope checks that the line really exists in the original file. Before sending, you confirm which LLM will receive how many files. Values that look like passwords or keys are replaced with `[REDACTED]`, and files such as private keys are not sent (for a local LLM whose content never leaves your machine, you can choose "unrestricted" in Settings). Files that could not be read or were not sent are listed as "unchecked" with the reason. The LLM integration is still off by default.
-- **Added: the app is available in 10 languages** (Japanese, English, Korean, Simplified Chinese, Traditional Chinese, German, French, Spanish, Italian, Portuguese). It follows the OS language and can be changed in Settings → Language. The command line supports Japanese and English (`--lang=ja|en`). The translations started as machine translations and have not been reviewed by native speakers. The macOS screen names (System Settings, Privacy & Security, Full Disk Access) match the wording macOS itself uses in each language.
-- **Added: in-app updates on Linux.** The update is installed only after its signature is verified; updates with a wrong signature or a tampered file are refused. The Linux package (.deb) in this release is for delivering in-app updates; it is not yet offered as an installer.
-- **Fixed: the macOS privacy settings data (TCC.db) is now read correctly from real data**, including apps that are allowed by bundle ID. Commands in the suggested fixes are safely quoted even when the path contains spaces or symbols.
-- **Changed: the wording of the app and the command line is easier to understand** (the reason for each step is shown as a sentence instead of an internal name; "choke point" became "fix point", and so on). Settings is organized into tabs by function, overlapping text in the diagram is fixed, and a confirmation that explains the reason appears before opening the Full Disk Access settings.
+The contents of these releases, grouped by theme. The full text of each entry is in this file's git history.
 
-### 0.1.0
-
-- **First release.** Bundled in the Mac 1.10.19 DMG. It analyzes, read-only, the paths by which privileges can be escalated on this machine (the routes to root or to sensitive data) and shows which places to fix first.
+- **Added: have an LLM read your config files to find easily missed risks (LLM assist).** Files such as sudoers, cron and scripts are written in many different styles, so a program alone cannot always read them. The LLM looks for entries that involve root privileges (for example, a sudo setting that needs no password, or a file that root runs periodically). Before anything it finds is used in the analysis, PathScope checks that the line really exists in the original file. Before sending, you confirm which LLM will receive how many files. Values that look like passwords or keys are replaced with `[REDACTED]`, and files such as private keys are not sent (for a local LLM whose content never leaves your machine, you can choose "unrestricted" in Settings). Files that could not be read or were not sent are listed as "unchecked" with the reason. The LLM integration is still off by default. (0.1.1)
+- **Added: the app is available in 10 languages** (Japanese, English, Korean, Simplified Chinese, Traditional Chinese, German, French, Spanish, Italian, Portuguese). It follows the OS language and can be changed in Settings → Language. The command line supports Japanese and English (`--lang=ja|en`). The translations started as machine translations and have not been reviewed by native speakers. The macOS screen names (System Settings, Privacy & Security, Full Disk Access) match the wording macOS itself uses in each language. (0.1.1)
+- **Added: in-app updates on Linux.** The update is installed only after its signature is verified; updates with a wrong signature or a tampered file are refused. The Linux package (.deb) in this release is for delivering in-app updates; it is not yet offered as an installer. (0.1.1)
+- **Fixed: the macOS privacy settings data (TCC.db) is now read correctly from real data**, including apps that are allowed by bundle ID. Commands in the suggested fixes are safely quoted even when the path contains spaces or symbols. (0.1.1)
+- **Changed: the wording of the app and the command line is easier to understand** (the reason for each step is shown as a sentence instead of an internal name; "choke point" became "fix point", and so on). Settings is organized into tabs by function, overlapping text in the diagram is fixed, and a confirmation that explains the reason appears before opening the Full Disk Access settings. (0.1.1)
+- **First release.** Bundled in the Mac 1.10.19 DMG. It analyzes, read-only, the paths by which privileges can be escalated on this machine (the routes to root or to sensitive data) and shows which places to fix first. (0.1.0)
 
 ## PersonalSOC
 
@@ -180,6 +185,10 @@ setup instructions.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.10.23
+
+- **PathScope is now bundled.** It is an app separate from RoamSwitch that works out the paths by which an ordinary user could reach root and shows where to fix first (a privilege-escalation path analysis tool). It is included in the Client Edition deb, rpm and tarball (and the AUR package) and opens from the application menu as "PathScope"; the command is `pathscope`. It is licensed under the Apache License 2.0, and Section 4-3 was added to the EULA. It is updated together with the RoamSwitch package. If a standalone `pathscope` package of the same name is installed, it is replaced. The Server Edition does not include it. See PathScope 0.1.4.
+
 ### 1.10.22
 
 - **The bundled PersonalSOC is now 0.1.7.** It fixes the drop-down lists having a white background, which made their text unreadable in dark mode on Linux (see PersonalSOC 0.1.7).
@@ -188,11 +197,7 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 
 - **The bundled PersonalSOC is now 0.1.6.** The white margin around the app icon is gone (see PersonalSOC 0.1.6).
 
-### 1.10.20
-
-- **The bundled PersonalSOC is now 0.1.5.** Settings is split into tabs by function and the message after a report is created is shorter (see PersonalSOC 0.1.5).
-
-### 1.10.0 - 1.10.19 (summarized)
+### 1.10.0 - 1.10.20 (summarized)
 
 Everything in these releases, grouped by topic (Client and Server Edition unless marked). The full text of each entry is in the git history of this file.
 
@@ -216,7 +221,7 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 - **Working with Sensor** (1.10.16 to 1.10.19): pairing sends a proof of key possession (PoP). Control-API signature v3 (bound to Sensor's public key) is sent and never downgraded to v2 once it has worked. The reason "Sensor's own storage file is corrupt, so pairing is impossible" returned by Sensor 0.3.15 is shown in 10 languages. The GUI no longer says "removed" when removing a Sensor failed. The calmer warning during a Sensor audit returns to the normal warning as soon as the report arrives.
 - **Ransomware detection and notifications** (1.10.18): a stale verdict left over when a process ID (PID) was reused could freeze a legitimate `cp`; the process start time is now checked as well. A process released with `roamswitch frozen resume` is not frozen again for 600 seconds. The notification for a failed isolation shows the reason in 10 languages when it was refused for lack of a login session. `roamswitch forward status` puts a translated heading before the reason a forwarding target was refused.
 - **OS Hardening** (1.10.18): fixed the "do not use Secure Boot" checkbox missing when re-enrolling TPM2, and the contradictory fingerprint (Validity 138a:0090) guidance.
-- **Bundled PersonalSOC** (1.10.16 to 1.10.19): 0.1.2 to 0.1.4 in turn (see each PersonalSOC release).
+- **Bundled PersonalSOC** (1.10.16 to 1.10.20): 0.1.2 to 0.1.5 in turn (see each PersonalSOC release). In 1.10.20, Settings is split into tabs by function and the message after a report is created is shorter (0.1.5).
 
 ### 1.9.39 - 1.9.94 (summarized)
 
@@ -268,6 +273,10 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 
 ## RoamSwitch for Mac
 
+## 1.10.24
+
+- **The bundled PathScope is now 0.1.4.** It fixes the update section text and the unreadable drop-down text on Linux, among other things (see PathScope 0.1.4). The Mac screens hardly change. If 0.1.0 or later is already installed, you can update from inside the app (Settings → Update).
+
 ## 1.10.23
 
 - **The bundled PathScope is now 0.1.3.** It fixes one German label only; the other screens do not change (see PathScope 0.1.3). If 0.1.0 or later is already installed, you can update from inside the app (Settings → Update).
@@ -276,11 +285,7 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 
 - **The bundled PathScope is now 0.1.2.** Even with "unrestricted", private key files and API keys are no longer sent (see PathScope 0.1.2). If 0.1.0 or later is already installed, you can update from inside the app (Settings → Update).
 
-## 1.10.21
-
-- **The bundled PersonalSOC is now 0.1.7.** It fixes unreadable drop-down text on Linux; the Mac screens do not change (see PersonalSOC 0.1.7). If 0.1.1 or later is already installed, you can update from inside the app.
-
-## 1.10.0 - 1.10.20 (summarized)
+## 1.10.0 - 1.10.21 (summarized)
 
 The contents of these releases, grouped by theme. The full text of each entry is in this file's git history.
 
@@ -303,7 +308,7 @@ The contents of these releases, grouped by theme. The full text of each entry is
 - **Working with Sensor** (1.10.17 to 1.10.18): pairing sends a proof of key possession (PoP). The control signature version is remembered at the highest confirmed level and is not downgraded on connections without a pinned certificate. The reason "Sensor's own storage file is corrupt, so pairing is impossible" returned by Sensor 0.3.15 is shown in 10 languages. The calmer warning during a Sensor audit returns to the normal warning once the report arrives (1.10.16).
 - **Other fixes** (1.10.17): SSH remote-login state detection, DNS restore (disabled services and the like), resuming port-scan detection, and symlink handling in the process-execution record's plist check.
 - **Decoys and notifications** (1.10.15): added `~/.pypirc` and `~/.env.backup` as decoys (honeytokens). A real access to a decoy places and watches one related decoy (the chain stops after one step). The process-execution record (Pro) gained a rule that detects commands naming a decoy file directly (11 rules). Log-audit notifications are limited to security-relevant anomalies such as authentication failures and XProtect detections. Warnings in the roughly 25 minutes after requesting a Sensor audit use calmer wording. Full Disk Access guidance was unified (the permission is decided by "RoamSwitch" in the System Settings list).
-- **Bundled PersonalSOC** (1.10.15 to 1.10.19): 0.1.2 to 0.1.6 in turn (see each PersonalSOC release). In 1.10.19, Settings is split into tabs by function, the message after a report is created is shorter, and the white margin around the app icon is gone (0.1.6).
+- **Bundled PersonalSOC** (1.10.15 to 1.10.21): 0.1.2 to 0.1.7 in turn (see each PersonalSOC release). In 1.10.21, the unreadable drop-down text on Linux was fixed (0.1.7; the Mac screens do not change). In 1.10.19, Settings is split into tabs by function, the message after a report is created is shorter, and the white margin around the app icon is gone (0.1.6).
 - **Bundled PathScope** (1.10.19 to 1.10.20): 0.1.0 and 0.1.1 (see each PathScope release). In 1.10.20, 0.1.1 added reading config files with an LLM to find risks, 10 languages in the app, and in-app updates on Linux.
 
 ## 1.9.6 - 1.9.54 (summarized)
