@@ -10,6 +10,10 @@ independently. Older releases are summarized in ranges.
 
 ## PathScope
 
+### 0.1.3
+
+- **Fixed: the German label for "unrestricted" is now "Uneingeschränkt".** The earlier "Unbegrenzt" reads as "unlimited in quantity". The settings screen now matches the wording on the website and in the EULA.
+
 ### 0.1.2
 
 - **Changed: even with "unrestricted", private key files and API key or password values are not sent.** Until now, choosing "unrestricted" turned off both the replacement of values and the exclusion of files such as private keys. From now on, the following are kept whatever the setting. Private key files (a renamed key, or a key pasted into a config file, is found by its content, `-----BEGIN … PRIVATE KEY-----`). API keys in well-known formats (AWS, GitHub, Slack, OpenAI/Anthropic, Google, GitLab, npm, Stripe, JWT, `Bearer`), passwords inside URLs, and values whose name means a password or key (`name=value`, `name: value`, JSON, `--name value`) are replaced with `[REDACTED]`. What "unrestricted" still turns off is the exclusion of things like password hashes and `.env`, and the guess that treats long alphanumeric strings as secrets. Because this works by names and shapes, some secrets can still be missed.
@@ -264,6 +268,10 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 
 ## RoamSwitch for Mac
 
+## 1.10.23
+
+- **The bundled PathScope is now 0.1.3.** It fixes one German label only; the other screens do not change (see PathScope 0.1.3). If 0.1.0 or later is already installed, you can update from inside the app (Settings → Update).
+
 ## 1.10.22
 
 - **The bundled PathScope is now 0.1.2.** Even with "unrestricted", private key files and API keys are no longer sent (see PathScope 0.1.2). If 0.1.0 or later is already installed, you can update from inside the app (Settings → Update).
@@ -272,11 +280,7 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 
 - **The bundled PersonalSOC is now 0.1.7.** It fixes unreadable drop-down text on Linux; the Mac screens do not change (see PersonalSOC 0.1.7). If 0.1.1 or later is already installed, you can update from inside the app.
 
-## 1.10.20
-
-- **The bundled PathScope is now 0.1.1.** It adds reading config files with an LLM to find risks, 10 languages, in-app updates on Linux, and more (see PathScope 0.1.1). If 0.1.0 is already installed, you can update from inside the app (Settings → Update).
-
-## 1.10.0 - 1.10.19 (summarized)
+## 1.10.0 - 1.10.20 (summarized)
 
 The contents of these releases, grouped by theme. The full text of each entry is in this file's git history.
 
@@ -300,6 +304,7 @@ The contents of these releases, grouped by theme. The full text of each entry is
 - **Other fixes** (1.10.17): SSH remote-login state detection, DNS restore (disabled services and the like), resuming port-scan detection, and symlink handling in the process-execution record's plist check.
 - **Decoys and notifications** (1.10.15): added `~/.pypirc` and `~/.env.backup` as decoys (honeytokens). A real access to a decoy places and watches one related decoy (the chain stops after one step). The process-execution record (Pro) gained a rule that detects commands naming a decoy file directly (11 rules). Log-audit notifications are limited to security-relevant anomalies such as authentication failures and XProtect detections. Warnings in the roughly 25 minutes after requesting a Sensor audit use calmer wording. Full Disk Access guidance was unified (the permission is decided by "RoamSwitch" in the System Settings list).
 - **Bundled PersonalSOC** (1.10.15 to 1.10.19): 0.1.2 to 0.1.6 in turn (see each PersonalSOC release). In 1.10.19, Settings is split into tabs by function, the message after a report is created is shorter, and the white margin around the app icon is gone (0.1.6).
+- **Bundled PathScope** (1.10.19 to 1.10.20): 0.1.0 and 0.1.1 (see each PathScope release). In 1.10.20, 0.1.1 added reading config files with an LLM to find risks, 10 languages in the app, and in-app updates on Linux.
 
 ## 1.9.6 - 1.9.54 (summarized)
 
