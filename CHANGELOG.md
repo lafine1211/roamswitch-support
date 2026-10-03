@@ -8,6 +8,20 @@ independently. Older releases are summarized in ranges.
 
 ---
 
+## PathScope
+
+### 0.1.1
+
+- **Added: have an LLM read your config files to find easily missed risks (LLM assist).** Files such as sudoers, cron and scripts are written in many different styles, so a program alone cannot always read them. The LLM looks for entries that involve root privileges (for example, a sudo setting that needs no password, or a file that root runs periodically). Before anything it finds is used in the analysis, PathScope checks that the line really exists in the original file. Before sending, you confirm which LLM will receive how many files. Values that look like passwords or keys are replaced with `[REDACTED]`, and files such as private keys are not sent (for a local LLM whose content never leaves your machine, you can choose "unrestricted" in Settings). Files that could not be read or were not sent are listed as "unchecked" with the reason. The LLM integration is still off by default.
+- **Added: the app is available in 10 languages** (Japanese, English, Korean, Simplified Chinese, Traditional Chinese, German, French, Spanish, Italian, Portuguese). It follows the OS language and can be changed in Settings → Language. The command line supports Japanese and English (`--lang=ja|en`). The translations started as machine translations and have not been reviewed by native speakers. The macOS screen names (System Settings, Privacy & Security, Full Disk Access) match the wording macOS itself uses in each language.
+- **Added: in-app updates on Linux.** The update is installed only after its signature is verified; updates with a wrong signature or a tampered file are refused. The Linux package (.deb) in this release is for delivering in-app updates; it is not yet offered as an installer.
+- **Fixed: the macOS privacy settings data (TCC.db) is now read correctly from real data**, including apps that are allowed by bundle ID. Commands in the suggested fixes are safely quoted even when the path contains spaces or symbols.
+- **Changed: the wording of the app and the command line is easier to understand** (the reason for each step is shown as a sentence instead of an internal name; "choke point" became "fix point", and so on). Settings is organized into tabs by function, overlapping text in the diagram is fixed, and a confirmation that explains the reason appears before opening the Full Disk Access settings.
+
+### 0.1.0
+
+- **First release.** Bundled in the Mac 1.10.19 DMG. It analyzes, read-only, the paths by which privileges can be escalated on this machine (the routes to root or to sensitive data) and shows which places to fix first.
+
 ## PersonalSOC
 
 ### 0.1.6
@@ -249,6 +263,10 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 ---
 
 ## RoamSwitch for Mac
+
+## 1.10.20
+
+- **The bundled PathScope is now 0.1.1.** It adds reading config files with an LLM to find risks, 10 languages, in-app updates on Linux, and more (see PathScope 0.1.1). If 0.1.0 is already installed, you can update from inside the app (Settings → Update).
 
 ## 1.10.19
 
