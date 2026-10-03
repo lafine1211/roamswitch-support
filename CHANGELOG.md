@@ -24,6 +24,10 @@ independently. Older releases are summarized in ranges.
 
 ## PersonalSOC
 
+### 0.1.7
+
+- **Fixed: on Linux, the drop-down lists (update interval, LLM choice, display language) had a white background, so their text could not be read in dark mode.**
+
 ### 0.1.6
 
 - **Changed: removed the margin around the app icon and made its background transparent.** It used to come with a white margin. The rounded square now fills the whole icon on Mac, Linux and in the app window.
@@ -33,20 +37,13 @@ independently. Older releases are summarized in ranges.
 - **Changed: Settings is now split into tabs by function (Automatic status check, LLM integration, Updates, Display language).** The Updates tab appears only where updating is supported (Mac). The Save button still saves all settings together.
 - **Changed: removed the "it contains unverified text, so please check…" note from the message shown when a report has been created** (all 10 languages).
 
-### 0.1.4
-
-- **Fixed: secret masking in logs and detections now also covers quoted JSON (`"token": "abc"`) and `Authorization`, `Bearer` and `Basic` headers.** Before, only a value right after `=` or `:` was masked.
-- **Fixed: log lines can no longer close the data fence handed to the LLM by containing the lookalike characters `<<<` and `>>>`.**
-- **Fixed: scheduled runs (Mac) now work in folders whose path contains spaces or non-ASCII characters.** An app opened straight from the DMG (Gatekeeper translocation, where the app is run from a temporary location) is not registered, and you are asked to move it to the Applications folder (10 languages). If saving the settings fails, the registration is rolled back.
-- **Fixed: when an LLM command times out, the child processes it started are terminated too.**
-- **Changed: `opencode` is no longer treated as having its tools locked, because we have not yet confirmed that the setting really takes effect.** Using it now requires the confirmation in Settings, as with `agy` and `codex` (the README is updated).
-
-### 0.1.0 - 0.1.3 (summarized)
+### 0.1.0 - 0.1.4 (summarized)
 
 - **0.1.0**: first release of "PersonalSOC", a personal security operations center that gathers this device's logs and defense status, read-only, into a report. Findings, sources and IOCs are shown with charts; the UI has 10 languages and follows the OS language. "Check status" has your chosen LLM CLI (opencode, claude, codex, agy) investigate autonomously with read-only tools and write an audit report. LLM integration is optional and off by default. PersonalSOC itself has no network permission.
 - **0.1.1**: in-app updater (Mac), which fetches version information only when you press the button and verifies the signature before installing. Removed the fixed "Response" section from reports and fixed chart legends and axis labels overlapping in English and other languages.
 - **0.1.2**: reads more from RoamSwitch's MCP (package CVE matches, active vulnerability check status, what Sensor found from outside, protections switched off, honeytoken, browser-credential and ransomware detections, recovery readiness, preserved evidence, Air-Gap). Gatekeeper denials on Mac became an optional source (off by default). The LLM command's own tools are switched off at launch where possible (`claude` starts with built-in tools and MCP off; `agy` and `codex` cannot be locked, so they need the confirmation in Settings). Fixed the XProtect check matching process names and `codex` not running in an empty temporary folder.
 - **0.1.3**: an LLM reply that contains raw line breaks or invalid escapes is repaired and parsed again. The Gatekeeper source is now labelled "check the record of denials", and the screen and README state that Gatekeeper behaves the same whether it is on or off (it only reads the record).
+- **0.1.4**: secret masking now also covers quoted JSON and `Authorization`, `Bearer` and `Basic` headers. Log lines can no longer close the data fence handed to the LLM using the lookalike characters `<<<` and `>>>`. Scheduled runs (Mac) work in folders with spaces or non-ASCII characters, and an app opened straight from the DMG is told to move to the Applications folder (10 languages). When an LLM command times out, its child processes are terminated too. `opencode` is no longer treated as having its tools locked, because we have not confirmed the setting takes effect, so using it requires the confirmation in Settings (the README is updated too).
 
 ---
 
@@ -172,6 +169,10 @@ setup instructions.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.10.22
+
+- **The bundled PersonalSOC is now 0.1.7.** It fixes the drop-down lists having a white background, which made their text unreadable in dark mode on Linux (see PersonalSOC 0.1.7).
+
 ### 1.10.21
 
 - **The bundled PersonalSOC is now 0.1.6.** The white margin around the app icon is gone (see PersonalSOC 0.1.6).
@@ -180,15 +181,7 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 
 - **The bundled PersonalSOC is now 0.1.5.** Settings is split into tabs by function and the message after a report is created is shorter (see PersonalSOC 0.1.5).
 
-### 1.10.19
-
-- **Added (security): secrets are now masked in the command lines of the exec records.** The Linux edition had no masking until now, and the MCP `search_exec_events`, the CLI and the TUI returned the arguments as they were. With the same rules as on the Mac, it masks `mysql -ppassword`, `sshpass`, `docker login -p`, flags with secret-like names, `-u user:pass`, `NAME_PASS=`, credentials in URLs, bearer and basic headers, and the formats of well-known API keys and tokens. It sees through wrappers such as `sudo`, `env` and `nohup`, interpreters such as `sh`, `python`, `ruby`, `perl` and `node`, and the contents of `sh -c '…'`, and masks according to the real command. Crypto wallet private keys (WIF, BIP32) and seed phrases (BIP39) are masked only when their checksum matches (a seed split into one word per argument is detected too). A search runs on the masked text, so what a search matches cannot be used to guess a secret. The same masking is applied to incident evidence (`roamswitch-incident-capture`).
-- **Fixed (data protection): when the stored list of trusted Sensors could not be read, the other pairings were wiped.** A damaged file was treated as an empty list and overwritten with the one new entry. Only a missing file is treated as empty. A file that exists but cannot be read is not rewritten: a copy is kept as `<file>.corrupt-<time>` (mode 0600, the three newest), and pairing and unpairing fail with a clear error. The audit-results file has the same protection. The GUI shows it in 10 languages and the CLI in Japanese and English.
-- **Fixed: the GUI said "unpaired" even when unpairing a Sensor had failed.**
-- **Fixed: `roamswitch forward status` showed the reason a forwarding file path was refused in English only.** A translated headline (Japanese and English in the CLI, 10 languages in the server TUI) now comes first.
-- **Added: the reason returned by Sensor 0.3.15 when pairing is impossible because the Sensor's own file is damaged (`sensor_storage_unavailable`) is now shown in 10 languages.**
-
-### 1.10.0 - 1.10.18 (summarized)
+### 1.10.0 - 1.10.19 (summarized)
 
 Everything in these releases, grouped by topic (Client and Server Edition unless marked). The full text of each entry is in the git history of this file.
 
@@ -205,14 +198,14 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 - **Activity log and false-positive audit** (1.10.13): a Security Activity Log tab to search and filter past detections (ARP, FIM, port anomalies, recorded process execution, notification history and more). An alert-fatigue audit fixed 44 findings in the desktop edition and 7 in the server edition: lockfile monitoring's "unreadable" verdict is no longer treated as tampering, notifications for link protection, isolation-release checks, gateway-MAC changes and exec detection now carry more to judge them by (the triggering signal, old and new MAC, the download source), and the server edition's Docker notification is deduplicated.
 - **Resume from suspend, diagnostics, feed** (1.10.12): fixed a false "protection is not responding" alert right after resuming from suspend (a gap far beyond the monitor loop's interval is treated as a resume, and every guard's timestamp is reset). Also fixed the order and explanation of the active-verification status, a UDP-listener notification record that grew without limit, and the popular-npm-packages feed's manifest URL not matching the published file name, which showed a false SHA-256 mismatch warning.
 - **Decoys and notification tuning** (1.10.15): the honeytokens now include `~/.pypirc` and `~/.env.backup`. Log-audit notifications are limited to security-relevant anomalies such as authentication failures and malware detections. For about 25 minutes after a Sensor audit is requested, the warning is worded calmly (Client edition).
-- **Security fixes** (1.10.16 to 1.10.18): when the daemon placed decoys (canary files, honeytokens) in a user's folder it followed symbolic links, which could lead to privilege escalation; it now creates them without following links. `get_canary_status` returns only the caller's own entries to non-admins, `kill_process` refuses processes the caller does not own, an IPC line is capped at 1 MiB and non-root users at 16 concurrent connections. Event-forwarding file output is limited to locations only root can write. Values passed to DNS settings and rfkill are validated, ClamAV and YARA scans validate the path and put `--` before it. Webhook `curl` is limited to http and https, and a new option (`webhook_block_private_addresses`, off by default, with DNS-rebinding protection) refuses internal addresses. The quarantine store moved to a root-only `/var/lib/roamswitch/quarantine` (migrated automatically from the old location at start-up), and restore and delete verify the store path and ownership.
+- **Security fixes** (1.10.16 to 1.10.19): when the daemon placed decoys (canary files, honeytokens) in a user's folder it followed symbolic links, which could lead to privilege escalation; it now creates them without following links. `get_canary_status` returns only the caller's own entries to non-admins, `kill_process` refuses processes the caller does not own, an IPC line is capped at 1 MiB and non-root users at 16 concurrent connections. Event-forwarding file output is limited to locations only root can write. Values passed to DNS settings and rfkill are validated, ClamAV and YARA scans validate the path and put `--` before it. Webhook `curl` is limited to http and https, and a new option (`webhook_block_private_addresses`, off by default, with DNS-rebinding protection) refuses internal addresses. The quarantine store moved to a root-only `/var/lib/roamswitch/quarantine` (migrated automatically from the old location at start-up), and restore and delete verify the store path and ownership.
 - **Blocking file execution (fanotify)** (1.10.18): it was not effective when run as a systemd service because executions never reached the daemon. It now watches per filesystem, and we confirmed under the real service that a detected suspicious script is refused. Scan exclusions can no longer be bypassed by spoofing a process name or matching part of a path.
-- **Data protection and integrity** (1.10.16 to 1.10.18): firewall profile switches are atomic in one batch (also for Air-Gap), so rules can no longer disappear midway or on failure. Concurrent updates to the pending approvals record (`approvals.json`) no longer lose data. When the trusted-Sensor file cannot be read, other pairings are no longer erased by overwriting with an empty list; a copy is kept (`<file>.corrupt-<time>`, 0600, latest 3) and the operation fails with a clear error. The audit-results file got the same protection.
-- **Secret masking in the execution record** (1.10.18, same rules as Mac): command lines in the execution record hide `mysql -ppassword`, `sshpass`, `docker login -p`, sensitive flags, URL credentials, bearer and basic headers, known API key and token formats, and cryptocurrency private keys and seed phrases (only when the checksum matches). Wrappers such as `sudo` and `env`, interpreters such as `sh` and `python`, and the contents of `sh -c '…'` are seen through. It covers MCP, the CLI, the TUI and incident evidence, and search runs on the masked text.
-- **Working with Sensor** (1.10.16 to 1.10.18): pairing sends a proof of key possession (PoP). Control-API signature v3 (bound to Sensor's public key) is sent and never downgraded to v2 once it has worked. The reason "Sensor's own storage file is corrupt, so pairing is impossible" returned by Sensor 0.3.15 is shown in 10 languages. The GUI no longer says "removed" when removing a Sensor failed. The calmer warning during a Sensor audit returns to the normal warning as soon as the report arrives.
+- **Data protection and integrity** (1.10.16 to 1.10.19): firewall profile switches are atomic in one batch (also for Air-Gap), so rules can no longer disappear midway or on failure. Concurrent updates to the pending approvals record (`approvals.json`) no longer lose data. When the trusted-Sensor file cannot be read, other pairings are no longer erased by overwriting with an empty list; a copy is kept (`<file>.corrupt-<time>`, 0600, latest 3) and the operation fails with a clear error. The audit-results file got the same protection.
+- **Secret masking in the execution record** (1.10.19, same rules as Mac): command lines in the execution record hide `mysql -ppassword`, `sshpass`, `docker login -p`, sensitive flags, URL credentials, bearer and basic headers, known API key and token formats, and cryptocurrency private keys and seed phrases (only when the checksum matches). Wrappers such as `sudo` and `env`, interpreters such as `sh` and `python`, and the contents of `sh -c '…'` are seen through. It covers MCP, the CLI, the TUI and incident evidence, and search runs on the masked text.
+- **Working with Sensor** (1.10.16 to 1.10.19): pairing sends a proof of key possession (PoP). Control-API signature v3 (bound to Sensor's public key) is sent and never downgraded to v2 once it has worked. The reason "Sensor's own storage file is corrupt, so pairing is impossible" returned by Sensor 0.3.15 is shown in 10 languages. The GUI no longer says "removed" when removing a Sensor failed. The calmer warning during a Sensor audit returns to the normal warning as soon as the report arrives.
 - **Ransomware detection and notifications** (1.10.18): a stale verdict left over when a process ID (PID) was reused could freeze a legitimate `cp`; the process start time is now checked as well. A process released with `roamswitch frozen resume` is not frozen again for 600 seconds. The notification for a failed isolation shows the reason in 10 languages when it was refused for lack of a login session. `roamswitch forward status` puts a translated heading before the reason a forwarding target was refused.
 - **OS Hardening** (1.10.18): fixed the "do not use Secure Boot" checkbox missing when re-enrolling TPM2, and the contradictory fingerprint (Validity 138a:0090) guidance.
-- **Bundled PersonalSOC** (1.10.16 to 1.10.18): 0.1.2 to 0.1.4 in turn (see each PersonalSOC release).
+- **Bundled PersonalSOC** (1.10.16 to 1.10.19): 0.1.2 to 0.1.4 in turn (see each PersonalSOC release).
 
 ### 1.9.39 - 1.9.94 (summarized)
 
@@ -264,6 +257,10 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 
 ## RoamSwitch for Mac
 
+## 1.10.21
+
+- **The bundled PersonalSOC is now 0.1.7.** It fixes unreadable drop-down text on Linux; the Mac screens do not change (see PersonalSOC 0.1.7). If 0.1.1 or later is already installed, you can update from inside the app.
+
 ## 1.10.20
 
 - **The bundled PathScope is now 0.1.1.** It adds reading config files with an LLM to find risks, 10 languages, in-app updates on Linux, and more (see PathScope 0.1.1). If 0.1.0 is already installed, you can update from inside the app (Settings → Update).
@@ -272,13 +269,7 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 
 - **The bundled PersonalSOC is now 0.1.6.** Settings is split into tabs by function, the message after a report is created is shorter, and the white margin around the app icon is gone (see PersonalSOC 0.1.5 and 0.1.6). If 0.1.1 or later is already installed, you can update from inside the app.
 
-## 1.10.18
-
-- **Added (security): the masking of the exec records now sees through scripts and wrappers.** Before, the rules were chosen by the command name, so a script run as `/bin/sh ./mysql -ppassword` did not get the `mysql` rule, and the password was shown as it was and was found by a search. It now skips wrappers such as `sudo`, `env`, `nohup`, `nice`, `time`, `timeout`, `command`, `exec` and `xargs`, and interpreters such as `sh`, `bash`, `zsh`, `python`, `ruby`, `perl`, `node` and `php`, and applies the rules of the real command or script. The contents of `sh -c '…'` are split with quotes honoured and masked command by command. The MCP output and the search use the same rules.
-- **Fixed (data protection): when the list of trusted Sensors could not be read, every pairing was wiped.** A damaged list file was treated as empty and overwritten with the one new entry. Only a missing file is treated as empty. A file that exists but cannot be read is not rewritten: a copy is kept as `trusted_sensors.json.corrupt-<time>` (mode 0600, the three newest), and pairing, re-pinning and unpairing fail with a clear error (shown in 10 languages). A failed unpairing was not shown on screen before, and now it is.
-- **Added: the reason returned by Sensor 0.3.15 when pairing is impossible because the Sensor's own file is damaged is now shown in 10 languages.**
-
-## 1.10.0 - 1.10.17 (summarized)
+## 1.10.0 - 1.10.18 (summarized)
 
 The contents of these releases, grouped by theme. The full text of each entry is in this file's git history.
 
