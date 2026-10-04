@@ -10,6 +10,14 @@ independently. Older releases are summarized in ranges.
 
 ## PathScope
 
+### 0.1.5
+
+- **Added: it checks the versions of installed software against known vulnerabilities.** It compares the versions of packages, the running kernel and macOS with known vulnerabilities that were exploited in real attacks (50 entries from the CISA KEV catalog that let a regular user become root), and adds the ones that are not yet fixed to the paths to root. There is one path per package, the unit you fix, listing the matching CVE numbers. The suggested fix is an update command (apt, dnf, zypper, pacman, apk or softwareupdate); nothing is run automatically. "Fix this?" lets you analyze the result of updating without changing anything.
+- **Supported environments**: macOS, and on Linux the releases of Debian, Ubuntu, RHEL-compatible systems (including AlmaLinux and Rocky Linux), SUSE (SLES and openSUSE Leap), Arch and Alpine for which fixed-version data exists. Releases without data (Debian 11 and older, Fedora, openSUSE Tumbleweed, derivatives other than those above) are shown as "unchecked", not as "no problem".
+- **What it does not do**: it is not a complete vulnerability scan. Only entries in the KEV catalog that let a local user gain privileges are covered; vulnerabilities attacked remotely and application packages are not checked. It judges by version only, so it does not check whether the affected component is actually in use. For entries that need an extra condition (a SUID executable, or unprivileged user namespaces for regular users), a path appears only when the condition is met. For the kernel, only the running one is checked, not every installed kernel.
+- **The data is bundled with the app.** Nothing is looked up over the network during an analysis. The result shows the date of the data, and warns when it is more than 45 days old. New data arrives with app updates.
+- The screens and the command line were added in 10 languages (the translations are based on machine translation and have not been reviewed by native speakers).
+
 ### 0.1.4
 
 - **Added: PathScope can now be bundled in RoamSwitch's Linux packages (deb, rpm and tarball) on Linux.** It installs a launcher entry and icons so that it opens from the application menu, the `pathscope` command, the `pathscope-gui` window and the Apache-2.0 texts. An install made by a package does not use Settings > Update; it says that updates come with that package's updates.
@@ -20,17 +28,14 @@ independently. Older releases are summarized in ranges.
 
 - **Fixed: the German label for "unrestricted" is now "Uneingeschränkt".** The earlier "Unbegrenzt" reads as "unlimited in quantity". The settings screen now matches the wording on the website and in the EULA.
 
-### 0.1.2
-
-- **Changed: even with "unrestricted", private key files and API key or password values are not sent.** Until now, choosing "unrestricted" turned off both the replacement of values and the exclusion of files such as private keys. From now on, the following are kept whatever the setting. Private key files (a renamed key, or a key pasted into a config file, is found by its content, `-----BEGIN … PRIVATE KEY-----`). API keys in well-known formats (AWS, GitHub, Slack, OpenAI/Anthropic, Google, GitLab, npm, Stripe, JWT, `Bearer`), passwords inside URLs, and values whose name means a password or key (`name=value`, `name: value`, JSON, `--name value`) are replaced with `[REDACTED]`. What "unrestricted" still turns off is the exclusion of things like password hashes and `.env`, and the guess that treats long alphanumeric strings as secrets. Because this works by names and shapes, some secrets can still be missed.
-- **Fixed: even in standard mode, a renamed private key or a key pasted into a config file is no longer sent.** Files were excluded only by name and location, so a key with a name such as `backup.conf` could have part of its content sent (the replacement of long alphanumeric strings does not apply to lines that contain `/`). JSON `"password": "…"` and tokens that contain `.`, such as JWTs, are now replaced too.
-- **Fixed: with "unrestricted", the protection against instructions planted in config files (removing invisible characters, defusing the data fence marks) was also turned off.** It is now always applied, whatever the setting.
-- **Fixed: the result of "Fix everything?" is shown in plain sentences instead of internal wording.**
-
-### 0.1.0 - 0.1.1 (summarized)
+### 0.1.0 - 0.1.2 (summarized)
 
 The contents of these releases, grouped by theme. The full text of each entry is in this file's git history.
 
+- **Changed: even with "unrestricted", private key files and API key or password values are not sent.** Until now, choosing "unrestricted" turned off both the replacement of values and the exclusion of files such as private keys. From now on, the following are kept whatever the setting. Private key files (a renamed key, or a key pasted into a config file, is found by its content, `-----BEGIN … PRIVATE KEY-----`). API keys in well-known formats (AWS, GitHub, Slack, OpenAI/Anthropic, Google, GitLab, npm, Stripe, JWT, `Bearer`), passwords inside URLs, and values whose name means a password or key (`name=value`, `name: value`, JSON, `--name value`) are replaced with `[REDACTED]`. What "unrestricted" still turns off is the exclusion of things like password hashes and `.env`, and the guess that treats long alphanumeric strings as secrets. Because this works by names and shapes, some secrets can still be missed. （0.1.2）
+- **Fixed: even in standard mode, a renamed private key or a key pasted into a config file is no longer sent.** Files were excluded only by name and location, so a key with a name such as `backup.conf` could have part of its content sent (the replacement of long alphanumeric strings does not apply to lines that contain `/`). JSON `"password": "…"` and tokens that contain `.`, such as JWTs, are now replaced too. （0.1.2）
+- **Fixed: with "unrestricted", the protection against instructions planted in config files (removing invisible characters, defusing the data fence marks) was also turned off.** It is now always applied, whatever the setting. （0.1.2）
+- **Fixed: the result of "Fix everything?" is shown in plain sentences instead of internal wording.** （0.1.2）
 - **Added: have an LLM read your config files to find easily missed risks (LLM assist).** Files such as sudoers, cron and scripts are written in many different styles, so a program alone cannot always read them. The LLM looks for entries that involve root privileges (for example, a sudo setting that needs no password, or a file that root runs periodically). Before anything it finds is used in the analysis, PathScope checks that the line really exists in the original file. Before sending, you confirm which LLM will receive how many files. Values that look like passwords or keys are replaced with `[REDACTED]`, and files such as private keys are not sent (for a local LLM whose content never leaves your machine, you can choose "unrestricted" in Settings). Files that could not be read or were not sent are listed as "unchecked" with the reason. The LLM integration is still off by default. (0.1.1)
 - **Added: the app is available in 10 languages** (Japanese, English, Korean, Simplified Chinese, Traditional Chinese, German, French, Spanish, Italian, Portuguese). It follows the OS language and can be changed in Settings → Language. The command line supports Japanese and English (`--lang=ja|en`). The translations started as machine translations and have not been reviewed by native speakers. The macOS screen names (System Settings, Privacy & Security, Full Disk Access) match the wording macOS itself uses in each language. (0.1.1)
 - **Added: in-app updates on Linux.** The update is installed only after its signature is verified; updates with a wrong signature or a tampered file are refused. The Linux package (.deb) in this release is for delivering in-app updates; it is not yet offered as an installer. (0.1.1)
@@ -185,6 +190,10 @@ setup instructions.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.10.24
+
+- **The bundled PathScope is now 0.1.5.** It checks the versions of installed packages and of the running kernel against known vulnerabilities that were exploited in real attacks (see PathScope 0.1.5).
+
 ### 1.10.23
 
 - **PathScope is now bundled.** It is an app separate from RoamSwitch that works out the paths by which an ordinary user could reach root and shows where to fix first (a privilege-escalation path analysis tool). It is included in the Client Edition deb, rpm and tarball (and the AUR package) and opens from the application menu as "PathScope"; the command is `pathscope`. It is licensed under the Apache License 2.0, and Section 4-3 was added to the EULA. It is updated together with the RoamSwitch package. If a standalone `pathscope` package of the same name is installed, it is replaced. The Server Edition does not include it. See PathScope 0.1.4.
@@ -193,14 +202,11 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 
 - **The bundled PersonalSOC is now 0.1.7.** It fixes the drop-down lists having a white background, which made their text unreadable in dark mode on Linux (see PersonalSOC 0.1.7).
 
-### 1.10.21
-
-- **The bundled PersonalSOC is now 0.1.6.** The white margin around the app icon is gone (see PersonalSOC 0.1.6).
-
-### 1.10.0 - 1.10.20 (summarized)
+### 1.10.0 - 1.10.21 (summarized)
 
 Everything in these releases, grouped by topic (Client and Server Edition unless marked). The full text of each entry is in the git history of this file.
 
+- **Bundled PersonalSOC** (1.10.21): The white margin around the app icon is gone (see PersonalSOC 0.1.6).
 - **Detections and features added** (1.10.0, 1.10.7, 1.10.11): DNS tunneling and exfiltration detection (only the host's own DNS queries; name resolution is never blocked). A forensic evidence bundle (with a SHA-256 manifest) when containment fires. Honeytokens. The age of the last proven vulnerability check (`roamswitch vuln-status`) and a mapping of diagnostic items to NIST CSF 2.0 and CIS Controls v8. Detection of LockBit-style partial encryption (16 of every 32 bytes, 1.10.7). Detection of the ransomware-recovery snapshots being deleted or thinned by anything other than RoamSwitch or the known managers snapper and timeshift (T1490, 1.10.11).
 - **Honeytoken and evidence-bundle fixes** (1.10.4, 1.10.5, 1.10.8): so that real tools are not broken, the AWS decoy uses a separate profile name and the Docker decoy a non-existent registry name. Mode is 0600, and access by OpenSSH and by RoamSwitch itself is not flagged (1.10.8 also fixed a false positive from RoamSwitch's own process). The 1.10.0–1.10.4 packages did not include `roamswitch-honeytokens` and `roamswitch-incident-capture`, so decoys and evidence bundles never ran. 1.10.5 ships both in the client and server packages, and CI fails a build that lacks them.
 - **Isolation (Air-Gap) and host defense** (Server Edition, 1.10.5): fixed host isolation cutting the management SSH it should keep, port 22 being opened even with `preserve_ssh_on_isolation=false`, and the operator's acknowledgement (`roamswitch server ack`) being ignored. Evidence is now collected before blocking on more paths, and the settings `honeytokens_enabled` and `harden_userns_enabled` were added.
@@ -273,6 +279,10 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 
 ## RoamSwitch for Mac
 
+## 1.10.25
+
+- **The bundled PathScope is now 0.1.5.** It checks the versions of installed software against known vulnerabilities that were exploited in real attacks, and adds the ones not yet fixed to the paths to root (see PathScope 0.1.5). If 0.1.0 or later is already installed, you can update from inside the app (Settings → Update).
+
 ## 1.10.24
 
 - **The bundled PathScope is now 0.1.4.** It fixes the update section text and the unreadable drop-down text on Linux, among other things (see PathScope 0.1.4). The Mac screens hardly change. If 0.1.0 or later is already installed, you can update from inside the app (Settings → Update).
@@ -281,14 +291,11 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 
 - **The bundled PathScope is now 0.1.3.** It fixes one German label only; the other screens do not change (see PathScope 0.1.3). If 0.1.0 or later is already installed, you can update from inside the app (Settings → Update).
 
-## 1.10.22
-
-- **The bundled PathScope is now 0.1.2.** Even with "unrestricted", private key files and API keys are no longer sent (see PathScope 0.1.2). If 0.1.0 or later is already installed, you can update from inside the app (Settings → Update).
-
-## 1.10.0 - 1.10.21 (summarized)
+## 1.10.0 - 1.10.22 (summarized)
 
 The contents of these releases, grouped by theme. The full text of each entry is in this file's git history.
 
+- **Bundled PathScope** (1.10.22): Even with "unrestricted", private key files and API keys are no longer sent (see PathScope 0.1.2). If 0.1.0 or later is already installed, you can update from inside the app (Settings → Update).
 - **Privileged helper hardening** (1.10.5): the helper now runs inside a sandbox from launch and self-checks it. It only talks to the genuine app, and Mach-O, `eslogger`, `tcpdump` and Sensor traffic are parsed outside root. Snapshot restore runs with the user's own privileges.
 - **Quarantine and port scans** (1.10.5, 1.10.6): ARP-spoofing quarantine is lifted automatically once the cause is confirmed gone. Fixed quarantine release trusting a spoofed gateway and ARP pinning locking in a forged MAC. Automatic port-scan blocking now verifies the source MAC, and IPv6 scans are detected. A manual quarantine that failed no longer keeps showing "quarantined".
 - **Ransomware defense and recovery** (1.10.0 to 1.10.8): added generic entropy-based detection and reworked decoy files so they no longer break real tools. "Ransomware Recovery" lets you pick deleted files from snapshot contents, and detects deletion of recovery snapshots by a third party. Added a separate "Recovery and Uninstall" menu.
