@@ -190,6 +190,10 @@ setup instructions.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.10.25
+
+- **Copying many compressed or media files, or copying in a file manager, no longer gets the writer frozen as ransomware.** A file whose first bytes are a genuine compressed or media format (gzip, zip and its relatives, JPEG, PNG, mp4/mov/heic, xz, zstd, 7z, lz4 and so on) is left out of the burst check. Encryption destroys those first bytes, so detection of real encryption is not weakened; documents such as docx and xlsx are still tracked. File managers (Nautilus, Nemo, Thunar, Dolphin, Caja, GVfs, KDE's KIO) are now on the allowlist, like `cp`: a GUI copy is written by the file manager itself, so it could be frozen before. `.heic`, `.avif`, `.mov`, `.webm`, `.m4a`, `.rar`, `.whl`, `.lz4` and others were added to the skipped extensions. Checked on a real Linux kernel, before and after: ciphertext without a header, and `cp` run under another name, are still detected after the fix.
+
 ### 1.10.24
 
 - **The bundled PathScope is now 0.1.5.** It checks the versions of installed packages and of the running kernel against known vulnerabilities that were exploited in real attacks (see PathScope 0.1.5).
@@ -198,15 +202,11 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 
 - **PathScope is now bundled.** It is an app separate from RoamSwitch that works out the paths by which an ordinary user could reach root and shows where to fix first (a privilege-escalation path analysis tool). It is included in the Client Edition deb, rpm and tarball (and the AUR package) and opens from the application menu as "PathScope"; the command is `pathscope`. It is licensed under the Apache License 2.0, and Section 4-3 was added to the EULA. It is updated together with the RoamSwitch package. If a standalone `pathscope` package of the same name is installed, it is replaced. The Server Edition does not include it. See PathScope 0.1.4.
 
-### 1.10.22
-
-- **The bundled PersonalSOC is now 0.1.7.** It fixes the drop-down lists having a white background, which made their text unreadable in dark mode on Linux (see PersonalSOC 0.1.7).
-
-### 1.10.0 - 1.10.21 (summarized)
+### 1.10.0 - 1.10.22 (summarized)
 
 Everything in these releases, grouped by topic (Client and Server Edition unless marked). The full text of each entry is in the git history of this file.
 
-- **Bundled PersonalSOC** (1.10.21): The white margin around the app icon is gone (see PersonalSOC 0.1.6).
+- **Bundled PersonalSOC** (1.10.21, 1.10.22): The white margin around the app icon is gone (see PersonalSOC 0.1.6). On Linux, the drop-down lists no longer have a white background that made their text unreadable in dark mode (0.1.7).
 - **Detections and features added** (1.10.0, 1.10.7, 1.10.11): DNS tunneling and exfiltration detection (only the host's own DNS queries; name resolution is never blocked). A forensic evidence bundle (with a SHA-256 manifest) when containment fires. Honeytokens. The age of the last proven vulnerability check (`roamswitch vuln-status`) and a mapping of diagnostic items to NIST CSF 2.0 and CIS Controls v8. Detection of LockBit-style partial encryption (16 of every 32 bytes, 1.10.7). Detection of the ransomware-recovery snapshots being deleted or thinned by anything other than RoamSwitch or the known managers snapper and timeshift (T1490, 1.10.11).
 - **Honeytoken and evidence-bundle fixes** (1.10.4, 1.10.5, 1.10.8): so that real tools are not broken, the AWS decoy uses a separate profile name and the Docker decoy a non-existent registry name. Mode is 0600, and access by OpenSSH and by RoamSwitch itself is not flagged (1.10.8 also fixed a false positive from RoamSwitch's own process). The 1.10.0–1.10.4 packages did not include `roamswitch-honeytokens` and `roamswitch-incident-capture`, so decoys and evidence bundles never ran. 1.10.5 ships both in the client and server packages, and CI fails a build that lacks them.
 - **Isolation (Air-Gap) and host defense** (Server Edition, 1.10.5): fixed host isolation cutting the management SSH it should keep, port 22 being opened even with `preserve_ssh_on_isolation=false`, and the operator's acknowledgement (`roamswitch server ack`) being ignored. Evidence is now collected before blocking on more paths, and the settings `honeytokens_enabled` and `harden_userns_enabled` were added.
@@ -279,6 +279,12 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 
 ## RoamSwitch for Mac
 
+## 1.10.26
+
+- **Fixed a false ransomware detection when copying many compressed files.** When a lot of files were copied, already-compressed files such as `.gz` and `.jpg` (which have high entropy by nature) were counted as "encrypted file writes", and this could even trigger the full network cut-off (air-gap isolation), naming Spotlight's indexer as the culprit. A file whose first bytes are a genuine compressed or media format (gzip, zip, JPEG, PNG, mp4 and so on) is now left out of the check. Encryption destroys those first bytes, so detection of real encryption is not weakened. Folders such as `.venv`, `node_modules` and `.git` are skipped, and Spotlight's worker processes (`mdworker_shared` and the like) and any process started from macOS's own locations (`/System`, `/usr`) are treated as safe.
+- **Fixed the exit node reconnecting and disconnecting about every 40 seconds after a Tailscale disconnect.** While the network service reconnected after the disconnect, the gateway's MAC address could not be read for about 40 seconds; the 30-second grace period ran out first and the network was judged to be an unknown one (Lockdown). So even at a Standard-protection home network, it briefly went to Lockdown and the VPN connected, then disconnected when the MAC came back, and reconnected again, with traffic stopping on and off. The grace period is now 90 seconds and ends as soon as the gateway is back.
+- **Added protection against the app quitting after an isolation is released.** When the app reached its limit of open files (256), starting ClamAV raised an exception and the app quit. The crash report does not prove that this limit was the cause. The limit is now raised, and the pipe for ClamAV's output is always closed, even when the launch fails.
+
 ## 1.10.25
 
 - **The bundled PathScope is now 0.1.5.** It checks the versions of installed software against known vulnerabilities that were exploited in real attacks, and adds the ones not yet fixed to the paths to root (see PathScope 0.1.5). If 0.1.0 or later is already installed, you can update from inside the app (Settings → Update).
@@ -287,15 +293,11 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 
 - **The bundled PathScope is now 0.1.4.** It fixes the update section text and the unreadable drop-down text on Linux, among other things (see PathScope 0.1.4). The Mac screens hardly change. If 0.1.0 or later is already installed, you can update from inside the app (Settings → Update).
 
-## 1.10.23
-
-- **The bundled PathScope is now 0.1.3.** It fixes one German label only; the other screens do not change (see PathScope 0.1.3). If 0.1.0 or later is already installed, you can update from inside the app (Settings → Update).
-
-## 1.10.0 - 1.10.22 (summarized)
+## 1.10.0 - 1.10.23 (summarized)
 
 The contents of these releases, grouped by theme. The full text of each entry is in this file's git history.
 
-- **Bundled PathScope** (1.10.22): Even with "unrestricted", private key files and API keys are no longer sent (see PathScope 0.1.2). If 0.1.0 or later is already installed, you can update from inside the app (Settings → Update).
+- **Bundled PathScope** (1.10.22, 1.10.23): Even with "unrestricted", private key files and API keys are no longer sent (see PathScope 0.1.2). 1.10.23 fixes one German label (0.1.3). If 0.1.0 or later is already installed, you can update from inside the app (Settings → Update).
 - **Privileged helper hardening** (1.10.5): the helper now runs inside a sandbox from launch and self-checks it. It only talks to the genuine app, and Mach-O, `eslogger`, `tcpdump` and Sensor traffic are parsed outside root. Snapshot restore runs with the user's own privileges.
 - **Quarantine and port scans** (1.10.5, 1.10.6): ARP-spoofing quarantine is lifted automatically once the cause is confirmed gone. Fixed quarantine release trusting a spoofed gateway and ARP pinning locking in a forged MAC. Automatic port-scan blocking now verifies the source MAC, and IPv6 scans are detected. A manual quarantine that failed no longer keeps showing "quarantined".
 - **Ransomware defense and recovery** (1.10.0 to 1.10.8): added generic entropy-based detection and reworked decoy files so they no longer break real tools. "Ransomware Recovery" lets you pick deleted files from snapshot contents, and detects deletion of recovery snapshots by a third party. Added a separate "Recovery and Uninstall" menu.
