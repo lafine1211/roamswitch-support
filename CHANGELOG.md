@@ -10,6 +10,10 @@ independently. Older releases are summarized in ranges.
 
 ## PathScope
 
+### 0.1.6
+
+- **Added: when PathScope itself is the subject of a finding, an explanation is added** (macOS). The finding that an app with Full Disk Access can be overwritten by an ordinary user also applies to PathScope itself, which asks you to allow it so that it can read the privacy settings data (TCC.db). The finding is not hidden: it is marked as being about PathScope itself, with what to do (remove the permission in System Settings once the reading is done; making root the owner also works, but the in-app update then asks for the administrator password and the owner may revert after an update). It is shown in both the app and the command line. The text was added in 10 languages (the translations are based on machine translation and have not been checked by native speakers).
+
 ### 0.1.5
 
 - **Added: it checks the versions of installed software against known vulnerabilities.** It compares the versions of packages, the running kernel and macOS with known vulnerabilities that were exploited in real attacks (50 entries from the CISA KEV catalog that let a regular user become root), and adds the ones that are not yet fixed to the paths to root. There is one path per package, the unit you fix, listing the matching CVE numbers. The suggested fix is an update command (apt, dnf, zypper, pacman, apk or softwareupdate); nothing is run automatically. "Fix this?" lets you analyze the result of updating without changing anything.
@@ -24,15 +28,12 @@ independently. Older releases are summarized in ranges.
 - **Fixed: on Linux (WebKitGTK) in dark mode, a closed drop-down kept a white background and its text was unreadable.**
 - **Fixed: depending on the startup order, the text in the update section could stay as a raw key name.** It could happen when the update information arrived before the text catalog was loaded (on both Mac and Linux).
 
-### 0.1.3
-
-- **Fixed: the German label for "unrestricted" is now "Uneingeschränkt".** The earlier "Unbegrenzt" reads as "unlimited in quantity". The settings screen now matches the wording on the website and in the EULA.
-
-### 0.1.0 - 0.1.2 (summarized)
+### 0.1.0 - 0.1.3 (summarized)
 
 The contents of these releases, grouped by theme. The full text of each entry is in this file's git history.
 
 - **Changed: even with "unrestricted", private key files and API key or password values are not sent.** Until now, choosing "unrestricted" turned off both the replacement of values and the exclusion of files such as private keys. From now on, the following are kept whatever the setting. Private key files (a renamed key, or a key pasted into a config file, is found by its content, `-----BEGIN … PRIVATE KEY-----`). API keys in well-known formats (AWS, GitHub, Slack, OpenAI/Anthropic, Google, GitLab, npm, Stripe, JWT, `Bearer`), passwords inside URLs, and values whose name means a password or key (`name=value`, `name: value`, JSON, `--name value`) are replaced with `[REDACTED]`. What "unrestricted" still turns off is the exclusion of things like password hashes and `.env`, and the guess that treats long alphanumeric strings as secrets. Because this works by names and shapes, some secrets can still be missed. （0.1.2）
+- **Fixed: the German label for "unrestricted" is now "Uneingeschränkt".** The earlier "Unbegrenzt" reads as "unlimited in quantity". The settings screen now matches the wording on the website and in the EULA. （0.1.3）
 - **Fixed: even in standard mode, a renamed private key or a key pasted into a config file is no longer sent.** Files were excluded only by name and location, so a key with a name such as `backup.conf` could have part of its content sent (the replacement of long alphanumeric strings does not apply to lines that contain `/`). JSON `"password": "…"` and tokens that contain `.`, such as JWTs, are now replaced too. （0.1.2）
 - **Fixed: with "unrestricted", the protection against instructions planted in config files (removing invisible characters, defusing the data fence marks) was also turned off.** It is now always applied, whatever the setting. （0.1.2）
 - **Fixed: the result of "Fix everything?" is shown in plain sentences instead of internal wording.** （0.1.2）
@@ -193,6 +194,7 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 ### 1.10.25
 
 - **Copying many compressed or media files, or copying in a file manager, no longer gets the writer frozen as ransomware.** A file whose first bytes are a genuine compressed or media format (gzip, zip and its relatives, JPEG, PNG, mp4/mov/heic, xz, zstd, 7z, lz4 and so on) is left out of the burst check. Encryption destroys those first bytes, so detection of real encryption is not weakened; documents such as docx and xlsx are still tracked. File managers (Nautilus, Nemo, Thunar, Dolphin, Caja, GVfs, KDE's KIO) are now on the allowlist, like `cp`: a GUI copy is written by the file manager itself, so it could be frozen before. `.heic`, `.avif`, `.mov`, `.webm`, `.m4a`, `.rar`, `.whl`, `.lz4` and others were added to the skipped extensions. Checked on a real Linux kernel, before and after: ciphertext without a header, and `cp` run under another name, are still detected after the fix.
+- **The bundled PathScope is now 0.1.6.** The added explanation is for macOS, so the Linux screens hardly change (see PathScope 0.1.6).
 
 ### 1.10.24
 
@@ -284,6 +286,7 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 - **Fixed a false ransomware detection when copying many compressed files.** When a lot of files were copied, already-compressed files such as `.gz` and `.jpg` (which have high entropy by nature) were counted as "encrypted file writes", and this could even trigger the full network cut-off (air-gap isolation), naming Spotlight's indexer as the culprit. A file whose first bytes are a genuine compressed or media format (gzip, zip, JPEG, PNG, mp4 and so on) is now left out of the check. Encryption destroys those first bytes, so detection of real encryption is not weakened. Folders such as `.venv`, `node_modules` and `.git` are skipped, and Spotlight's worker processes (`mdworker_shared` and the like) and any process started from macOS's own locations (`/System`, `/usr`) are treated as safe.
 - **Fixed the exit node reconnecting and disconnecting about every 40 seconds after a Tailscale disconnect.** While the network service reconnected after the disconnect, the gateway's MAC address could not be read for about 40 seconds; the 30-second grace period ran out first and the network was judged to be an unknown one (Lockdown). So even at a Standard-protection home network, it briefly went to Lockdown and the VPN connected, then disconnected when the MAC came back, and reconnected again, with traffic stopping on and off. The grace period is now 90 seconds and ends as soon as the gateway is back.
 - **Added protection against the app quitting after an isolation is released.** When the app reached its limit of open files (256), starting ClamAV raised an exception and the app quit. The crash report does not prove that this limit was the cause. The limit is now raised, and the pipe for ClamAV's output is always closed, even when the launch fails.
+- **The bundled PathScope is now 0.1.6.** When PathScope itself is the subject of a finding, an explanation is added (see PathScope 0.1.6). If 0.1.0 or later is already installed, you can update from inside the app (Settings → Update).
 
 ## 1.10.25
 
