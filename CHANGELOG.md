@@ -46,6 +46,10 @@ The contents of these releases, grouped by theme. The full text of each entry is
 
 ## PersonalSOC
 
+### 0.1.8
+
+- **Fixed: the details of a CVE (known vulnerability) finding now show the package name and version.** The report table shows only the details, not the finding's title, so it was not clear which package a finding was about.
+
 ### 0.1.7
 
 - **Fixed: on Linux, the drop-down lists (update interval, LLM choice, display language) had a white background, so their text could not be read in dark mode.**
@@ -54,18 +58,14 @@ The contents of these releases, grouped by theme. The full text of each entry is
 
 - **Changed: removed the margin around the app icon and made its background transparent.** It used to come with a white margin. The rounded square now fills the whole icon on Mac, Linux and in the app window.
 
-### 0.1.5
-
-- **Changed: Settings is now split into tabs by function (Automatic status check, LLM integration, Updates, Display language).** The Updates tab appears only where updating is supported (Mac). The Save button still saves all settings together.
-- **Changed: removed the "it contains unverified text, so please check…" note from the message shown when a report has been created** (all 10 languages).
-
-### 0.1.0 - 0.1.4 (summarized)
+### 0.1.0 - 0.1.5 (summarized)
 
 - **0.1.0**: first release of "PersonalSOC", a personal security operations center that gathers this device's logs and defense status, read-only, into a report. Findings, sources and IOCs are shown with charts; the UI has 10 languages and follows the OS language. "Check status" has your chosen LLM CLI (opencode, claude, codex, agy) investigate autonomously with read-only tools and write an audit report. LLM integration is optional and off by default. PersonalSOC itself has no network permission.
 - **0.1.1**: in-app updater (Mac), which fetches version information only when you press the button and verifies the signature before installing. Removed the fixed "Response" section from reports and fixed chart legends and axis labels overlapping in English and other languages.
 - **0.1.2**: reads more from RoamSwitch's MCP (package CVE matches, active vulnerability check status, what Sensor found from outside, protections switched off, honeytoken, browser-credential and ransomware detections, recovery readiness, preserved evidence, Air-Gap). Gatekeeper denials on Mac became an optional source (off by default). The LLM command's own tools are switched off at launch where possible (`claude` starts with built-in tools and MCP off; `agy` and `codex` cannot be locked, so they need the confirmation in Settings). Fixed the XProtect check matching process names and `codex` not running in an empty temporary folder.
 - **0.1.3**: an LLM reply that contains raw line breaks or invalid escapes is repaired and parsed again. The Gatekeeper source is now labelled "check the record of denials", and the screen and README state that Gatekeeper behaves the same whether it is on or off (it only reads the record).
 - **0.1.4**: secret masking now also covers quoted JSON and `Authorization`, `Bearer` and `Basic` headers. Log lines can no longer close the data fence handed to the LLM using the lookalike characters `<<<` and `>>>`. Scheduled runs (Mac) work in folders with spaces or non-ASCII characters, and an app opened straight from the DMG is told to move to the Applications folder (10 languages). When an LLM command times out, its child processes are terminated too. `opencode` is no longer treated as having its tools locked, because we have not confirmed the setting takes effect, so using it requires the confirmation in Settings (the README is updated too).
+- **0.1.5**: Settings is split into tabs by function (Automatic status check, LLM integration, Updates, Display language); the Updates tab appears only where updating is supported (Mac). Removed the "it contains unverified text, so please check…" note from the message shown when a report has been created (10 languages).
 
 ---
 
@@ -191,6 +191,10 @@ setup instructions.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.10.26
+
+- **The bundled PersonalSOC is now 0.1.8.** The details of a CVE (known vulnerability) finding now show the package name and version (see PersonalSOC 0.1.8).
+
 ### 1.10.25
 
 - **Copying many compressed or media files, or copying in a file manager, no longer gets the writer frozen as ransomware.** A file whose first bytes are a genuine compressed or media format (gzip, zip and its relatives, JPEG, PNG, mp4/mov/heic, xz, zstd, 7z, lz4 and so on) is left out of the burst check. Encryption destroys those first bytes, so detection of real encryption is not weakened; documents such as docx and xlsx are still tracked. File managers (Nautilus, Nemo, Thunar, Dolphin, Caja, GVfs, KDE's KIO) are now on the allowlist, like `cp`: a GUI copy is written by the file manager itself, so it could be frozen before. `.heic`, `.avif`, `.mov`, `.webm`, `.m4a`, `.rar`, `.whl`, `.lz4` and others were added to the skipped extensions. Checked on a real Linux kernel, before and after: ciphertext without a header, and `cp` run under another name, are still detected after the fix.
@@ -200,14 +204,11 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 
 - **The bundled PathScope is now 0.1.5.** It checks the versions of installed packages and of the running kernel against known vulnerabilities that were exploited in real attacks (see PathScope 0.1.5).
 
-### 1.10.23
-
-- **PathScope is now bundled.** It is an app separate from RoamSwitch that works out the paths by which an ordinary user could reach root and shows where to fix first (a privilege-escalation path analysis tool). It is included in the Client Edition deb, rpm and tarball (and the AUR package) and opens from the application menu as "PathScope"; the command is `pathscope`. It is licensed under the Apache License 2.0, and Section 4-3 was added to the EULA. It is updated together with the RoamSwitch package. If a standalone `pathscope` package of the same name is installed, it is replaced. The Server Edition does not include it. See PathScope 0.1.4.
-
-### 1.10.0 - 1.10.22 (summarized)
+### 1.10.0 - 1.10.23 (summarized)
 
 Everything in these releases, grouped by topic (Client and Server Edition unless marked). The full text of each entry is in the git history of this file.
 
+- **PathScope bundled** (1.10.23): a separate app that works out the paths by which an ordinary user could reach root and shows where to fix first (a privilege-escalation path analysis tool) is now bundled in the Client Edition deb, rpm and tarball (and the AUR package). It opens from the application menu as "PathScope"; the command is `pathscope`. It is licensed under the Apache License 2.0, and Section 4-3 was added to the EULA. It is updated together with the RoamSwitch package, and replaces a standalone `pathscope` package of the same name if one is installed. The Server Edition does not include it (see PathScope 0.1.4).
 - **Bundled PersonalSOC** (1.10.21, 1.10.22): The white margin around the app icon is gone (see PersonalSOC 0.1.6). On Linux, the drop-down lists no longer have a white background that made their text unreadable in dark mode (0.1.7).
 - **Detections and features added** (1.10.0, 1.10.7, 1.10.11): DNS tunneling and exfiltration detection (only the host's own DNS queries; name resolution is never blocked). A forensic evidence bundle (with a SHA-256 manifest) when containment fires. Honeytokens. The age of the last proven vulnerability check (`roamswitch vuln-status`) and a mapping of diagnostic items to NIST CSF 2.0 and CIS Controls v8. Detection of LockBit-style partial encryption (16 of every 32 bytes, 1.10.7). Detection of the ransomware-recovery snapshots being deleted or thinned by anything other than RoamSwitch or the known managers snapper and timeshift (T1490, 1.10.11).
 - **Honeytoken and evidence-bundle fixes** (1.10.4, 1.10.5, 1.10.8): so that real tools are not broken, the AWS decoy uses a separate profile name and the Docker decoy a non-existent registry name. Mode is 0600, and access by OpenSSH and by RoamSwitch itself is not flagged (1.10.8 also fixed a false positive from RoamSwitch's own process). The 1.10.0–1.10.4 packages did not include `roamswitch-honeytokens` and `roamswitch-incident-capture`, so decoys and evidence bundles never ran. 1.10.5 ships both in the client and server packages, and CI fails a build that lacks them.
@@ -281,6 +282,10 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 
 ## RoamSwitch for Mac
 
+## 1.10.27
+
+- **The bundled PersonalSOC is now 0.1.8.** The details of a CVE (known vulnerability) finding now show the package name and version (see PersonalSOC 0.1.8). You can update from inside the app (Settings → Update).
+
 ## 1.10.26
 
 - **Fixed a false ransomware detection when copying many compressed files.** When a lot of files were copied, already-compressed files such as `.gz` and `.jpg` (which have high entropy by nature) were counted as "encrypted file writes", and this could even trigger the full network cut-off (air-gap isolation), naming Spotlight's indexer as the culprit. A file whose first bytes are a genuine compressed or media format (gzip, zip, JPEG, PNG, mp4 and so on) is now left out of the check. Encryption destroys those first bytes, so detection of real encryption is not weakened. Folders such as `.venv`, `node_modules` and `.git` are skipped, and Spotlight's worker processes (`mdworker_shared` and the like) and any process started from macOS's own locations (`/System`, `/usr`) are treated as safe.
@@ -292,15 +297,11 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 
 - **The bundled PathScope is now 0.1.5.** It checks the versions of installed software against known vulnerabilities that were exploited in real attacks, and adds the ones not yet fixed to the paths to root (see PathScope 0.1.5). If 0.1.0 or later is already installed, you can update from inside the app (Settings → Update).
 
-## 1.10.24
-
-- **The bundled PathScope is now 0.1.4.** It fixes the update section text and the unreadable drop-down text on Linux, among other things (see PathScope 0.1.4). The Mac screens hardly change. If 0.1.0 or later is already installed, you can update from inside the app (Settings → Update).
-
-## 1.10.0 - 1.10.23 (summarized)
+## 1.10.0 - 1.10.24 (summarized)
 
 The contents of these releases, grouped by theme. The full text of each entry is in this file's git history.
 
-- **Bundled PathScope** (1.10.22, 1.10.23): Even with "unrestricted", private key files and API keys are no longer sent (see PathScope 0.1.2). 1.10.23 fixes one German label (0.1.3). If 0.1.0 or later is already installed, you can update from inside the app (Settings → Update).
+- **Bundled PathScope** (1.10.22 to 1.10.24): Even with "unrestricted", private key files and API keys are no longer sent (see PathScope 0.1.2). 1.10.23 fixes one German label (0.1.3). 1.10.24 fixes the update section text and the unreadable drop-down text on Linux, among other things (0.1.4; the Mac screens hardly change). If 0.1.0 or later is already installed, you can update from inside the app (Settings → Update).
 - **Privileged helper hardening** (1.10.5): the helper now runs inside a sandbox from launch and self-checks it. It only talks to the genuine app, and Mach-O, `eslogger`, `tcpdump` and Sensor traffic are parsed outside root. Snapshot restore runs with the user's own privileges.
 - **Quarantine and port scans** (1.10.5, 1.10.6): ARP-spoofing quarantine is lifted automatically once the cause is confirmed gone. Fixed quarantine release trusting a spoofed gateway and ARP pinning locking in a forged MAC. Automatic port-scan blocking now verifies the source MAC, and IPv6 scans are detected. A manual quarantine that failed no longer keeps showing "quarantined".
 - **Ransomware defense and recovery** (1.10.0 to 1.10.8): added generic entropy-based detection and reworked decoy files so they no longer break real tools. "Ransomware Recovery" lets you pick deleted files from snapshot contents, and detects deletion of recovery snapshots by a third party. Added a separate "Recovery and Uninstall" menu.
