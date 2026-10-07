@@ -8,6 +8,20 @@ independently. Older releases are summarized in ranges.
 
 ---
 
+## AccessScope
+
+A security diagnosis tool for access logs. It is a separate app (Apache-2.0): the Server Edition .deb / .rpm packages carry only the command (`accessscope`); the Linux client edition and the Mac app carry the command and a window app.
+
+### 0.1.0
+
+- **First release.** From web server access logs (Apache and Nginx common/combined, nginx / Caddy / Traefik JSON, gzip) and SSH authentication logs (sshd logs, and journald on Linux) it finds attack attempts and shows them with the evidence log lines, the MITRE ATT&CK technique ID and a confidence level (confirmed, likely, hypothesis). It is read-only: it never changes logs and never raises privileges. The analysis uses neither an LLM nor the network.
+- **What it finds**: SQL injection, path traversal, XSS, command and code injection, Log4Shell, Shellshock, template injection, SSRF, exploit paths of known vulnerabilities (Apache 2.4.49/50, PHPUnit, Laravel Ignition, Citrix, FortiOS, Spring4Shell, Confluence, Exchange and others), probing for secret files and admin pages, attack-tool User-Agents, mass attempts on non-existent paths, login brute force and distributed credential stuffing, possible web shell access, chains from reconnaissance to exploitation, high request rates, SSH brute force, username enumeration, a success after failures, root password logins, and instructions to an AI planted in the logs.
+- **An HTTP 200 is not treated as success.** If a 2xx response to an attack-looking request is the same size as the normal page, it is reported as "the payload was probably ignored" and does not raise the severity. The overall risk (0 to 100) is weighted per kind of finding, so the number of attacking IPs does not inflate it.
+- **It looks for the logs.** Besides standard locations it checks the places named by nginx, Apache, Caddy and Traefik configs (including rotated files) and, on Linux, journald. Optionally an LLM is given only facts about the environment (names of running servers, log locations named in configs, file names such as under `/var/log`; never file contents) and suggests missing locations. A suggestion is shown only after it is verified to be readable as a log, and nothing is read until you pick and add it.
+- **Analysis by an LLM (optional, off by default).** Only a summary and a few evidence log lines are passed to an LLM (claude, opencode, codex, agy) to write a report. Raw logs are not sent; secrets are masked and IPs are defanged (or pseudonymized). `--show-prompt` shows exactly what would be sent. Logs are attacker-controlled, so text that looks like instructions to an AI is reported as a finding and the LLM output is treated as an untrusted quotation. It does not run as root. When enabled, the summary may be sent to an external service through the LLM command you chose.
+- The Mac app can update itself (Settings → Update). On Linux it is updated by the package.
+- The screens and the command line are in 10 languages (translations are machine-made and have not been reviewed by native speakers).
+
 ## PathScope
 
 ### 0.1.6
@@ -191,6 +205,14 @@ setup instructions.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.10.27
+
+- **AccessScope 0.1.0 is now bundled.** A separate tool that finds attack attempts in web server and SSH access logs and shows the evidence. The Server Edition gets only the command (`accessscope`); the client edition gets the command and a window app (see AccessScope 0.1.0).
+- **Fix: addressed the app not starting automatically at login on some desktop environments.** Looking into a report from a real machine, the `NoDisplay=true` in the autostart `.desktop` file was suspected: some environments, such as lxqt-session, treat it as a reason to skip autostart. The file already lives where the application menu never lists it, so the unneeded setting is removed. Re-checking on a real machine is still to be done.
+- **Change: the MCP tool `run_package_cve_scan_languages`, when called with an empty folder, now scans the registered project folders (`pkgcve_watched_folders`).** This matches the Mac tool of the same name, so the watched folders can be used without passing a path.
+- **Change: the apt and rpm repositories now keep only the newest version of each package.** Three versions used to be kept, so `apt install roamswitch=<version>` or `dnf downgrade` could roll back. To save storage that is no longer possible. If a release turns out to be defective, a fixed version will be published instead.
+- The contact details in the EULA and README changed from an address that cannot receive mail to the contact form (with an email as a fallback); the terms of the EULA themselves did not change. Product-page URLs in the app, the command line, the screens and the package notes now point to roamswitch.com.
+
 ### 1.10.26
 
 - **The bundled PersonalSOC is now 0.1.8.** The details of a CVE (known vulnerability) finding now show the package name and version (see PersonalSOC 0.1.8).
@@ -200,15 +222,11 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 - **Copying many compressed or media files, or copying in a file manager, no longer gets the writer frozen as ransomware.** A file whose first bytes are a genuine compressed or media format (gzip, zip and its relatives, JPEG, PNG, mp4/mov/heic, xz, zstd, 7z, lz4 and so on) is left out of the burst check. Encryption destroys those first bytes, so detection of real encryption is not weakened; documents such as docx and xlsx are still tracked. File managers (Nautilus, Nemo, Thunar, Dolphin, Caja, GVfs, KDE's KIO) are now on the allowlist, like `cp`: a GUI copy is written by the file manager itself, so it could be frozen before. `.heic`, `.avif`, `.mov`, `.webm`, `.m4a`, `.rar`, `.whl`, `.lz4` and others were added to the skipped extensions. Checked on a real Linux kernel, before and after: ciphertext without a header, and `cp` run under another name, are still detected after the fix.
 - **The bundled PathScope is now 0.1.6.** The added explanation is for macOS, so the Linux screens hardly change (see PathScope 0.1.6).
 
-### 1.10.24
-
-- **The bundled PathScope is now 0.1.5.** It checks the versions of installed packages and of the running kernel against known vulnerabilities that were exploited in real attacks (see PathScope 0.1.5).
-
-### 1.10.0 - 1.10.23 (summarized)
+### 1.10.0 - 1.10.24 (summarized)
 
 Everything in these releases, grouped by topic (Client and Server Edition unless marked). The full text of each entry is in the git history of this file.
 
-- **PathScope bundled** (1.10.23): a separate app that works out the paths by which an ordinary user could reach root and shows where to fix first (a privilege-escalation path analysis tool) is now bundled in the Client Edition deb, rpm and tarball (and the AUR package). It opens from the application menu as "PathScope"; the command is `pathscope`. It is licensed under the Apache License 2.0, and Section 4-3 was added to the EULA. It is updated together with the RoamSwitch package, and replaces a standalone `pathscope` package of the same name if one is installed. The Server Edition does not include it (see PathScope 0.1.4).
+- **PathScope bundled** (1.10.23 to 1.10.24): a separate app that works out the paths by which an ordinary user could reach root and shows where to fix first (a privilege-escalation path analysis tool) is now bundled in the Client Edition deb, rpm and tarball (and the AUR package). It opens from the application menu as "PathScope"; the command is `pathscope`. It is licensed under the Apache License 2.0, and Section 4-3 was added to the EULA. It is updated together with the RoamSwitch package, and replaces a standalone `pathscope` package of the same name if one is installed. The Server Edition does not include it (see PathScope 0.1.4). 1.10.24 checks the versions of installed packages and of the running kernel against known vulnerabilities (0.1.5).
 - **Bundled PersonalSOC** (1.10.21, 1.10.22): The white margin around the app icon is gone (see PersonalSOC 0.1.6). On Linux, the drop-down lists no longer have a white background that made their text unreadable in dark mode (0.1.7).
 - **Detections and features added** (1.10.0, 1.10.7, 1.10.11): DNS tunneling and exfiltration detection (only the host's own DNS queries; name resolution is never blocked). A forensic evidence bundle (with a SHA-256 manifest) when containment fires. Honeytokens. The age of the last proven vulnerability check (`roamswitch vuln-status`) and a mapping of diagnostic items to NIST CSF 2.0 and CIS Controls v8. Detection of LockBit-style partial encryption (16 of every 32 bytes, 1.10.7). Detection of the ransomware-recovery snapshots being deleted or thinned by anything other than RoamSwitch or the known managers snapper and timeshift (T1490, 1.10.11).
 - **Honeytoken and evidence-bundle fixes** (1.10.4, 1.10.5, 1.10.8): so that real tools are not broken, the AWS decoy uses a separate profile name and the Docker decoy a non-existent registry name. Mode is 0600, and access by OpenSSH and by RoamSwitch itself is not flagged (1.10.8 also fixed a false positive from RoamSwitch's own process). The 1.10.0–1.10.4 packages did not include `roamswitch-honeytokens` and `roamswitch-incident-capture`, so decoys and evidence bundles never ran. 1.10.5 ships both in the client and server packages, and CI fails a build that lacks them.
@@ -282,6 +300,12 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 
 ## RoamSwitch for Mac
 
+## 1.10.28
+
+- **AccessScope 0.1.0 is now in the DMG.** It sits next to RoamSwitch.app. A separate app that finds attack attempts in web server and SSH access logs and shows the evidence (see AccessScope 0.1.0). You can update it from inside the app (Settings → Update).
+- **Fixed the MCP `get_security_report` always reporting the gateway ARP lock as "disabled", even when it was on.** The report was generated without the ARP lock setting. `get_guard_status` already returned the correct value.
+- **Change: the links to the purchase page, help and the MCP knowledge base inside the app now point to roamswitch.com.**
+
 ## 1.10.27
 
 - **The bundled PersonalSOC is now 0.1.8.** The details of a CVE (known vulnerability) finding now show the package name and version (see PersonalSOC 0.1.8). You can update from inside the app (Settings → Update).
@@ -293,15 +317,11 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 - **Added protection against the app quitting after an isolation is released.** When the app reached its limit of open files (256), starting ClamAV raised an exception and the app quit. The crash report does not prove that this limit was the cause. The limit is now raised, and the pipe for ClamAV's output is always closed, even when the launch fails.
 - **The bundled PathScope is now 0.1.6.** When PathScope itself is the subject of a finding, an explanation is added (see PathScope 0.1.6). If 0.1.0 or later is already installed, you can update from inside the app (Settings → Update).
 
-## 1.10.25
-
-- **The bundled PathScope is now 0.1.5.** It checks the versions of installed software against known vulnerabilities that were exploited in real attacks, and adds the ones not yet fixed to the paths to root (see PathScope 0.1.5). If 0.1.0 or later is already installed, you can update from inside the app (Settings → Update).
-
-## 1.10.0 - 1.10.24 (summarized)
+## 1.10.0 - 1.10.25 (summarized)
 
 The contents of these releases, grouped by theme. The full text of each entry is in this file's git history.
 
-- **Bundled PathScope** (1.10.22 to 1.10.24): Even with "unrestricted", private key files and API keys are no longer sent (see PathScope 0.1.2). 1.10.23 fixes one German label (0.1.3). 1.10.24 fixes the update section text and the unreadable drop-down text on Linux, among other things (0.1.4; the Mac screens hardly change). If 0.1.0 or later is already installed, you can update from inside the app (Settings → Update).
+- **Bundled PathScope** (1.10.22 to 1.10.25): Even with "unrestricted", private key files and API keys are no longer sent (see PathScope 0.1.2). 1.10.23 fixes one German label (0.1.3). 1.10.24 fixes the update section text and the unreadable drop-down text on Linux, among other things (0.1.4; the Mac screens hardly change). If 0.1.0 or later is already installed, you can update from inside the app (Settings → Update). 1.10.25 adds checking installed software versions against known vulnerabilities (0.1.5).
 - **Privileged helper hardening** (1.10.5): the helper now runs inside a sandbox from launch and self-checks it. It only talks to the genuine app, and Mach-O, `eslogger`, `tcpdump` and Sensor traffic are parsed outside root. Snapshot restore runs with the user's own privileges.
 - **Quarantine and port scans** (1.10.5, 1.10.6): ARP-spoofing quarantine is lifted automatically once the cause is confirmed gone. Fixed quarantine release trusting a spoofed gateway and ARP pinning locking in a forged MAC. Automatic port-scan blocking now verifies the source MAC, and IPv6 scans are detected. A manual quarantine that failed no longer keeps showing "quarantined".
 - **Ransomware defense and recovery** (1.10.0 to 1.10.8): added generic entropy-based detection and reworked decoy files so they no longer break real tools. "Ransomware Recovery" lets you pick deleted files from snapshot contents, and detects deletion of recovery snapshots by a third party. Added a separate "Recovery and Uninstall" menu.
