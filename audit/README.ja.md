@@ -3,7 +3,7 @@
 # Zero Telemetry 外向き通信の監査
 
 RoamSwitch の外向き通信が、ホワイトペーパー
-（<https://lafine.net/security.html> §7）に記載した4経路だけであることを、
+（<https://roamswitch.com/security.html> §7）に記載した4経路だけであることを、
 **主張ではなく実測で**確かめるためのツール一式です。
 
 | # | 宛先 | プロセス | 発生条件 |
@@ -87,7 +87,7 @@ Linux エディションには、`nftables` Air-Gap、ランサムウェアの�
 セルフペネトレーションテスト／防御検証レポートがあります:
 
 - **[RESULTS-LINUX-2026-09-02.ja.md](RESULTS-LINUX-2026-09-02.ja.md)**（[English](RESULTS-LINUX-2026-09-02.md)）— 14 / 15 PASS、発見された不具合はすべて修正・再検証済み
-- 設計書 §9 ＋ 付録 C: <https://lafine.net/linux/whitepaper>
+- 設計書 §9 ＋ 付録 C: <https://roamswitch.com/linux/whitepaper>
 
 **Server Edition** には別途、インバウンド既定拒否、`guard.yaml` の重大度別封じ込め、
 セーフティタイマー、Egress/C2 遮断リストを対象としたレポートがあります。公式 APT
@@ -95,4 +95,4 @@ Linux エディションには、`nftables` Air-Gap、ランサムウェアの�
 
 - **[RESULTS-PENTEST-SERVER-2026-09-07.ja.md](RESULTS-PENTEST-SERVER-2026-09-07.ja.md)**（[English](RESULTS-PENTEST-SERVER-2026-09-07.md)）— 18 / 18 PASS
 - 再現方法: [`test/docker/server/`](../test/docker/server/)
-- 設計書 §6: <https://lafine.net/linux-server-whitepaper.html>
+- 設計書 §6: <https://roamswitch.com/linux-server-whitepaper.html>

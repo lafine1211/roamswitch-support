@@ -19,7 +19,7 @@ Macのネットワーク境界を自律的に守るメニューバーアプリ�
 
 ## ダウンロード
 
-**https://lafine.net/**
+**https://roamswitch.com/**
 
 - 署名・公証済みの `.dmg`（Mac App Store 外での直接配布）
 - **macOS 13 Ventura 以降** / Apple silicon 専用（M1 / M2 / M3 / M4 以降）
@@ -64,7 +64,7 @@ Macのネットワーク境界を自律的に守るメニューバーアプリ�
 | **Free（無料版）** | ¥0 | 1 台 |
 | **Pro Lifetime** | **¥2,980** | 2 台 |
 
-Pro は永続ライセンス・アップデート無償。購入は **https://lafine.net/** から。
+Pro は永続ライセンス・アップデート無償。購入は **https://roamswitch.com/** から。
 
 ## プライバシー — Zero Telemetry
 
@@ -90,7 +90,7 @@ claude mcp add roamswitch /Applications/RoamSwitch.app/Contents/MacOS/RoamSwitch
 `get_port_anomaly_incidents` / `get_runtime_threat_status` / `get_notification_history`。加えて `roamswitch://docs/*`
 リソースを 4 種類提供します。インシデント状態系のツールはローカル状態のみを読むため、
 Air‑Gap 隔離中でも応答します。Claude Desktop / Claude Code / Codex CLI / OpenCode /
-Antigravity の設定手順は <https://lafine.net/mcp-setup.html>。
+Antigravity の設定手順は <https://roamswitch.com/mcp-setup.html>。
 
 MCP サーバーと、その検知ロジックは **オープンソース**（MIT）です：
 [github.com/lafine1211/roamswitch-mcp](https://github.com/lafine1211/roamswitch-mcp)。
@@ -112,19 +112,19 @@ Telegram / LINE / Webhook 通知、30 項目診断）。
 
 - **無償「Community Edition」**、全機能開放、ライセンス認証不要。プロプライエタリ・
   フリーウェア（同梱 EULA）。ソースは公開していません。
-- **ダウンロード・ドキュメント:** <https://lafine.net/linux>
+- **ダウンロード・ドキュメント:** <https://roamswitch.com/linux>
 - **導入:** APT（`lafine.net/apt`）、DNF / zypper（`lafine.net/rpm`）。Arch は同梱
   PKGBUILD からビルド（AUR `roamswitch-bin` は準備中）。Ubuntu 22.04+ / Debian 12+
   など systemd + nftables のディストロが必要。x86_64 / aarch64（Raspberry Pi 4 / 5 を含む）。
-- **ドキュメント:** [CLI / ヘッドレス運用](https://lafine.net/linux-cli.html) ·
-  [Server Edition 運用マニュアル](https://lafine.net/linux/server-manual) ·
-  [Server Edition セキュリティ設計書](https://lafine.net/linux/server-whitepaper)
+- **ドキュメント:** [CLI / ヘッドレス運用](https://roamswitch.com/linux-cli.html) ·
+  [Server Edition 運用マニュアル](https://roamswitch.com/linux/server-manual) ·
+  [Server Edition セキュリティ設計書](https://roamswitch.com/linux/server-whitepaper)
 - **Rust SDK（MIT）:** [roamswitch-linux-kit](https://github.com/lafine1211/roamswitch-linux-kit)
-- **セキュリティ設計書:** <https://lafine.net/linux/whitepaper> — 「外部送信データゼロ」の
+- **セキュリティ設計書:** <https://roamswitch.com/linux/whitepaper> — 「外部送信データゼロ」の
   コードレベル監査と破壊的セルフテストの結果
   （[audit/RESULTS-LINUX-2026-09-02.ja.md](audit/RESULTS-LINUX-2026-09-02.ja.md)）を収録。
 - **RoamSwitch Business**（有償・準備中）は、組織向けにフリート集中管理・署名付きポリシー配布・
-  署名済み社内 APT リポジトリ・SLA サポートを追加します: <https://lafine.net/business>。
+  署名済み社内 APT リポジトリ・SLA サポートを追加します: <https://roamswitch.com/business>。
   macOS 版の **Pro Lifetime** をお持ちの方には、ご本人所有の Linux 端末で Business 機能を
   無償付与します。
 - **サポート:** 同じ [Issues](../../issues) をご利用ください。Linux の報告にはラベルを付け、
@@ -134,7 +134,7 @@ Telegram / LINE / Webhook 通知、30 項目診断）。
 
 - **アーキテクチャ／セキュリティ設計書** — RoamSwitch がどんな権限を持ち、その境界で何をしているかを、
   出荷バイナリと照合できる粒度で：
-  <https://lafine.net/security.html>（日本語／English、ページ内で切替可能）
+  <https://roamswitch.com/security.html>（日本語／English、ページ内で切替可能）
 - **[`verify.sh`](verify.sh)** — 設計書 付録 A のチェックを、インストール済みのアプリに対して実行します
   （署名・公証・entitlements・MCP サーバーのオフライン応答・pf の状態）。約 90 行の読み取り専用シェルです。
   中身を読んでから：
@@ -160,14 +160,14 @@ Telegram / LINE / Webhook 通知、30 項目診断）。
 
 - **バグ報告・機能要望:** [Issue](../../issues) を作成（テンプレートあり）
 - **質問・雑談:** [Discussions](../../discussions)
-- リリースノート: [CHANGELOG.ja.md](CHANGELOG.ja.md) ／ ヘルプ: [FAQ](https://lafine.net/faq.html)
+- リリースノート: [CHANGELOG.ja.md](CHANGELOG.ja.md) ／ ヘルプ: [FAQ](https://roamswitch.com/faq.html)
 
 Issue は日本語・英語どちらでも構いません。
 
 ## リンク
 
-- Web サイト・ダウンロード: https://lafine.net/
-- [FAQ](https://lafine.net/faq.html) ／ [プライバシーポリシー](https://lafine.net/privacy.html) ／ [変更履歴](CHANGELOG.ja.md) ／ [開発が止まったとき](CONTINUITY.ja.md)
+- Web サイト・ダウンロード: https://roamswitch.com/
+- [FAQ](https://roamswitch.com/faq.html) ／ [プライバシーポリシー](https://lafine.net/privacy.html) ／ [変更履歴](CHANGELOG.ja.md) ／ [開発が止まったとき](CONTINUITY.ja.md)
 
 ---
 

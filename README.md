@@ -20,7 +20,7 @@ between them.
 
 ## Download
 
-**https://lafine.net/**
+**https://roamswitch.com/**
 
 - Signed & notarized `.dmg`, distributed outside the Mac App Store
 - Requires **macOS 13 Ventura or later**, Apple silicon only (M1 / M2 / M3 / M4 and later)
@@ -65,7 +65,7 @@ One‑time purchase — no subscription.
 | **Free** | $0 | 1 |
 | **Pro Lifetime** | **$19.99** | 2 |
 
-Pro is a lifetime license with free updates. Purchase at **https://lafine.net/**.
+Pro is a lifetime license with free updates. Purchase at **https://roamswitch.com/**.
 Prices are shown in USD; checkout is billed in your local currency where supported.
 
 ## Privacy — Zero Telemetry
@@ -91,7 +91,7 @@ claude mcp add roamswitch /Applications/RoamSwitch.app/Contents/MacOS/RoamSwitch
 `get_runtime_threat_status`, `get_notification_history` — plus four `roamswitch://docs/*` resources. The incident‑state
 tools read only local state, so they still answer while RoamSwitch has air‑gapped the network.
 Setup for Claude Desktop, Claude Code, Codex CLI, OpenCode and Antigravity:
-<https://lafine.net/mcp-setup.html>.
+<https://roamswitch.com/mcp-setup.html>.
 
 The server and the detection logic behind it are **open source** (MIT):
 [github.com/lafine1211/roamswitch-mcp](https://github.com/lafine1211/roamswitch-mcp) —
@@ -114,22 +114,22 @@ resource‑exhaustion guard, Telegram/LINE/webhook alerts, and a 30‑item audit
 
 - **Free — "Community Edition"**, every feature unlocked, no activation. Proprietary
   freeware (bundled EULA); the source is not published.
-- **Download & docs:** <https://lafine.net/linux>
+- **Download & docs:** <https://roamswitch.com/linux>
 - **Install:** APT (`lafine.net/apt`) or DNF / zypper (`lafine.net/rpm`); on Arch,
   build from the bundled PKGBUILD (the AUR package `roamswitch-bin` is pending).
   Requires Ubuntu 22.04+ / Debian 12+ or a compatible systemd + nftables distro;
   x86_64 / aarch64 (incl. Raspberry Pi 4 / 5).
-- **Docs:** [CLI / headless operations](https://lafine.net/linux-cli.html) ·
-  [Server Edition manual](https://lafine.net/linux/server-manual) ·
-  [Server Edition whitepaper](https://lafine.net/linux/server-whitepaper)
+- **Docs:** [CLI / headless operations](https://roamswitch.com/linux-cli.html) ·
+  [Server Edition manual](https://roamswitch.com/linux/server-manual) ·
+  [Server Edition whitepaper](https://roamswitch.com/linux/server-whitepaper)
 - **Rust SDK (MIT):** [roamswitch-linux-kit](https://github.com/lafine1211/roamswitch-linux-kit)
-- **Security whitepaper:** <https://lafine.net/linux/whitepaper>
+- **Security whitepaper:** <https://roamswitch.com/linux/whitepaper>
   ([EN](https://lafine.net/linux/whitepaper.en)) — includes a code‑level audit of
   "zero data sent off the machine" and the destructive self‑test results
   ([audit/RESULTS-LINUX-2026-09-02.md](audit/RESULTS-LINUX-2026-09-02.md)).
 - **RoamSwitch Business** (planned, paid) adds fleet management, signed policy
   distribution, a signed internal APT repository and SLA support for organizations:
-  <https://lafine.net/business>. Holders of a macOS **Pro Lifetime** license get
+  <https://roamswitch.com/business>. Holders of a macOS **Pro Lifetime** license get
   Business features free on their own Linux machines.
 - **Support:** same [Issues](../../issues) tracker — please label Linux reports and
   attach `journalctl -u roamswitch -b` and `roamswitch status` output (redacted).
@@ -138,7 +138,7 @@ resource‑exhaustion guard, Telegram/LINE/webhook alerts, and a 30‑item audit
 
 - **Architecture & security whitepaper** — what privileges RoamSwitch holds and what it
   does at that boundary, at a level you can check against the shipping binary:
-  <https://lafine.net/security.html> (English/日本語, switchable on the page)
+  <https://roamswitch.com/security.html> (English/日本語, switchable on the page)
 - **[`verify.sh`](verify.sh)** — runs the whitepaper's Appendix A checks against your
   installed copy (signature, notarization, entitlements, the MCP server's offline
   response, pf state). It's ~90 lines of read-only shell — read it first, then:
@@ -169,14 +169,14 @@ resource‑exhaustion guard, Telegram/LINE/webhook alerts, and a 30‑item audit
 
 - **Bug reports & feature requests:** open an [Issue](../../issues) (templates provided)
 - **Questions & discussion:** [Discussions](../../discussions)
-- Release notes: [CHANGELOG.md](CHANGELOG.md) · Help: [FAQ](https://lafine.net/faq.html)
+- Release notes: [CHANGELOG.md](CHANGELOG.md) · Help: [FAQ](https://roamswitch.com/faq.html)
 
 Japanese and English are both welcome in Issues.
 
 ## Links
 
-- Website & download: https://lafine.net/
-- [FAQ](https://lafine.net/faq.html) · [Privacy Policy](https://lafine.net/privacy.html) · [Changelog](CHANGELOG.md) · [If development stops](CONTINUITY.md)
+- Website & download: https://roamswitch.com/
+- [FAQ](https://roamswitch.com/faq.html) · [Privacy Policy](https://lafine.net/privacy.html) · [Changelog](CHANGELOG.md) · [If development stops](CONTINUITY.md)
 
 ---
 
