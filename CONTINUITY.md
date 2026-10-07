@@ -53,7 +53,7 @@ Condition 1 (an announcement) skips the notice and the 30 days: the 90 days star
    against an embedded public key, so an installed, activated copy keeps working when our servers
    go away. Only *new* activations depend on the server, so the last release also runs without
    activation.
-3. **Say so here**, in the README and on https://lafine.net/, and keep the last downloads and
+3. **Say so here**, in the README and on https://roamswitch.com/, and keep the last downloads and
    their SHA-256 checksums available for as long as the domain is held.
 
 ## Licence
@@ -71,4 +71,4 @@ fork signs with its own identities; those secrets never belong in a repository.
 
 Nothing changes. Security fixes are released as they are found; the changelog is in
 [CHANGELOG.md](CHANGELOG.md). If you depend on RoamSwitch for a company, you can ask for a copy of
-this commitment in writing at https://lafine.net/business.
+this commitment in writing at https://roamswitch.com/business.
