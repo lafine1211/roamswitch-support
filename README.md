@@ -154,7 +154,7 @@ There are two mutually exclusive packages: **Client Edition** (`roamswitch`, tra
 web UI, 27‑item audit) and **Server Edition** (`roamswitch-server`, fully headless for
 cloud VPS/data centers — inbound default drop with SSH lockout prevention, Critical Path
 FIM, eBPF intrusion detection via Falco or Tetragon with autonomous containment, a
-resource‑exhaustion guard, Telegram/LINE/webhook alerts, and a 33‑item audit).
+resource‑exhaustion guard, Telegram/LINE/webhook alerts, and a 34‑item audit).
 
 - **Free — "Community Edition"**, every feature unlocked, no activation. Proprietary
   freeware (bundled EULA); the source is not published.

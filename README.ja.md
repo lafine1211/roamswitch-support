@@ -150,7 +150,7 @@ CLI（`roamswitch` / `man roamswitch`）、36 ツールの読み取り専用 MCP
 27 項目診断）と、**Server Edition**（`roamswitch-server`。クラウド VPS・データセンター向けの
 完全ヘッドレス版。インバウンド既定拒否＋SSH 締め出し防止、クリティカルパス FIM、
 Falco / Tetragon 連携の eBPF 侵入検知と自律隔離、リソース枯渇ガード、
-Telegram / LINE / Webhook 通知、33 項目診断）。
+Telegram / LINE / Webhook 通知、34 項目診断）。
 
 - **無償「Community Edition」**、全機能開放、ライセンス認証不要。プロプライエタリ・
   フリーウェア（同梱 EULA）。ソースは公開していません。
