@@ -15,6 +15,14 @@ connections are the four documented in the whitepaper
 | 3 | ClamAV mirrors | `freshclam` (not the app) | only if ClamAV is installed |
 | 4 | `HEAD` to a target URL | RoamSwitch | only when you use the in-app Link Safety sheet |
 
+> **Scope of the last measurement.** This table and the last run
+> ([RESULTS-2026-08-29.md](RESULTS-2026-08-29.md)) are for RoamSwitch 1.4.7, measured on
+> 2026-08-29. Later Mac versions have more outbound paths (link guard threat feed, package
+> CVE data about every 30 days, ClamAV definition updates, the DNS threat guard, and the
+> optional Sensor, VPN and npm signature check; see the Privacy section of the
+> [README](../README.md)). The audit's allowlist has not been extended to them yet, so
+> the measurement says nothing about those paths.
+
 This is heavier than [`../verify.sh`](../verify.sh): it runs packet captures,
 drives the bundled MCP server, and (with `--tier-b`) temporarily quiets the
 machine. Use `verify.sh` for a quick read-only check; use this to produce a shareable

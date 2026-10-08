@@ -24,7 +24,7 @@ between them.
 
 - Signed & notarized `.dmg`, distributed outside the Mac App Store
 - Requires **macOS 13 Ventura or later**, Apple silicon only (M1 / M2 / M3 / M4 and later)
-- Latest version: **1.10.28**
+- Latest version: **1.11.0**
 
 ## What it does
 
@@ -70,11 +70,31 @@ Prices are shown in USD; checkout is billed in your local currency where support
 
 ## Privacy — Zero Telemetry
 
-RoamSwitch performs **no external network communication of its own**: no analytics,
-no crash reporting, no license "phone home" beyond the one‑time purchase checkout on
-the website. The bundled MCP server is read‑only and speaks local stdio only (its own network
-behavior is described in the MCP section below). See
-the [Privacy Policy](https://lafine.net/privacy.html).
+RoamSwitch has **no telemetry**: it does not collect or send usage data, diagnostic
+results, analytics or crash reports. It does make the minimal connections its features
+need, which are published in the design document and the
+[Privacy Policy](https://lafine.net/privacy.html). In the Mac app they are:
+
+- the update check (the Sparkle appcast, at launch and every 24 hours, all users)
+- license activation (only when you enter a key)
+- the link guard's signed threat feed (Pro)
+- package CVE data (all users, fetched about once every 30 days)
+- ClamAV definition updates (Pro, automatic)
+- the DNS threat guard, which switches the system DNS resolver (Pro)
+- only when you use them: expanding a short URL in the Link Safety sheet (the request
+  goes directly to the target URL), the Sensor and VPN features, and the npm signature check
+
+Purchase checkout happens on the website. The bundled MCP server is read‑only and speaks
+local stdio only (its own network behavior is described in the MCP section below). The last
+egress measurement in [`audit/`](audit/) was made on version 1.4.7 on 2026-08-29 and predates
+several of these paths.
+
+On Linux, the Server Edition makes no external connection by default other than OS package
+updates and one daily, signed, receive‑only, anonymous HTTPS GET to lafine.net for the kernel
+CVE map (on by default since 1.11.0; nothing about the host is sent; turn it off with
+`roamswitch server config set cve_kernel_map_updates_enabled false`). Other external
+communications, such as the npm signature check and notification webhooks, are on only when
+an operator sets them up.
 
 ## MCP server (for Claude Desktop / Claude Code)
 
@@ -174,7 +194,8 @@ resource‑exhaustion guard, Telegram/LINE/webhook alerts, and a 33‑item audit
 - **[`audit/`](audit/)** — a heavier, repeatable **Zero Telemetry egress audit**:
   it captures traffic and attributes it per-process to check that the only
   outbound connections from RoamSwitch's binaries are the four documented in
-  whitepaper §7. Latest run: [**PASS, 2026-08-29**](audit/RESULTS-2026-08-29.md).
+  whitepaper §7. Latest run: [**PASS, 2026-08-29**](audit/RESULTS-2026-08-29.md)
+  (RoamSwitch 1.4.7; later versions have more paths, listed in "Privacy" above).
   Reproduce with `./audit/rs-zerotel-audit.sh all`.
 - **[`test/docker/`](test/docker/)** — reproducible Docker test suite verifying all Linux
   defense mechanisms & penetration scenarios (Air-Gap enforcement, self-healing against
