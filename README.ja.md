@@ -86,8 +86,8 @@ RoamSwitch には **テレメトリがありません**。利用状況・診断�
 2026-08-29 の 1.4.7 で、これらの経路の一部より前のものです。
 
 Linux の Server Edition は、既定では、OS のパッケージ更新と、カーネル CVE マップのための
-1 日 1 回の署名つき・受信専用・匿名の HTTPS GET（lafine.net 宛て。1.11.0 から既定で有効。
-このホストの情報は送りません。`roamswitch server config set cve_kernel_map_updates_enabled false`
+署名つき・受信専用・匿名の HTTPS GET（lafine.net 宛て。マニフェストの確認は毎日、データ本体の取得は約 30 日に 1 回。
+1.11.0 から既定で有効。このホストの情報は送りません。`roamswitch server config set cve_kernel_map_updates_enabled false`
 で無効化できます）以外の外部通信をしません。npm の署名確認や通知の Webhook などの
 ほかの外部通信は、運用者が設定したときだけ有効になります。
 

@@ -90,8 +90,8 @@ egress measurement in [`audit/`](audit/) was made on version 1.4.7 on 2026-08-29
 several of these paths.
 
 On Linux, the Server Edition makes no external connection by default other than OS package
-updates and one daily, signed, receive‑only, anonymous HTTPS GET to lafine.net for the kernel
-CVE map (on by default since 1.11.0; nothing about the host is sent; turn it off with
+updates and a signed, receive‑only, anonymous HTTPS GET to lafine.net for the kernel CVE map (the manifest is
+checked daily and the data fetched about every 30 days; on by default since 1.11.0; nothing about the host is sent; turn it off with
 `roamswitch server config set cve_kernel_map_updates_enabled false`). Other external
 communications, such as the npm signature check and notification webhooks, are on only when
 an operator sets them up.
