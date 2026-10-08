@@ -167,8 +167,8 @@ Telegram / LINE / Webhook 通知、33 項目診断）。
   （[audit/RESULTS-LINUX-2026-09-02.ja.md](audit/RESULTS-LINUX-2026-09-02.ja.md)）を収録。
 - **RoamSwitch Business**（有償・準備中）は、組織向けにフリート集中管理・署名付きポリシー配布・
   署名済み社内 APT リポジトリ・SLA サポートを追加します: <https://roamswitch.com/business>。
-  macOS 版の **Pro Lifetime** をお持ちの方には、ご本人所有の Linux 端末で Business 機能を
-  無償付与します。
+  macOS 版の **Pro Lifetime** をお持ちの方には、Business の提供を始めた時点で、ご本人所有の Linux 端末で
+  Business 機能を無償で付与する方針です（現時点では未提供）。
 - **サポート:** 同じ [Issues](../../issues) をご利用ください。Linux の報告にはラベルを付け、
   `journalctl -u roamswitch -b` と `roamswitch status` の出力（要マスキング）を添付してください。
 
@@ -190,7 +190,7 @@ Telegram / LINE / Webhook 通知、33 項目診断）。
   設計書 §7 の4経路だけであることを確かめます。直近の実測：[**PASS・2026-08-29**](audit/RESULTS-2026-08-29.ja.md)
   （RoamSwitch 1.4.7。以降の版は経路が増えています。上の「プライバシー」を参照）。
   `./audit/rs-zerotel-audit.sh all` で再現できます。
-- **[`test/docker/`](test/docker/)** — Linux 版ホワイトペーパー（付録 C.2）の防衛機構・侵入テスト項目（Air-Gap 遮断、防火壁消去時の自己修復、ランサムウェア検知、/tmp noexec、Yama LSM、ホモグラフ検知など全 17 項目）を、**ホストを壊さず誰でも 100% 手元で安全に再現検証できる Docker スイート**：
+- **[`test/docker/`](test/docker/)** — Linux 版ホワイトペーパー（付録 C.2）の防衛機構のうち、公開スイートに含まれる PENT-1〜7 の 7 シナリオ（Air-Gap 遮断、防火壁消去時の自己修復、ランサムウェア検知、/tmp noexec、Yama LSM、ホモグラフ検知など。個々の判定は最大 17 件）を、**手元で再現して確かめられる Docker スイート**です。`--privileged` で動かすため、Yama の `ptrace_scope` など、カーネル全体で共有される設定はホストにも反映されます。使い捨ての環境で実行してください：
 
   ```sh
   cd test/docker

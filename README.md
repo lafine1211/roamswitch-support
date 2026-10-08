@@ -173,8 +173,9 @@ resource‑exhaustion guard, Telegram/LINE/webhook alerts, and a 33‑item audit
   ([audit/RESULTS-LINUX-2026-09-02.md](audit/RESULTS-LINUX-2026-09-02.md)).
 - **RoamSwitch Business** (planned, paid) adds fleet management, signed policy
   distribution, a signed internal APT repository and SLA support for organizations:
-  <https://roamswitch.com/business>. Holders of a macOS **Pro Lifetime** license get
-  Business features free on their own Linux machines.
+  <https://roamswitch.com/business>. The policy is that holders of a macOS
+  **Pro Lifetime** license get Business features free on their own Linux machines once the
+  Business tier becomes available (it is not offered yet).
 - **Support:** same [Issues](../../issues) tracker — please label Linux reports and
   attach `journalctl -u roamswitch -b` and `roamswitch status` output (redacted).
 
@@ -197,11 +198,13 @@ resource‑exhaustion guard, Telegram/LINE/webhook alerts, and a 33‑item audit
   whitepaper §7. Latest run: [**PASS, 2026-08-29**](audit/RESULTS-2026-08-29.md)
   (RoamSwitch 1.4.7; later versions have more paths, listed in "Privacy" above).
   Reproduce with `./audit/rs-zerotel-audit.sh all`.
-- **[`test/docker/`](test/docker/)** — reproducible Docker test suite verifying all Linux
-  defense mechanisms & penetration scenarios (Air-Gap enforcement, self-healing against
-  firewall clobbering, ransomware canary tampering, `/tmp` noexec, Yama LSM, homograph detection,
-  and credential leak detection — 17 items total). Run safely in an isolated container without
-  affecting the host:
+- **[`test/docker/`](test/docker/)** — reproducible Docker test suite for the seven public attack
+  scenarios (PENT-1 to 7: Air-Gap enforcement, self-healing against firewall clobbering,
+  `/tmp` noexec, Yama LSM, ransomware canary tampering, IP spoofing and SYN flood resistance,
+  homograph detection and credential leak detection; at most 17 individual checks). Network
+  and file changes stay inside the container's own network and mount namespaces, but the
+  container runs with `--privileged`, so settings shared by the whole kernel (for example
+  Yama's `ptrace_scope`) also change on the host. Run it in a disposable environment:
 
   ```sh
   cd test/docker
