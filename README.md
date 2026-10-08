@@ -72,7 +72,8 @@ Prices are shown in USD; checkout is billed in your local currency where support
 
 RoamSwitch performs **no external network communication of its own**: no analytics,
 no crash reporting, no license "phone home" beyond the one‑time purchase checkout on
-the website. The bundled MCP server is read‑only and speaks local stdio only. See
+the website. The bundled MCP server is read‑only and speaks local stdio only (its own network
+behavior is described in the MCP section below). See
 the [Privacy Policy](https://lafine.net/privacy.html).
 
 ## MCP server (for Claude Desktop / Claude Code)
@@ -84,12 +85,35 @@ your Mac's security posture. No lockdown/quarantine/eject actions are exposed.
 claude mcp add roamswitch /Applications/RoamSwitch.app/Contents/MacOS/RoamSwitchMCPServer
 ```
 
-15 tools, all read‑only: `get_security_report`, `get_exposed_ports`, `get_guard_status`,
-`audit_url_safety`, `audit_secrets`, `audit_security_logs`, `get_app_help`,
+31 tools, all read‑only: `get_security_report`, `verify_security_findings`, `get_exposed_ports`,
+`get_guard_status`, `audit_url_safety`, `audit_secrets`, `audit_security_logs`, `get_app_help`,
 `run_active_vuln_scan`, `run_package_cve_scan`, `run_package_cve_scan_languages`,
-`get_quarantine_status`, `get_canary_status`, `get_port_anomaly_incidents`,
-`get_runtime_threat_status`, `get_notification_history` — plus four `roamswitch://docs/*` resources. The incident‑state
+`run_package_lifecycle_script_scan`, `run_typosquat_scan`, `run_npm_audit_signatures`,
+`get_vulnerability_scan_history`, `get_quarantine_status`, `get_canary_status`,
+`get_ransomware_entropy_guard_status`, `get_ransomware_recovery_snapshots`,
+`get_forensic_evidence_bundles`, `get_honeytoken_status`, `get_browser_credential_watch_status`,
+`get_port_anomaly_incidents`, `get_runtime_threat_status`, `get_incident_timeline`,
+`search_exec_events`, `get_process_tree`, `get_network_history`, `get_sensor_audit_results`,
+`get_notification_history`, `audit_mcp_configs` — plus four `roamswitch://docs/*` resources. The incident‑state
 tools read only local state, so they still answer while RoamSwitch has air‑gapped the network.
+`verify_security_findings` re‑evaluates items of `get_security_report` (by `checkId`) against the
+current state and returns, per item, `stillPresent`, `resolved` or `inconclusive` with a
+language‑independent reason code, so you can confirm a fix actually worked. An item that could
+not be measured (missing permission, privileged helper not connected, Docker unreachable) is
+reported as `inconclusive`, never as safe. `host_firewall`, `network_stealth_mode`,
+`gateway_arp_lock`, `malware_scanning`, `dns_threat_guard` and `usb_zero_trust` are decided by
+RoamSwitch's in‑app settings, so they reflect those settings and are not a re‑measurement of the
+actual OS state. It is read‑only and neither repairs anything nor changes any setting.
+
+Network behavior of the MCP server: it does not connect to external hosts. On Mac, the
+diagnostic tools may send an ICMP ping to the gateway on your LAN to identify its MAC address
+(normally one, up to three if the MAC cannot be resolved). On Linux, evaluating a diagnosis
+(`get_security_report`, `verify_security_findings`) sends nothing to the LAN: the MAC address comes
+only from the ARP/neighbor tables and the in‑memory cache. (Linux sends a ping only in emergency
+restore and Sensor pairing.) The only tool
+that talks to an external host is `run_npm_audit_signatures` (the npm registry), which is opt‑in
+and Pro‑only. `run_active_vuln_scan` only probes `127.0.0.1`, and `get_exposed_ports` sends one
+HTTP `GET` to `127.0.0.1` per exposed port to check its headers.
 Setup for Claude Desktop, Claude Code, Codex CLI, OpenCode and Antigravity:
 <https://roamswitch.com/mcp-setup.html>.
 
@@ -103,14 +127,14 @@ A separate edition for **Linux** (systemd + nftables) reproduces the same zero�
 model — autonomous `nftables` profile switching by gateway MAC, ransomware behaviour
 detection with emergency Air‑Gap isolation, unauthorized‑USB / BadUSB guard, a VPN tunnel
 with an nftables kill switch (WireGuard / Tailscale), a passive link guard, local CVE
-matching, a 24‑item security audit, a full CLI (`roamswitch`, `man roamswitch`) and a
-read‑only MCP server with 19 tools.
+matching, a 27‑item security audit, a full CLI (`roamswitch`, `man roamswitch`) and a
+read‑only MCP server with 36 tools.
 
 There are two mutually exclusive packages: **Client Edition** (`roamswitch`, tray app +
-web UI, 24‑item audit) and **Server Edition** (`roamswitch-server`, fully headless for
+web UI, 27‑item audit) and **Server Edition** (`roamswitch-server`, fully headless for
 cloud VPS/data centers — inbound default drop with SSH lockout prevention, Critical Path
 FIM, eBPF intrusion detection via Falco or Tetragon with autonomous containment, a
-resource‑exhaustion guard, Telegram/LINE/webhook alerts, and a 30‑item audit).
+resource‑exhaustion guard, Telegram/LINE/webhook alerts, and a 33‑item audit).
 
 - **Free — "Community Edition"**, every feature unlocked, no activation. Proprietary
   freeware (bundled EULA); the source is not published.

@@ -71,7 +71,7 @@ Pro は永続ライセンス・アップデート無償。購入は **https://ro
 RoamSwitch は **アプリ自身による外部ネットワーク通信を一切行いません**。
 アナリティクス・クラッシュレポート・ライセンスの常時通信はありません
 （購入時の Web 決済のみ）。同梱の MCP サーバーは読み取り専用でローカル stdio のみを
-使用します。詳細は [プライバシーポリシー](https://lafine.net/privacy.html)。
+使用します（ネットワーク動作は下の MCP の節に記載）。詳細は [プライバシーポリシー](https://lafine.net/privacy.html)。
 
 ## MCP サーバー連携（Claude Desktop / Claude Code）
 
@@ -83,14 +83,38 @@ MCP 対応クライアントから Mac のセキュリティ状況を問い合�
 claude mcp add roamswitch /Applications/RoamSwitch.app/Contents/MacOS/RoamSwitchMCPServer
 ```
 
-提供ツール（全 15 種・すべて読み取り専用）: `get_security_report` / `get_exposed_ports` /
-`get_guard_status` / `audit_url_safety` / `audit_secrets` / `audit_security_logs` /
-`get_app_help` / `run_active_vuln_scan` / `run_package_cve_scan` /
-`run_package_cve_scan_languages` / `get_quarantine_status` / `get_canary_status` /
-`get_port_anomaly_incidents` / `get_runtime_threat_status` / `get_notification_history`。加えて `roamswitch://docs/*`
+提供ツール（全 31 種・すべて読み取り専用）: `get_security_report` / `verify_security_findings` /
+`get_exposed_ports` / `get_guard_status` / `audit_url_safety` / `audit_secrets` /
+`audit_security_logs` / `get_app_help` / `run_active_vuln_scan` / `run_package_cve_scan` /
+`run_package_cve_scan_languages` / `run_package_lifecycle_script_scan` / `run_typosquat_scan` /
+`run_npm_audit_signatures` / `get_vulnerability_scan_history` / `get_quarantine_status` /
+`get_canary_status` / `get_ransomware_entropy_guard_status` /
+`get_ransomware_recovery_snapshots` / `get_forensic_evidence_bundles` /
+`get_honeytoken_status` / `get_browser_credential_watch_status` /
+`get_port_anomaly_incidents` / `get_runtime_threat_status` / `get_incident_timeline` /
+`search_exec_events` / `get_process_tree` / `get_network_history` /
+`get_sensor_audit_results` / `get_notification_history` / `audit_mcp_configs`。加えて `roamswitch://docs/*`
 リソースを 4 種類提供します。インシデント状態系のツールはローカル状態のみを読むため、
 Air‑Gap 隔離中でも応答します。Claude Desktop / Claude Code / Codex CLI / OpenCode /
 Antigravity の設定手順は <https://roamswitch.com/mcp-setup.html>。
+
+`verify_security_findings` は、`get_security_report` の項目（`checkId`）を今の状態で再評価し、
+項目ごとに `stillPresent`（まだ該当）、`resolved`（解消、または設計上該当なし）、
+`inconclusive`（判定不能）のどれかと、言語に依存しない理由コードを返します。修正のあとに
+本当に直ったかを確かめるためのツールで、権限不足・特権ヘルパーの未接続・Docker に届かない
+などで測れなかった項目は、安全とは報告せず `inconclusive` にします。`host_firewall` /
+`network_stealth_mode` / `gateway_arp_lock` / `malware_scanning` / `dns_threat_guard` /
+`usb_zero_trust` は RoamSwitch のアプリ内設定の値で合否が決まるため、アプリ内設定の反映であって、
+OS の実状態の再測定ではありません。読み取り専用で、修復も設定変更もしません。
+
+MCP サーバーのネットワーク動作: 外部のホストには接続しません。ゲートウェイの MAC アドレスを
+調べるため、Mac の診断系のツールは LAN 内のゲートウェイに ICMP ping を送ることがあります
+（通常は1発、MAC が引けないときは最大3回）。Linux は、診断の評価（`get_security_report` /
+`verify_security_findings`）では LAN に何も送らず、MAC アドレスは ARP / neighbor テーブルと
+メモリ上のキャッシュだけから取ります（Linux で ping を送るのは緊急復旧と Sensor ペアリングだけです）。
+外部へ通信するのは、オプトインかつ Pro 限定の `run_npm_audit_signatures`（npm レジストリ）だけです。
+`run_active_vuln_scan` は `127.0.0.1` へのプローブのみで、`get_exposed_ports` は公開ポートごとに
+`127.0.0.1` へ HTTP `GET` を1回送ってヘッダを確認します。
 
 MCP サーバーと、その検知ロジックは **オープンソース**（MIT）です：
 [github.com/lafine1211/roamswitch-mcp](https://github.com/lafine1211/roamswitch-mcp)。
@@ -101,14 +125,14 @@ MCP サーバーと、その検知ロジックは **オープンソース**（MI
 **Linux**（systemd + nftables）向けの別エディションが、同じゼロトラスト思想を再現しています。
 ゲートウェイ MAC による `nftables` プロファイルの自律切替、ランサムウェアの挙動検知と
 緊急 Air‑Gap 隔離、不正 USB / BadUSB ガード、VPN トンネル＋nftables キルスイッチ
-（WireGuard / Tailscale）、受動リンクガード、ローカル CVE 照合、24 項目のセキュリティ診断、
-CLI（`roamswitch` / `man roamswitch`）、19 ツールの読み取り専用 MCP サーバーを同梱します。
+（WireGuard / Tailscale）、受動リンクガード、ローカル CVE 照合、27 項目のセキュリティ診断、
+CLI（`roamswitch` / `man roamswitch`）、36 ツールの読み取り専用 MCP サーバーを同梱します。
 
 パッケージは排他の 2 種類です。**Client Edition**（`roamswitch`。トレイアプリ＋Web UI、
-24 項目診断）と、**Server Edition**（`roamswitch-server`。クラウド VPS・データセンター向けの
+27 項目診断）と、**Server Edition**（`roamswitch-server`。クラウド VPS・データセンター向けの
 完全ヘッドレス版。インバウンド既定拒否＋SSH 締め出し防止、クリティカルパス FIM、
 Falco / Tetragon 連携の eBPF 侵入検知と自律隔離、リソース枯渇ガード、
-Telegram / LINE / Webhook 通知、30 項目診断）。
+Telegram / LINE / Webhook 通知、33 項目診断）。
 
 - **無償「Community Edition」**、全機能開放、ライセンス認証不要。プロプライエタリ・
   フリーウェア（同梱 EULA）。ソースは公開していません。
