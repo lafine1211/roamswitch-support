@@ -247,6 +247,10 @@ Client / Server Edition）とのペアリングコード方式(固定IP+短命�
 Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）。
 詳しくは <https://lafine.net/linux>。
 
+### 1.11.3
+
+- **修正: サーバー上の`docker build`が、ホスト全体のネットワーク遮断(Air-Gap)を起こす誤検知を直しました**。Dockerイメージのビルドの各ステップは、Falcoから見ると、`container.id`が`system.slice`のようなsystemdの単位名になり、イメージ名も空になります。以前は、これを本物のコンテナとして扱ったので、ビルドの`apt-get`が動かす大量の新しい実行ファイルが「Drop and execute new binary in container」(Critical)になり、繰り返しの回数が上限(3回)を超えると、ホスト全体のAir-Gapに進みました(実機で、公開サイトが止まるのを確認しました)。いまは、`container.id`が単位名で、コンテナのIDを含まない検知は、記録と通知だけにして、プロセスの隔離もAir-Gapも自動では行いません。繰り返しの回数にも数えません。本物のコンテナ(16進数のID)とホストの検知は、これまでどおりです。
+
 ### 1.11.2
 
 - **Server Editionのdeb・rpmに、PersonalSOCのコマンド(`personalsoc`)とPathScopeのコマンド(`pathscope`)を加えました**。AccessScopeのコマンド(`accessscope`)と合わせて3つです。どれもコマンドだけで、画面アプリとWebKitGTKは入りません。コマンド自体は、ネットワークの通信をしません。`personalsoc --llm`を指定したときだけ、運用者が選んだLLMのコマンドを通じて、診断の要約が外部のサービスに送られえます(既定はオフで、Zero Telemetryの対象外です)。`pathscope`のコマンドは、LLMを呼び出しません。同じ名前の単独のパッケージが入っているときは、置き換わります。

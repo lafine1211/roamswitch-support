@@ -256,6 +256,10 @@ setup instructions.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.11.3
+
+- **Fix: `docker build` on a server no longer triggers a false host-wide network Air-Gap.** To Falco, each step of a Docker image build reports a systemd unit name such as `system.slice` as the `container.id`, with an empty image name. RoamSwitch used to treat that as a real container, so the many new executables an `apt-get` in the build runs became "Drop and execute new binary in container" (Critical) events, and once the repeat count passed the limit (3) the host went into a full Air-Gap (observed on a production server: the public sites went down). An event whose `container.id` is only a unit name, with no container id in it, is now logged and notified, but no process isolation or Air-Gap is applied automatically, and it does not count toward the repeat limit. Real containers (hex ids) and host events are handled as before.
+
 ### 1.11.2
 
 - **The Server Edition .deb / .rpm now also carry the PersonalSOC command (`personalsoc`) and the PathScope command (`pathscope`).** Together with the AccessScope command (`accessscope`) that is three. They are commands only: no window apps and no WebKitGTK. The commands themselves do no network communication. Only when you pass `personalsoc --llm`, a summary of the diagnosis may be sent to an external service through the LLM command you chose (off by default; outside Zero Telemetry). The `pathscope` command does not call an LLM. If a standalone package of the same name is installed, this package replaces it.
