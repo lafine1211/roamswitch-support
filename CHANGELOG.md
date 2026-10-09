@@ -256,6 +256,10 @@ setup instructions.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.11.4
+
+- **Fix: the egress IP blocklist and the port-scan source block only took effect for five packets per minute.** Each rule used to be written as one rule, "log, rate-limit to 5 per minute, drop". In nftables, `limit rate` stops matching once the rate is exceeded, so only the first five packets per minute were dropped and the rest went through (measured: 25 of 30 packets passed). A retrying connection got through after a few seconds, so the block was only a delay. Each target now has two rules: a rate-limited log rule and an unconditional drop. This covers the egress block of malicious IPs (`roamswitch_egress_block`) and the block of port-scan sources (`roamswitch_portscan`).
+
 ### 1.11.3
 
 - **Fix: `docker build` on a server no longer triggers a false host-wide network Air-Gap.** To Falco, each step of a Docker image build reports a systemd unit name such as `system.slice` as the `container.id`, with an empty image name. RoamSwitch used to treat that as a real container, so the many new executables an `apt-get` in the build runs became "Drop and execute new binary in container" (Critical) events, and once the repeat count passed the limit (3) the host went into a full Air-Gap (observed on a production server: the public sites went down). An event whose `container.id` is only a unit name, with no container id in it, is now logged and notified, but no process isolation or Air-Gap is applied automatically, and it does not count toward the repeat limit. Real containers (hex ids) and host events are handled as before.
