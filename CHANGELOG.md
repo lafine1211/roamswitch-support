@@ -256,6 +256,10 @@ The full text of each item is in this file's git history.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.11.5
+
+- **Added: the app now points to a page that says what to do, and in what order, in the first hour after an isolation**. The site has a new page, "First Hour After an Incident" (<https://roamswitch.com/en/incident-first-hour.html>, in 10 languages). The client edition shows a link to it in the dialog that releases Air-Gap. The Server Edition adds one line with the page address to the end of the notifications sent while the host is still isolated (when it enters degraded mode, and when you acknowledge with ack), and to the output of `roamswitch server ebpf`. The page explains the order of checking, preserving, deciding, releasing and watching, and the commands for the evidence bundle, the timeline and the acknowledgement, for each environment. The link opens only when you click it. RoamSwitch never connects to this page by itself. There are no other changes.
+
 ### 1.11.4
 
 - **Fix: the egress IP blocklist and the port-scan source block only took effect for five packets per minute.** Each rule used to be written as one rule, "log, rate-limit to 5 per minute, drop". In nftables, `limit rate` stops matching once the rate is exceeded, so only the first five packets per minute were dropped and the rest went through (measured: 25 of 30 packets passed). A retrying connection got through after a few seconds, so the block was only a delay. Each target now has two rules: a rate-limited log rule and an unconditional drop. This covers the egress block of malicious IPs (`roamswitch_egress_block`) and the block of port-scan sources (`roamswitch_portscan`).
@@ -401,6 +405,10 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 ---
 
 ## RoamSwitch for Mac
+
+## 1.11.3
+
+- **Added: the screen that explains a network isolation (Air-Gap) now has a button to the "First Hour After an Incident" page**. The "ℹ️ Why you're isolated & how to release…" screen shows "See the first hour after an incident". Pressing it opens the page in the app's display language (10 languages) in your browser. The page explains the order of checking, preserving, deciding, releasing and watching, for the Mac, the Linux desktop edition and the Linux Server Edition. It opens only when you press the button; RoamSwitch never connects to this page by itself. There are no other changes. RoamSwitch itself reaches your Mac through the in-app update (Sparkle).
 
 ## 1.11.2
 
