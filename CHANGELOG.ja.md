@@ -102,6 +102,12 @@ Linux 版（別系列・1.x）でバージョン番号は独立しています�
 
 ## PersonalSOC
 
+### 0.1.10
+
+- **追加: 画面がない環境で、ログの自動収集への同意を、コマンドでできるようにしました(`personalsoc consent`)**。これまで同意は設定画面でしか変えられず、画面なしで入れたLinuxやServer Editionでは、`personalsoc scan`が出す「設定で同意してください」の行き先がありませんでした。`personalsoc consent`は、読み取る対象(この環境で有効な収集元とRoamSwitchのMCP)を見せ、`y`と答えるか`--yes`を付けたときだけ保存します。対話できない環境で`--yes`がなければ、保存せずに断ります。`--status`で状態を表示し、`--revoke`で取り消します(定期実行も止まります)。ほかの設定はそのまま保ちます。「同意するまで何も読まない」という点は変わりません。
+- **変更: `personalsoc scan`の同意のエラーに、`personalsoc consent`の案内を加えました**。
+- 追加・変更した文言は10言語です(日本語と英語以外は機械翻訳で、ネイティブの確認は受けていません)。
+
 ### 0.1.9
 
 - **追加: 依存パッケージの既知の脆弱性を、RoamSwitchから取り込みます**。RoamSwitchの`run_package_cve_scan_languages`に、RoamSwitchに登録済みのプロジェクトフォルダー(監視フォルダー)を照合させ、npm・PyPI・crates.ioなどの依存の既知の脆弱性を、報告に加えます。PersonalSOCからパスは渡さず、何も送りません。件数が多いので、CVSSの高い順に30件だけ出し、残りは件数で知らせます。フォルダーが未登録のときは、収集元の失敗にせず、その旨を注記します。
@@ -246,6 +252,10 @@ Client / Server Edition）とのペアリングコード方式(固定IP+短命�
 
 Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）。
 詳しくは <https://lafine.net/linux>。
+
+### 1.11.6
+
+- **同梱のPersonalSOCを0.1.10にしました**。画面がない環境(Server Editionを含む)でも、`personalsoc consent`で、コマンドだけでログの自動収集に同意できます(詳しくは、PersonalSOCの0.1.10の項)。このほかの変更はありません。
 
 ### 1.11.5
 
@@ -392,6 +402,10 @@ Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）
 ---
 
 ## RoamSwitch for Mac
+
+## 1.11.4
+
+- **同梱のPersonalSOCを0.1.10にしました**。コマンドラインから`personalsoc consent`で、ログの自動収集への同意を設定できます(詳しくは、PersonalSOCの0.1.10の項)。PersonalSOCは、アプリの中から更新できます(設定の「アップデート」)。RoamSwitch本体は、お使いのMacにアプリ内のアップデート(Sparkle)で届きます。このほかの変更はありません。
 
 ## 1.11.3
 

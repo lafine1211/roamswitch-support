@@ -102,6 +102,12 @@ The contents of these releases, grouped by theme. The full text of each entry is
 
 ## PersonalSOC
 
+### 0.1.10
+
+- **Added: consent to automatic log collection can now be given from the command line (`personalsoc consent`), for environments without the app window**. Until now consent could only be changed in the settings screen, so on Linux installed without a screen, and on the Server Edition, the "consent in Settings" that `personalsoc scan` asks for had nowhere to go. `personalsoc consent` lists what will be read (the sources enabled in this environment and the RoamSwitch MCP) and saves only when you answer `y` or pass `--yes`. Where it cannot ask and there is no `--yes`, it refuses and saves nothing. `--status` shows the current state and `--revoke` withdraws consent (scheduled runs stop too). Your other settings are kept as they are. Nothing is read until you consent, as before.
+- **Changed: the consent error of `personalsoc scan` now points to `personalsoc consent`**.
+- The new and changed strings are in 10 languages (other than Japanese and English they are machine translations and have not been checked by native speakers).
+
 ### 0.1.9
 
 - **Added: known vulnerabilities in dependencies are imported through RoamSwitch.** PersonalSOC has RoamSwitch's `run_package_cve_scan_languages` match the project folders registered in RoamSwitch (its watched folders) and adds the known vulnerabilities of npm, PyPI, crates.io and other dependencies to the report. PersonalSOC passes no path and sends nothing. Because there can be many, only the 30 with the highest CVSS are listed and the rest is reported as a count. If no folder is registered, this is noted instead of being counted as a source failure.
@@ -256,6 +262,10 @@ The full text of each item is in this file's git history.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.11.6
+
+- **The bundled PersonalSOC is now 0.1.10**. Even without the app window (including the Server Edition), `personalsoc consent` lets you consent to automatic log collection from the command line alone (see PersonalSOC 0.1.10). There are no other changes.
+
 ### 1.11.5
 
 - **Added: the app now points to a page that says what to do, and in what order, in the first hour after an isolation**. The site has a new page, "First Hour After an Incident" (<https://roamswitch.com/en/incident-first-hour.html>, in 10 languages). The client edition shows a link to it in the dialog that releases Air-Gap. The Server Edition adds one line with the page address to the end of the notifications sent while the host is still isolated (when it enters degraded mode, and when you acknowledge with ack), and to the output of `roamswitch server ebpf`. The page explains the order of checking, preserving, deciding, releasing and watching, and the commands for the evidence bundle, the timeline and the acknowledgement, for each environment. The link opens only when you click it. RoamSwitch never connects to this page by itself. There are no other changes.
@@ -405,6 +415,10 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 ---
 
 ## RoamSwitch for Mac
+
+## 1.11.4
+
+- **The bundled PersonalSOC is now 0.1.10**. From the command line, `personalsoc consent` sets consent to automatic log collection (see PersonalSOC 0.1.10). PersonalSOC can update itself from inside the app (Settings > Update). RoamSwitch itself reaches your Mac through the in-app update (Sparkle). There are no other changes.
 
 ## 1.11.3
 
