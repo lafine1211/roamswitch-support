@@ -90,6 +90,10 @@ The contents of these releases, grouped by theme. The full text of each entry is
 
 ## PersonalSOC
 
+### 0.1.12
+
+- **Improved: the message for a log that could not be read now includes an example with `sudo`.** Before, for a log that needs more privileges (authentication, web server, auditd), the message only said "cannot read with this privilege (root or the adm group is required)" and left you wondering what to do. Now it also says "Run it with sudo, for example: `sudo personalsoc scan --report`". The text is in 10 languages.
+
 ### 0.1.11
 
 - **Changed: the "consent" to reading logs automatically is gone.** Until now, neither `personalsoc scan` nor the "Check status" button read anything until you ticked the consent in Settings (or ran `personalsoc consent` where there is no screen). Whether you run it by hand or on a schedule, it was a step with no substance, so it was removed. `personalsoc scan` now reads without consent. The `personalsoc consent` command and the consent checkbox in Settings are gone. Scheduled runs work with the "Check automatically on a schedule" switch alone. A `consented` entry in an old settings file is read and discarded. Content is handed to an LLM only when you pass `--llm` (in the app, when you turn on LLM integration), as before. It reads only the fixed sources listed in the README and stays read-only.
@@ -250,6 +254,11 @@ The full text of each item is in this file's git history.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.11.9
+
+- **Fixed: the app's own autostart entry was reported as suspicious.** The autostart watch (added in 1.11.8) judged the link that `systemctl --user enable` creates (`~/.config/systemd/user/default.target.wants/roamswitch-app.service`) as "runs a program from a temporary or hidden folder" only because its target is inside a hidden folder (`.config`). In a real virtual machine, installing and starting the RoamSwitch app made it report its own service as a "suspicious autostart entry". Now a link that points into one of the places where systemd keeps units (`/etc/systemd`, `/usr/lib/systemd`, `/lib/systemd`, a user's `~/.config/systemd/user`) is judged by reading the unit and its `ExecStart`. Links to anywhere else are judged by the path they point to, as before.
+- **Bundled PersonalSOC is now 0.1.12.** The message for a log that could not be read now includes an example with `sudo` (see the PersonalSOC 0.1.12 entry).
+
 ### 1.11.8
 
 - **Added: an "admin-only" mode for shared machines** (off by default). Until now, anyone with a local login session could, even as an ordinary user, do things that affect the whole machine, such as changing the security level or engaging the Air-Gap. On a machine used by several people, another user could loosen the firewall. Only when the operator creates `/etc/roamswitch/admin-only` are changes to the firewall, DNS, VPN, USB, kernel and mount hardening, radios, Sensor trust and the like limited to root or users in the sudo, wheel or roamswitch group. The file counts only when it is owned by root and not writable by others (so a user cannot create it and switch the mode themselves). Actions tied to your own files and processes (isolation, kill, freeze, scans) work as before. The refusal messages are in 10 languages (the CLI in Japanese and English). It is off by default because a setup where an ordinary, non-admin user runs the app on their own PC would stop working.
@@ -367,6 +376,10 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 ---
 
 ## RoamSwitch for Mac
+
+## 1.11.6
+
+- **Bundled PersonalSOC is now 0.1.12.** The message for a log that could not be read now includes an example with `sudo` (see the PersonalSOC 0.1.12 entry). PersonalSOC can be updated from inside the app (Settings, "Updates"). RoamSwitch itself reaches your Mac through the in-app update (Sparkle). There are no other changes.
 
 ## 1.11.5
 
