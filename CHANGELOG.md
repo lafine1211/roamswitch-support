@@ -90,6 +90,12 @@ The contents of these releases, grouped by theme. The full text of each entry is
 
 ## PersonalSOC
 
+### 0.1.11
+
+- **Changed: the "consent" to reading logs automatically is gone.** Until now, neither `personalsoc scan` nor the "Check status" button read anything until you ticked the consent in Settings (or ran `personalsoc consent` where there is no screen). Whether you run it by hand or on a schedule, it was a step with no substance, so it was removed. `personalsoc scan` now reads without consent. The `personalsoc consent` command and the consent checkbox in Settings are gone. Scheduled runs work with the "Check automatically on a schedule" switch alone. A `consented` entry in an old settings file is read and discarded. Content is handed to an LLM only when you pass `--llm` (in the app, when you turn on LLM integration), as before. It reads only the fixed sources listed in the README and stays read-only.
+- **Note: logs that only root can read (authentication, web server, auditd) are read by running with `sudo`.** PersonalSOC does not raise its own privileges. Without `sudo`, a log that cannot be read is reported as unreadable, and a result of "no detections" then is not proof of safety. This is now in the README. I checked it on a Debian-like host, comparing an ordinary user with `sudo`.
+- The text is in 10 languages (the dictionary was regenerated).
+
 ### 0.1.10
 
 - **Added: consent to automatic log collection can now be given from the command line (`personalsoc consent`), for environments without the app window**. Until now consent could only be changed in the settings screen, so on Linux installed without a screen, and on the Server Edition, the "consent in Settings" that `personalsoc scan` asks for had nowhere to go. `personalsoc consent` lists what will be read (the sources enabled in this environment and the RoamSwitch MCP) and saves only when you answer `y` or pass `--yes`. Where it cannot ask and there is no `--yes`, it refuses and saves nothing. `--status` shows the current state and `--revoke` withdraws consent (scheduled runs stop too). Your other settings are kept as they are. Nothing is read until you consent, as before.
@@ -108,11 +114,7 @@ The contents of these releases, grouped by theme. The full text of each entry is
 - **Fixed: the third-party license list was rebuilt.** Dependencies such as the updater were missing from it. Only permissive licenses (MIT, Apache-2.0, ISC, BSD, Zlib) were added.
 - The added texts are in 10 languages (8 of them machine-translated and not reviewed by native speakers).
 
-### 0.1.8
-
-- **Fixed: the details of a CVE (known vulnerability) finding now show the package name and version.** The report table shows only the details, not the finding's title, so it was not clear which package a finding was about.
-
-### 0.1.0 - 0.1.7 (summarized)
+### 0.1.0 - 0.1.8 (summarized)
 
 - **0.1.0**: first release of "PersonalSOC", a personal security operations center that gathers this device's logs and defense status, read-only, into a report. Findings, sources and IOCs are shown with charts; the UI has 10 languages and follows the OS language. "Check status" has your chosen LLM CLI (opencode, claude, codex, agy) investigate autonomously with read-only tools and write an audit report. LLM integration is optional and off by default. PersonalSOC itself has no network permission.
 - **0.1.1**: in-app updater (Mac), which fetches version information only when you press the button and verifies the signature before installing. Removed the fixed "Response" section from reports and fixed chart legends and axis labels overlapping in English and other languages.
@@ -124,6 +126,7 @@ The contents of these releases, grouped by theme. The full text of each entry is
 - **0.1.7**: on Linux, the drop-down lists (update interval, LLM choice, display language) had a white background, so their text could not be read in dark mode; fixed.
 
 ---
+- **0.1.8**: the details of a CVE (known vulnerability) finding now show the package name and version. The report table shows only the details, not the finding's title, so it was not clear which package a finding was about.
 
 ## RoamSwitch Sensor
 
@@ -252,6 +255,7 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 - **Added: an "admin-only" mode for shared machines** (off by default). Until now, anyone with a local login session could, even as an ordinary user, do things that affect the whole machine, such as changing the security level or engaging the Air-Gap. On a machine used by several people, another user could loosen the firewall. Only when the operator creates `/etc/roamswitch/admin-only` are changes to the firewall, DNS, VPN, USB, kernel and mount hardening, radios, Sensor trust and the like limited to root or users in the sudo, wheel or roamswitch group. The file counts only when it is owned by root and not writable by others (so a user cannot create it and switch the mode themselves). Actions tied to your own files and processes (isolation, kill, freeze, scans) work as before. The refusal messages are in 10 languages (the CLI in Japanese and English). It is off by default because a setup where an ordinary, non-admin user runs the app on their own PC would stop working.
 - **Fix: the mutating methods of RoamSwitch OS are now limited to root or members of wheel.** Among the `os_hardening_*` methods, destroying files (shred, rollback restore), blocking the network (lockdown), rewriting where logs are sent (SIEM output) and switching Tor or DNS could be run as root with only a `confirmed` flag written by the request itself and a local login session. The wheel check that SecureBoot enrollment and TPM2 LUKS setup already did now applies to these too. Reading state and dry runs work as before. The app edition (apt, rpm, AUR) does not enable `os_hardening_integration`, so it is not affected.
 - **The bundled AccessScope is now 0.3.2.** Its terminal output was tidied (see the AccessScope 0.3.2 entry).
+- **The bundled PersonalSOC is now 0.1.11.** The "consent" to reading logs automatically is gone (see the PersonalSOC 0.1.11 entry).
 - The Japanese text in the app now uses one name for the guide page, "インシデント発生後の最初の1時間".
 - The build (CI) was hardened. Third-party Actions are pinned to commit SHAs instead of tags that can move, and write permission (`contents: write`) is given only to the job that publishes the release. There is no change you can see.
 
@@ -373,6 +377,7 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
   - Uninstalling (deleting the saved data) and changing Sensor trust (deciding who may audit this Mac) are tied to the administrator password in the same way. Releasing an isolation is not, because the automatic containment of ransomware and ARP spoofing also releases it when nobody is there.
   The path where you enter the password and it succeeds needs on-screen operation, so it was not checked on a real Mac. The added texts were machine-translated into 9 languages (not yet checked by native speakers).
 - **The bundled AccessScope is now 0.3.2** (its terminal output was tidied; see the AccessScope 0.3.2 entry). AccessScope can be updated from inside the app (Settings, "Update").
+- **The bundled PersonalSOC is now 0.1.11.** The "consent" to reading logs automatically is gone (see the PersonalSOC 0.1.11 entry). PersonalSOC can also be updated from inside the app (Settings, "Update").
 - The button on the Air-Gap guide screen now reads "インシデント発生後の最初の1時間を見る" in Japanese, matching the page name.
 
 ## 1.11.4
