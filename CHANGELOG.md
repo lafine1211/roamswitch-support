@@ -254,6 +254,11 @@ The full text of each item is in this file's git history.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.11.11
+
+- **Fixed: RoamSwitch's own notification history file could be flagged as a "reverse shell".** The notification history, the incident timeline, the evidence bundles, the execution log and the alert queue quote what was found (a command line, a path). A quote is not a program, but scanned as a file it matches the very signature it describes. For example, after a notification about a reverse-shell autostart entry, the `notification_history.json` that held it was itself reported as "suspected malware (WebShell-ReverseShell)". Reproduced in a real virtual machine on the published version and gone on the fixed one. Only data files under `/var/lib/roamswitch` and `/run/roamswitch` are skipped; executables there are still inspected.
+- Mac is not affected: it checks files by signature only in the folders it watches (Downloads, Desktop, Documents), and RoamSwitch's records are outside them.
+
 ### 1.11.10
 
 - **Fixed: when the gateway's entry briefly went missing, the ARP spoofing confirmation screen could show "attacker" and "legitimate router" the wrong way round.** When the gateway's entry disappears from the kernel's ARP table (the "pin the gateway" setting was turned off, an interface reset, expiry), the reference MAC address RoamSwitch remembered disappeared with it. If a forged reply arrived in that gap, the forged address was learned as the reference, and when the real router appeared later, the real one was reported as the sudden change. In a real virtual machine, the isolation confirmation screen showed the two the wrong way round. Now the earlier reference is kept while the gateway is missing from the table; a fresh reference is made only when a move to another network is confirmed.
