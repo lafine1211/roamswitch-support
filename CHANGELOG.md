@@ -14,7 +14,7 @@ A security diagnosis tool for access logs. It is a separate app (Apache-2.0): th
 
 ### 0.3.2
 
-- **Changed: the terminal output was tidied.** It no longer lists every log it read one by one. It counts them per kind (for example "Read 47 logs (Web access log 38, ...)") and names only the logs that could not be read. Add `--list-sources` to list them all. Findings that may have succeeded (a login after brute force, a web-shell-like request that got a success response, a login from an unfamiliar source) are named by number on a "Check first" line above the list. A note that applied to several findings is now printed once as a footnote (※1) at the end. What is detected and how it is judged are unchanged. The text is in 10 languages.
+- **Changed: the terminal output was tidied.** It no longer lists every log it read one by one. It counts them per kind (for example "Read 47 logs (Web access log 38, ...)") and names only the logs that could not be read. Add `--list-sources` to list them all. Findings that may have succeeded (a login after brute force, a web-shell-like request that got a success response, a login from an unfamiliar source) are named by number on a "Check first" line above the list. A note that applied to several findings is now printed once as a footnote (※1) at the end. Findings of the same attack chain are listed under one heading, one line per IP. The Markdown report (`--report`) opens with a table of all findings (number, severity / confidence, title, count) and the "Check first" line, and a long list of logs it read is counted per kind in the same way. What is detected and how it is judged are unchanged. The text is in 10 languages.
 
 ### 0.3.1
 
