@@ -243,6 +243,15 @@ The full text of each item is in this file's git history.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.11.7
+
+- **Added: recovering files from ransomware (snapshots).** The client package now includes `roamswitch-ransomware-rollback` and the resident service `roamswitch-ransomware-rollback-watch.service` (not in the Server Edition). It takes snapshots of btrfs subvolumes and LVM logical volumes and copies only the files you need to a separate place, without overwriting the current files. By default it takes a pre-damage snapshot every 6 hours regardless of any damage (4 generations on btrfs, 2 on LVM), and also takes one when a burst of writes or canary tampering is detected (after a detection-time snapshot, periodic snapshots pause for 7 days so that already-encrypted data cannot push out the last clean generation). The full rollback, `restore`, refuses a detection-time snapshot, which contains encrypted files, without `--accept-tampered`. The screen is "Ransomware Recovery" in the Incident Response tab, in 10 languages. The service is enabled on first install, restarted on upgrade and stopped on removal. It is documented in section 24 of the manual and on the CLI page.
+- **Changed: ransomware detection by write entropy now also cuts the network** (client edition). Until now it only froze the offending process with `SIGSTOP` and notified you. The isolation policy already defined a `RansomwareEntropyBurst` trigger, but nothing called it, and in 1.11.1 the README, intro text and knowledge base were rewritten to say "does not cut the network" to match the implementation. It now engages the Air-Gap after the freeze. It is treated like canary tampering, a high-confidence trigger: a timer alone never releases it silently; it lifts only once the cause is verified gone, or when you release it from the tray menu or with `roamswitch emergency-restore`. The notification now says the network was cut as well (10 languages). On a real kernel (Ubuntu, fanotify) I checked the whole chain from a 40-file write: the freeze, the isolation record, the outbound block and the evidence bundle.
+- **Added: suspicious autostart detection** (client edition; `persistence_watch_enabled`, on by default, notify-only). It checks autostart entries that were newly created or rewritten: `/etc/systemd/system`, cron (`/etc/cron.d`, `/etc/cron.{hourly,daily,weekly,monthly}`, `/etc/crontab`, `/var/spool/cron`), `/etc/xdg/autostart`, and each user's `~/.config/systemd/user` and `~/.config/autostart`. It notifies only about entries that look like how malware persists: a reverse shell, decoding data and running it directly, downloading and running it directly, or running a program from a temporary or hidden folder. Ordinary-looking entries are only logged. It corresponds to the Mac app's `PersistenceMonitorGuard`. The switch and the notification text are in 10 languages. On a real kernel, a suspicious systemd unit was detected within 10 seconds of being placed.
+- **Fix:** the description of the diagnostic item for entropy-based ransomware detection still said a 7.75 threshold in French, Spanish, Italian and Portuguese only, instead of the implemented 7.92.
+- The texts describing the write-entropy detection (app intro, knowledge base, diagnostic item) now say both the freeze and the network cut.
+
+
 ### 1.11.6
 
 - **The bundled PersonalSOC is now 0.1.10**. Even without the app window (including the Server Edition), `personalsoc consent` lets you consent to automatic log collection from the command line alone (see PersonalSOC 0.1.10). There are no other changes.
@@ -251,11 +260,7 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 
 - **Added: the app now points to a page that says what to do, and in what order, in the first hour after an isolation**. The site has a new page, "First Hour After an Incident" (<https://roamswitch.com/en/incident-first-hour.html>, in 10 languages). The client edition shows a link to it in the dialog that releases Air-Gap. The Server Edition adds one line with the page address to the end of the notifications sent while the host is still isolated (when it enters degraded mode, and when you acknowledge with ack), and to the output of `roamswitch server ebpf`. The page explains the order of checking, preserving, deciding, releasing and watching, and the commands for the evidence bundle, the timeline and the acknowledgement, for each environment. The link opens only when you click it. RoamSwitch never connects to this page by itself. There are no other changes.
 
-### 1.11.4
-
-- **Fix: the egress IP blocklist and the port-scan source block only took effect for five packets per minute.** Each rule used to be written as one rule, "log, rate-limit to 5 per minute, drop". In nftables, `limit rate` stops matching once the rate is exceeded, so only the first five packets per minute were dropped and the rest went through (measured: 25 of 30 packets passed). A retrying connection got through after a few seconds, so the block was only a delay. Each target now has two rules: a rate-limited log rule and an unconditional drop. This covers the egress block of malicious IPs (`roamswitch_egress_block`) and the block of port-scan sources (`roamswitch_portscan`).
-
-### 1.10.0 - 1.11.3 (summarized)
+### 1.10.0 - 1.11.4 (summarized)
 
 Everything in these releases, grouped by topic (Client and Server Edition unless marked). The full text of each entry is in the git history of this file.
 
@@ -296,6 +301,8 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 - **Ransomware detection and notifications** (1.10.18): a stale verdict left over when a process ID (PID) was reused could freeze a legitimate `cp`; the process start time is now checked as well. A process released with `roamswitch frozen resume` is not frozen again for 600 seconds. The notification for a failed isolation shows the reason in 10 languages when it was refused for lack of a login session. `roamswitch forward status` puts a translated heading before the reason a forwarding target was refused.
 - **OS Hardening** (1.10.18): fixed the "do not use Secure Boot" checkbox missing when re-enrolling TPM2, and the contradictory fingerprint (Validity 138a:0090) guidance.
 - **Bundled PersonalSOC** (1.10.16 to 1.10.20): 0.1.2 to 0.1.5 in turn (see each PersonalSOC release). In 1.10.20, Settings is split into tabs by function and the message after a report is created is shorter (0.1.5).
+
+- **Network block fix** (1.11.4): the egress block of malicious IPs (`roamswitch_egress_block`) and the block of port-scan sources (`roamswitch_portscan`) only took effect for five packets per minute. Each rule used to be written as one rule, "log, rate-limit to 5 per minute, drop". In nftables, `limit rate` stops matching once the rate is exceeded, so only the first five packets per minute were dropped and the rest went through (measured: 25 of 30 packets passed). A retrying connection got through after a few seconds, so the block was only a delay. Each target now has two rules: a rate-limited log rule and an unconditional drop.
 
 ### 1.9.39 - 1.9.94 (summarized)
 
