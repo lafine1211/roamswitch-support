@@ -254,6 +254,11 @@ The full text of each item is in this file's git history.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.11.10
+
+- **Fixed: when the gateway's entry briefly went missing, the ARP spoofing confirmation screen could show "attacker" and "legitimate router" the wrong way round.** When the gateway's entry disappears from the kernel's ARP table (the "pin the gateway" setting was turned off, an interface reset, expiry), the reference MAC address RoamSwitch remembered disappeared with it. If a forged reply arrived in that gap, the forged address was learned as the reference, and when the real router appeared later, the real one was reported as the sudden change. In a real virtual machine, the isolation confirmation screen showed the two the wrong way round. Now the earlier reference is kept while the gateway is missing from the table; a fresh reference is made only when a move to another network is confirmed.
+- **Changed: the labels "Attacker MAC" and "Legitimate router MAC" on the ARP spoofing confirmation screen are now "MAC now answering (suspected spoof)" and "Earlier gateway MAC (the reference)".** The reference is not always known to be right (10 languages).
+
 ### 1.11.9
 
 - **Fixed: the app's own autostart entry was reported as suspicious.** The autostart watch (added in 1.11.8) judged the link that `systemctl --user enable` creates (`~/.config/systemd/user/default.target.wants/roamswitch-app.service`) as "runs a program from a temporary or hidden folder" only because its target is inside a hidden folder (`.config`). In a real virtual machine, installing and starting the RoamSwitch app made it report its own service as a "suspicious autostart entry". Now a link that points into one of the places where systemd keeps units (`/etc/systemd`, `/usr/lib/systemd`, `/lib/systemd`, a user's `~/.config/systemd/user`) is judged by reading the unit and its `ExecStart`. Links to anywhere else are judged by the path they point to, as before.
