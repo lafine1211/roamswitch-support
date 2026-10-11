@@ -12,6 +12,10 @@ independently. Older releases are summarized in ranges.
 
 A security diagnosis tool for access logs. It is a separate app (Apache-2.0): the Server Edition .deb / .rpm packages carry only the command (`accessscope`; from 1.11.2 they also carry the PersonalSOC and PathScope commands); the Linux client edition and the Mac app carry the command and a window app.
 
+### 0.3.2
+
+- **Changed: the terminal output was tidied.** It no longer lists every log it read one by one. It counts them per kind (for example "Read 47 logs (Web access log 38, ...)") and names only the logs that could not be read. Add `--list-sources` to list them all. Findings that may have succeeded (a login after brute force, a web-shell-like request that got a success response, a login from an unfamiliar source) are named by number on a "Check first" line above the list. A note that applied to several findings is now printed once as a footnote (※1) at the end. What is detected and how it is judged are unchanged. The text is in 10 languages.
+
 ### 0.3.1
 
 - **Fix: the terms for "severity" and "confidence" are now consistent in the Korean and Chinese screens and reports.** In Korean, confidence is now "확신도" throughout (the old "신뢰도" was easy to confuse with "신뢰" in "trusted proxy"). In Simplified and Traditional Chinese, "严重度/嚴重度" is now "严重程度/嚴重程度", the confidence level "有力" is "较可能/較可能", and the severity level "中等" is "中". What is detected and how it is judged do not change.
@@ -243,6 +247,14 @@ The full text of each item is in this file's git history.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.11.8
+
+- **Added: an "admin-only" mode for shared machines** (off by default). Until now, anyone with a local login session could, even as an ordinary user, do things that affect the whole machine, such as changing the security level or engaging the Air-Gap. On a machine used by several people, another user could loosen the firewall. Only when the operator creates `/etc/roamswitch/admin-only` are changes to the firewall, DNS, VPN, USB, kernel and mount hardening, radios, Sensor trust and the like limited to root or users in the sudo, wheel or roamswitch group. The file counts only when it is owned by root and not writable by others (so a user cannot create it and switch the mode themselves). Actions tied to your own files and processes (isolation, kill, freeze, scans) work as before. The refusal messages are in 10 languages (the CLI in Japanese and English). It is off by default because a setup where an ordinary, non-admin user runs the app on their own PC would stop working.
+- **Fix: the mutating methods of RoamSwitch OS are now limited to root or members of wheel.** Among the `os_hardening_*` methods, destroying files (shred, rollback restore), blocking the network (lockdown), rewriting where logs are sent (SIEM output) and switching Tor or DNS could be run as root with only a `confirmed` flag written by the request itself and a local login session. The wheel check that SecureBoot enrollment and TPM2 LUKS setup already did now applies to these too. Reading state and dry runs work as before. The app edition (apt, rpm, AUR) does not enable `os_hardening_integration`, so it is not affected.
+- **The bundled AccessScope is now 0.3.2.** Its terminal output was tidied (see the AccessScope 0.3.2 entry).
+- The Japanese text in the app now uses one name for the guide page, "インシデント発生後の最初の1時間".
+- The build (CI) was hardened. Third-party Actions are pinned to commit SHAs instead of tags that can move, and write permission (`contents: write`) is given only to the job that publishes the release. There is no change you can see.
+
 ### 1.11.7
 
 - **Added: recovering files from ransomware (snapshots).** The client package now includes `roamswitch-ransomware-rollback` and the resident service `roamswitch-ransomware-rollback-watch.service` (not in the Server Edition). It takes snapshots of btrfs subvolumes and LVM logical volumes and copies only the files you need to a separate place, without overwriting the current files. By default it takes a pre-damage snapshot every 6 hours regardless of any damage (4 generations on btrfs, 2 on LVM), and also takes one when a burst of writes or canary tampering is detected (after a detection-time snapshot, periodic snapshots pause for 7 days so that already-encrypted data cannot push out the last clean generation). The full rollback, `restore`, refuses a detection-time snapshot, which contains encrypted files, without `--accept-tampered`. The screen is "Ransomware Recovery" in the Incident Response tab, in 10 languages. The service is enabled on first install, restarted on upgrade and stopped on removal. It is documented in section 24 of the manual and on the CLI page.
@@ -256,11 +268,7 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 
 - **The bundled PersonalSOC is now 0.1.10**. Even without the app window (including the Server Edition), `personalsoc consent` lets you consent to automatic log collection from the command line alone (see PersonalSOC 0.1.10). There are no other changes.
 
-### 1.11.5
-
-- **Added: the app now points to a page that says what to do, and in what order, in the first hour after an isolation**. The site has a new page, "First Hour After an Incident" (<https://roamswitch.com/en/incident-first-hour.html>, in 10 languages). The client edition shows a link to it in the dialog that releases Air-Gap. The Server Edition adds one line with the page address to the end of the notifications sent while the host is still isolated (when it enters degraded mode, and when you acknowledge with ack), and to the output of `roamswitch server ebpf`. The page explains the order of checking, preserving, deciding, releasing and watching, and the commands for the evidence bundle, the timeline and the acknowledgement, for each environment. The link opens only when you click it. RoamSwitch never connects to this page by itself. There are no other changes.
-
-### 1.10.0 - 1.11.4 (summarized)
+### 1.10.0 - 1.11.5 (summarized)
 
 Everything in these releases, grouped by topic (Client and Server Edition unless marked). The full text of each entry is in the git history of this file.
 
@@ -303,6 +311,8 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 - **Bundled PersonalSOC** (1.10.16 to 1.10.20): 0.1.2 to 0.1.5 in turn (see each PersonalSOC release). In 1.10.20, Settings is split into tabs by function and the message after a report is created is shorter (0.1.5).
 
 - **Network block fix** (1.11.4): the egress block of malicious IPs (`roamswitch_egress_block`) and the block of port-scan sources (`roamswitch_portscan`) only took effect for five packets per minute. Each rule used to be written as one rule, "log, rate-limit to 5 per minute, drop". In nftables, `limit rate` stops matching once the rate is exceeded, so only the first five packets per minute were dropped and the rest went through (measured: 25 of 30 packets passed). A retrying connection got through after a few seconds, so the block was only a delay. Each target now has two rules: a rate-limited log rule and an unconditional drop.
+
+- **Pointer to the first-hour page after an isolation** (1.11.5): the site has a new page, "First Hour After an Incident" (<https://roamswitch.com/en/incident-first-hour.html>, in 10 languages), and the app points to it. The client edition shows a link in the dialog that releases Air-Gap. The Server Edition adds one line with the page address to the end of the notifications sent while the host is still isolated (when it enters degraded mode, and when you acknowledge with ack), and to the output of `roamswitch server ebpf`. The link opens only when you click it; RoamSwitch never connects to this page by itself.
 
 ### 1.9.39 - 1.9.94 (summarized)
 
@@ -353,6 +363,17 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 ---
 
 ## RoamSwitch for Mac
+
+## 1.11.5
+
+- **Fix: four weaknesses in the helper that runs with administrator rights.**
+  - When restoring a snapshot, the helper no longer reads files that are not the user's own as root and hands them over. An ordinary user can create, in their own home, a hard link to a file only root can read (for example `/private/etc/master.passwd`). A hard link is not a symbolic link, so `O_NOFOLLOW` did not stop it, and restoring from a snapshot taken afterwards copied the contents that root had opened into the user's folder. The helper now refuses unless the opened file is owned by the console user.
+  - Unmounting a snapshot browse mount could unmount an unrelated mount if the name contained a link or `..`. The shape of the name is now matched exactly, and before unmounting the helper also checks that it is a real directory owned by root.
+  - Pinning the VPN tools (copying a tool from Homebrew's user-writable location to a root-only place so that it runs as root from then on) is now tied to entering the administrator password. Before, the only confirmation was a dialog in the app and the helper did not check that the person was there. A hijacked app could use this as a foothold to run an arbitrary tool as root.
+  - Uninstalling (deleting the saved data) and changing Sensor trust (deciding who may audit this Mac) are tied to the administrator password in the same way. Releasing an isolation is not, because the automatic containment of ransomware and ARP spoofing also releases it when nobody is there.
+  The path where you enter the password and it succeeds needs on-screen operation, so it was not checked on a real Mac. The added texts were machine-translated into 9 languages (not yet checked by native speakers).
+- **The bundled AccessScope is now 0.3.2** (its terminal output was tidied; see the AccessScope 0.3.2 entry). AccessScope can be updated from inside the app (Settings, "Update").
+- The button on the Air-Gap guide screen now reads "インシデント発生後の最初の1時間を見る" in Japanese, matching the page name.
 
 ## 1.11.4
 
