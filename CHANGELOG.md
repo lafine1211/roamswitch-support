@@ -254,6 +254,12 @@ The full text of each item is in this file's git history.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.11.12
+
+- **Fixed: shortened URLs and brand names written with digits were judged safe.** `audit-url` (and the URL audit in the app) showed a shortened URL such as `bit.ly` as having no problem. The audit does not connect, so it cannot see where a short link goes. It now shows a notice, "Shortened URL (the destination is not visible)" (penalty 25, not severe). A domain such as `paypa1-secure-login`, which writes the brand name with digits or look-alike characters and adds words like "secure" or "login", was also shown as safe. It is now judged a severe risk (penalty 45). A brand's own domains (`www.paypal.com`, `mail.google.com`) and names that do not contain a brand (`purchase-help.example.com`) stay safe.
+- **Fixed: packages that Ubuntu had already patched were shown as known vulnerabilities.** `scan-packages` compares the installed version with the fixed version numbers from Debian. Ubuntu builds (the version contains `ubuntu`, for example `8.5.0-2ubuntu10.15`) are numbered differently and cannot be compared with Debian's fixed versions. A patched `curl` was shown for CVE-2024-2398. Ubuntu builds are now left out of the comparison, and the screen says how many were skipped. Check them against Ubuntu's own security notices.
+- **Fixed: some screens stayed in English after changing the language.** In Traditional Chinese, Korean, German, French, Spanish, Italian and Portuguese, 24 items were English: the tab names (USB, DNS), the window subtitle, the "protection active in the background" line, and the headings and buttons of the Network, Dashboard, Ports and Decoy screens. They are now translated. Simplified Chinese had two items (USB, DNS) in English. These translations are based on machine translation and have not been checked by native speakers.
+
 ### 1.11.11
 
 - **Fixed: RoamSwitch's own notification history file could be flagged as a "reverse shell".** The notification history, the incident timeline, the evidence bundles, the execution log and the alert queue quote what was found (a command line, a path). A quote is not a program, but scanned as a file it matches the very signature it describes. For example, after a notification about a reverse-shell autostart entry, the `notification_history.json` that held it was itself reported as "suspected malware (WebShell-ReverseShell)". Reproduced in a real virtual machine on the published version and gone on the fixed one. Only data files under `/var/lib/roamswitch` and `/run/roamswitch` are skipped; executables there are still inspected.
@@ -386,6 +392,12 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 ---
 
 ## RoamSwitch for Mac
+
+## 1.11.7
+
+- **Fixed: shortened URLs and domains that add words like "secure" or "login" to a brand name were judged safe.** The URL audit now shows a notice, "Shortened URL (the destination is not visible)", for links such as `bit.ly` (penalty 25). A domain such as `paypa1-secure-login` or `microsoft-security-alert`, which adds words like "secure" or "login" to a brand name (including one written with digits or look-alike characters), is judged a severe risk (penalty 45). Official domains and names without a brand stay safe. What the link guard blocks or warns about does not change.
+- **Fixed: some text stayed in English after changing the language.** 13 items (the Wi-Fi and ARP monitor states, the protection level names Maximum Lockdown, Balanced and Trusted, and the rename prompt) were English in German, Spanish, French, Italian, Portuguese and Korean (Simplified and Traditional Chinese: the three protection level names). They are now translated. These translations are based on machine translation and have not been checked by native speakers.
+- The package vulnerability check (Homebrew) does not cover Ubuntu packages, so the Linux fix does not apply.
 
 ## 1.11.6
 
