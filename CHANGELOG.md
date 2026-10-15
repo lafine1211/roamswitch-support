@@ -131,6 +131,16 @@ development — see
 <https://lafine.net/roamswitch-sensor-manual.html> for current status and
 setup instructions.
 
+### 0.4.2
+
+- **New: the light audit of unmanaged devices can now check whether a device is a product with vulnerabilities in the CISA KEV catalog** (`unmanaged_audit.product_check`, **off by default**). It reads the product name from the web page a device normally returns and tells you whether that product has KEV-listed vulnerabilities. Covered: Fortinet FortiGate, Ivanti Connect Secure, Citrix NetScaler, Cisco (the ASA SSL VPN and the IOS XE web UI), UniFi OS, GeoVision, TerraMaster, Check Point Security Gateway and MikroTik RouterOS (Aruba devices have no entry in the KEV and are not covered).
+- **All it sends is a `GET /` to the web ports that accepted a connection (80, 8080, 8181, 443, 8443, 10443), the redirects the device itself points to at the same address (at most two), and a read of the HTTPS certificate's issuer and subject names.** It sends no logins, no password attempts, no guessed paths and nothing that exploits a vulnerability. The limit is 12 requests per device, 150 ms apart. The consent conditions (`enabled`, `authorization`, `allowed_cidrs`, `exclude`, the exclusion of paired devices and the MAC re-check) are those of the light audit, and nothing is sent while the light audit is off.
+- **Verdicts**: a product is named only when its on-screen markers all appear in the same response. It is reported as affected (high) only when the version the device displays can be read and falls in an NVD affected range; when the version cannot be read it stays a notice (medium): this product has KEV-listed vulnerabilities, the version could not be read, so it is unconfirmed. Today only MikroTik RouterOS shows its version, so other products normally get the unconfirmed notice.
+- A copy of the KEV ships with the product and is refreshed, only when both `product_check` and `updates.fetch_cve_map` are on, by fetching one public CISA feed file every 24 hours (nothing about your LAN is sent).
+- **Limits**: the markers are based on public detection signatures and have not been checked against real devices; a marker that does not match errs on the side of detecting nothing. The traffic with and without consent was checked against dummy web servers in Docker.
+- The new texts are in 10 languages (based on machine translation, not reviewed by native speakers). The design notes are in `docs/SENSOR.md`.
+- Fixed: the update-settings initializer now matches the latest RoamSwitch for Linux core (it no longer built after the Web Rules fields were added).
+
 ### 0.4.1
 
 - **New: detecting changes from each device's usual behavior** (on by default, `behavior.enabled`). The Sensor learns the hourly behavior of each device (identified by MAC, grouped by the existing device class) and reports unusual changes. It looks at bytes sent to public addresses, the number of public address ranges contacted for the first time, the number of LAN peers, DNS queries, data-carrying packets, and the ports used (including admin ports the device has never used). After the learning period (14 days by default, `behavior.learning_days`) it compares each hour with the past values of the same weekday-or-weekend hour (median and spread) and explains in words what changed compared with usual, such as "this camera used port 22 for the first time" or "outbound volume is 40 times the usual". Severity is low or medium, and **this finding alone never triggers lockdown or any other automatic blocking**. Sensitivity is `behavior.sensitivity` (low / normal / high).
@@ -240,6 +250,13 @@ The full text of each item is in this file's git history.
 
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
+
+### 1.11.24
+
+- **New: the Server Edition TUI (`roamswitch-server-tui`) has `kernel-modules` and `bluetooth-audit` in its Tools screen.** "Risky kernel module check" and "Bluetooth keyboard-injection check" run with Enter (read-only). On the first row, `a` (stop the unused risky modules from loading) and `u` (undo the block) are also available; both need root and go through a confirmation screen. The wording and logic are now shared with the CLI (the CLI's output is unchanged apart from losing its colours).
+- **New: the man page now documents `kernel-modules`, `bluetooth-audit` and the new MCP config audit finding for environment variables.**
+- The new texts are in 10 languages (based on machine translation, not reviewed by native speakers).
+- Not checked: operating the TUI for real (the `a` key through the confirmation screen to the action). Only the tests and an end-to-end run of the CLI in Docker were done.
 
 ### 1.11.23
 
