@@ -388,6 +388,7 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 ## 1.11.12
 
 - **Changed: the clipboard watch now checks every 0.1 s instead of every second.** When you copy a ClickFix-style malicious command, the app clears it from the clipboard, but with a once-a-second check it could be pasted until then. The check now runs every 0.1 s, and also while a menu is open. I did not measure the time from copy to clear on a real Mac (only the build and `ClickFixGuardTests` passing).
+- **Improved: the dependency CVE scan now says which project (repository) each finding comes from.** The scan walks the folders you point it at, but the results did not say which project a finding belonged to, so you could not tell which repository it was about. The results gained a "Project" column (the folder of the lockfile and the lockfile's name), and the first column of the CSV and the result of the MCP tool `run_package_cve_scan_languages` now carry the lockfile's path. Results are grouped by project; the same package in two projects is shown as two findings (10 languages).
 - **Changed: the "suspicious Terminal command" detection now waits less for changes to the shell history file** (the FSEvents latency from 1.0 s to 0.1 s, and the wait that merges consecutive changes from 0.5 s to 0.1 s). This detection reads the history after the command has run; it does not clear the clipboard.
 - Linux (Ubuntu and others) gets the same review (Linux 1.11.26).
 
