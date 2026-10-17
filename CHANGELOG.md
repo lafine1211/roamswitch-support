@@ -271,6 +271,12 @@ The full text of each item is in this file's git history.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.12.2
+
+- **Fixed: the lockfile and critical-path tamper notifications repeated with the same content every time the daemon restarted** (Linux client and Server Edition). The record of already-announced changes lived only in memory and was lost whenever the daemon started again, for example after a package update or a reboot. The baseline is deliberately never advanced on its own (so a possibly tampered change is not silently accepted), so the same notification came back at every start until `lockfile-fim update` or `fim update` was run. The record is now saved under `/var/lib/roamswitch/` (`lockfile_fim_notified.txt` and `fim_notified.txt`) and carried across restarts. A change that has been resolved drops out of the record, so the same file changing again is announced again. Detection itself is unchanged: `verify` keeps reporting the violation until the baseline is updated. If saving fails, the only effect is a repeated notification after the next restart; detection does not stop.
+- Updating the baseline works as before (`sudo roamswitch lockfile-fim update`, `sudo roamswitch fim update`).
+- The bundled apps are unchanged (AccessScope 0.3.7, PathScope 0.1.9, PersonalSOC 0.1.14).
+
 ### 1.12.1
 
 - **Fixed: the honeytoken (decoy credential file) watcher lost some reads** (Linux client edition and Server Edition). When a decoy is read, related decoys (the AWS config, the SSH config, the Kubernetes config) are planted, but every time that happened the watcher (fanotify) was closed and rebuilt. Events later in the same batch, and events during the rebuild, were lost. A stealer that reads credential files milliseconds apart lost track after the first one: on a real host, 3 of 5 reads were not detected. New decoys are now added to the running watcher instead of rebuilding it. On a real host (Ubuntu 24.04), all 5 reads and the 3 additional decoys are detected.
@@ -298,20 +304,7 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 - **Changed: the bundled AccessScope is now 0.3.7, PathScope 0.1.9 and PersonalSOC 0.1.14** (see each app's entry for its changes). This includes, in particular, the fix for the PersonalSOC mistake that lowered results matched with Ubuntu's data on Ubuntu machines (on an Ubuntu machine running 1.11.28, updating to this version makes the OS package CVE findings appear with the correct severity and confidence).
 - There are now 146 setting keys (109 in `server.conf` and 37 in `guard.yaml`) and 38 MCP tools. The added wording is in 10 languages (based on machine translation, and not reviewed by native speakers).
 
-### 1.11.28
-
-- **Fixed: false positives in the OS package CVE matching on Ubuntu.** An Ubuntu host was also matched with Debian's data, so it was compared against Debian's fixed version numbers (`3.18.2-1`, `3.2.7~ds-1+deb13u1` and so on), and CVEs that do not apply to Ubuntu or are not yet assessed showed "fix available" (for example fuse3 and node-* packages). It now uses a map made for Ubuntu.
-  - The map holds, per release (20.04, 22.04, 24.04, 26.04), the CVEs with a CVSS v3 of 7.0 or more for which Ubuntu has published a fix. A CVE that only Ubuntu Pro fixes is marked "Pro required". The kernel is handled by the kernel CVE map, as before.
-  - Matching uses the source package name and source version (because Ubuntu's data is by source package; the binary name is shown too).
-  - "Not applicable" does not mean "no known CVE". A CVE whose fix is not yet published is not included (the CLI and the screen carry a note).
-  - In a check that assumed a real Ubuntu 24.04 package set, the old method's 1,033 false positives became 0 for those that do not need Pro. On a set that was not updated, 1,341 real fixes are detected.
-  - An unsupported Ubuntu (25.04 and so on) and derivative distributions (Linux Mint, Pop!_OS and so on) are shown as "unsupported". They are not switched to Debian's map. **On Linux Mint and Pop!_OS, findings that used to appear from Debian's map no longer appear.** Debian, Arch, RHEL-family and SUSE behave as before.
-  - The map is signed and delivered only to Ubuntu hosts (about 4.4 MB). The output (MCP `run_package_cve_scan`) gained `ecosystem` and `release` (existing fields are unchanged).
-- **Changed: the Server Edition also receives the Ubuntu package CVE map.** It follows the server's outbound-connection switch (`cve_kernel_map_updates_enabled`); if you turn the switch off, nothing is fetched (then the OS package CVE matching on an Ubuntu server shows "data not fetched"). Maps for other OS packages are not fetched by the server edition. The outside connections the Server Edition makes by default are the anonymous receiving of signed data (kernel CVE data, web rules, and on an Ubuntu server the Ubuntu package CVE data). The explanation of item 8 of `roamswitch server setup` was changed to match.
-- **Changed: the bundled AccessScope is now 0.3.6 and PersonalSOC 0.1.13** (including the fixes listed above).
-- **Known limit: the Debian package CVE map does not tell Debian releases apart.** On Debian 12 and 13 hosts, fixed version numbers that exist only in Debian 14 can appear (on Ubuntu this is resolved by the new map).
-
-### 1.10.0 - 1.11.27 (summarized)
+### 1.10.0 - 1.11.28 (summarized)
 
 Everything in these releases, grouped by topic (Client and Server Edition unless marked). The full text of each entry is in the git history of this file.
 
@@ -386,6 +379,17 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 - (1.11.27) **Improved: CVE matching results now name the project (repository) lockfile they came from.** It is in the command output, the CSV, and the JSON of MCP and the terminal UI, and results are grouped by project.
 - (1.11.27) **Fixed: the daily update of the link guard's threat feed had been stopped since October 13.** The step that builds the bundled seed data piped the output of `sort -R` into `head` under `pipefail`, so the upstream failed with SIGPIPE. The shuffled result is now written to a file before it is read.
 - (1.11.27) Mac has the AI service diagnosis, the AI agent setup audit, the SSRF check, attack-server blocking and the CVE project display too (Mac 1.11.13).
+- (1.11.28) **Fixed: false positives in the OS package CVE matching on Ubuntu.** An Ubuntu host was also matched with Debian's data, so it was compared against Debian's fixed version numbers (`3.18.2-1`, `3.2.7~ds-1+deb13u1` and so on), and CVEs that do not apply to Ubuntu or are not yet assessed showed "fix available" (for example fuse3 and node-* packages). It now uses a map made for Ubuntu.
+  - The map holds, per release (20.04, 22.04, 24.04, 26.04), the CVEs with a CVSS v3 of 7.0 or more for which Ubuntu has published a fix. A CVE that only Ubuntu Pro fixes is marked "Pro required". The kernel is handled by the kernel CVE map, as before.
+  - Matching uses the source package name and source version (because Ubuntu's data is by source package; the binary name is shown too).
+  - "Not applicable" does not mean "no known CVE". A CVE whose fix is not yet published is not included (the CLI and the screen carry a note).
+  - In a check that assumed a real Ubuntu 24.04 package set, the old method's 1,033 false positives became 0 for those that do not need Pro. On a set that was not updated, 1,341 real fixes are detected.
+  - An unsupported Ubuntu (25.04 and so on) and derivative distributions (Linux Mint, Pop!_OS and so on) are shown as "unsupported". They are not switched to Debian's map. **On Linux Mint and Pop!_OS, findings that used to appear from Debian's map no longer appear.** Debian, Arch, RHEL-family and SUSE behave as before.
+  - The map is signed and delivered only to Ubuntu hosts (about 4.4 MB). The output (MCP `run_package_cve_scan`) gained `ecosystem` and `release` (existing fields are unchanged).
+- (1.11.28) **Changed: the Server Edition also receives the Ubuntu package CVE map.** It follows the server's outbound-connection switch (`cve_kernel_map_updates_enabled`); if you turn the switch off, nothing is fetched (then the OS package CVE matching on an Ubuntu server shows "data not fetched"). Maps for other OS packages are not fetched by the server edition. The outside connections the Server Edition makes by default are the anonymous receiving of signed data (kernel CVE data, web rules, and on an Ubuntu server the Ubuntu package CVE data). The explanation of item 8 of `roamswitch server setup` was changed to match.
+- (1.11.28) **Changed: the bundled AccessScope is now 0.3.6 and PersonalSOC 0.1.13** (including the fixes listed above).
+- (1.11.28) **Known limit: the Debian package CVE map does not tell Debian releases apart.** On Debian 12 and 13 hosts, fixed version numbers that exist only in Debian 14 can appear (on Ubuntu this is resolved by the new map).
+
 ### 1.9.39 - 1.9.94 (summarized)
 
 Everything in these releases, grouped by topic (Client and Server Edition unless marked). The full text of each entry is in the git history of this file.
@@ -436,6 +440,14 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 
 ## RoamSwitch for Mac
 
+## 1.12.2
+
+- **Fixed: the dependency lockfile tamper notification repeated with the same content every time the app was launched.** The record of already-announced changes lived only in memory and was lost on relaunch. The baseline is deliberately never advanced on its own, so that a possibly tampered change is not silently accepted; as a result, even the change from your own `npm install` was announced at every launch. The record is now saved and carried across restarts. A change that has been resolved drops out of the record, so the same file changing again is announced again.
+- **Added: the menu has "Update lockfile baseline to current state…".** Until now there was no way to accept a change as legitimate, so the notification could not be stopped. After a confirmation, the current lockfiles become the baseline immediately, and only new changes are announced from then on. The notification text now explains this action too.
+- The Linux edition has the same repeat fixed (Linux 1.12.2).
+- The bundled apps are unchanged (AccessScope 0.3.7, PathScope 0.1.9, PersonalSOC 0.1.14).
+- The added text is in 10 languages (based on machine translation, not reviewed by native speakers).
+
 ## 1.12.1
 
 - **Fixed: the honeytokens (decoy credential files) silently dropped every detection of a read.** To watch a decoy, the app itself holds the file open. On each detection it runs `lsof` to find who has it open, but the reader has usually exited by then, so only the app itself is left, and it was taken for the reader. A process of our own bundle counts as an "expected access", so the detection was dropped without a notification or a record. I installed the published 1.12.0 on a real Mac (a macOS 26 VM), confirmed that reading all five decoys produced no event at all, and then fixed it. The app's own process is now excluded, and when no reader is found it is reported as "could not be identified".
@@ -456,14 +468,7 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 - **Changed: the bundled AccessScope is now 0.3.7, PathScope 0.1.9 and PersonalSOC 0.1.14** (see each app's entry for its changes). They also arrive through the in-app update. The Ubuntu handling works only on Linux, so of the PersonalSOC changes, the ones that concern Mac are the new notice for an OS package CVE matching that could not be completed, and the order of the Settings tabs.
 - The added wording is in 10 languages (based on machine translation, and not reviewed by native speakers).
 
-## 1.11.14
-
-- **Changed: the bundled AccessScope is now 0.3.6 and PersonalSOC 0.1.13.** AccessScope includes the automatic decision of the real client for logs behind a reverse proxy, the tidying of chains and the fix for wrong web shell verdicts. PersonalSOC includes the new web log sources on Mac (the Apache that ships with macOS, and nginx and httpd from Homebrew). Both also arrive through the in-app update. There is no change to RoamSwitch's own features.
-- (1.11.13) **Added: local AI service diagnosis, AI agent setup audit, an SSRF check in the active scan, and blocking of traffic with the 3 attack-server IPs published by JPCERT/CC using pf.** The AI services (Ollama, Jupyter Server, MLflow, Gradio) get one read-only GET to the listener on 127.0.0.1 and are reported only when reachable without authentication. The AI agent setup audit (MCP tool `audit_agent_setup`) checks instruction files, skills and OpenClaw settings read-only. The attack-server block puts its rules right after the anchor call and reads them back with `pfctl -sr` after applying (the read-back as root on a real Mac was not checked).
-- (1.11.13) **Updated: the bundled AccessScope is now 0.3.5** (detection of XSS in headers and OAST call-back targets).
-- (1.11.13) Linux (Ubuntu and others) has the AI service diagnosis, the AI agent setup audit and the SSRF check too (Linux 1.11.27).
-
-## 1.10.0 - 1.11.13 (summarized)
+## 1.10.0 - 1.11.14 (summarized)
 
 The contents of these releases, grouped by theme. The full text of each entry is in this file's git history.
 
@@ -517,6 +522,10 @@ The contents of these releases, grouped by theme. The full text of each entry is
 - (1.11.12) **Improved: the dependency CVE scan now says which project (repository) each finding comes from.** The scan walks the folders you point it at, but the results did not say which project a finding belonged to, so you could not tell which repository it was about. The results gained a "Project" column (the folder of the lockfile and the lockfile's name), and the first column of the CSV and the result of the MCP tool `run_package_cve_scan_languages` now carry the lockfile's path. Results are grouped by project; the same package in two projects is shown as two findings (10 languages).
 - (1.11.12) **Changed: the "suspicious Terminal command" detection now waits less for changes to the shell history file** (the FSEvents latency from 1.0 s to 0.1 s, and the wait that merges consecutive changes from 0.5 s to 0.1 s). This detection reads the history after the command has run; it does not clear the clipboard.
 - (1.11.12) Linux (Ubuntu and others) gets the same review (Linux 1.11.26).
+- (1.11.14) **Changed: the bundled AccessScope is now 0.3.6 and PersonalSOC 0.1.13.** AccessScope includes the automatic decision of the real client for logs behind a reverse proxy, the tidying of chains and the fix for wrong web shell verdicts. PersonalSOC includes the new web log sources on Mac (the Apache that ships with macOS, and nginx and httpd from Homebrew). Both also arrive through the in-app update. There is no change to RoamSwitch's own features.
+- (1.11.13) **Added: local AI service diagnosis, AI agent setup audit, an SSRF check in the active scan, and blocking of traffic with the 3 attack-server IPs published by JPCERT/CC using pf.** The AI services (Ollama, Jupyter Server, MLflow, Gradio) get one read-only GET to the listener on 127.0.0.1 and are reported only when reachable without authentication. The AI agent setup audit (MCP tool `audit_agent_setup`) checks instruction files, skills and OpenClaw settings read-only. The attack-server block puts its rules right after the anchor call and reads them back with `pfctl -sr` after applying (the read-back as root on a real Mac was not checked).
+- (1.11.13) **Updated: the bundled AccessScope is now 0.3.5** (detection of XSS in headers and OAST call-back targets).
+- (1.11.13) Linux (Ubuntu and others) has the AI service diagnosis, the AI agent setup audit and the SSRF check too (Linux 1.11.27).
 
 ## 1.9.6 - 1.9.54 (summarized)
 
