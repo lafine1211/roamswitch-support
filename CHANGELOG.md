@@ -436,6 +436,13 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 
 ## RoamSwitch for Mac
 
+## 1.12.4
+
+- **Fixed: the honeytoken (decoy credential file) notification repeated every 30 seconds** (since 1.12.1). When RoamSwitch detects an access to a decoy, it runs `lsof <decoy>` to find who holds the file. The helper's exec recorder judged that `lsof` to be "a command naming a decoy" and read the decoy's contents to confirm it was a real decoy. That read moved the file's access time, the app detected an access again and ran `lsof` again, and the loop produced a notification every 30 seconds for `~/.aws/credentials` and `~/.aws/config`. It became visible because 1.12.1 fixed the bug that silently dropped detections. On a real Mac, the history showed a detection every 30 seconds and the access time moving in step with the monitor's cycle. A direct child process of RoamSwitch itself (Developer ID signed, same team) is now excluded before the decoy is read. The same command run by any other process is still reported as before.
+- The Linux edition is not affected: it detects accesses differently (fanotify, where the event carries who opened the file, with no access-time polling and no exec rule that reads decoy contents).
+- The bundled apps are unchanged (AccessScope 0.3.7, PathScope 0.1.9, PersonalSOC 0.1.14).
+- That the notification stops after replacing the helper with the fixed one on a real Mac will be checked after release.
+
 ## 1.12.3
 
 - **Fixed: the autostart detection never reported the same path twice** (`PersistenceMonitorGuard`). A LaunchAgent or LaunchDaemon plist that had been reported was skipped for as long as the app ran, so deleting it and creating it again under the same name, or rewriting it with another payload, raised no second alert. Reported plists are now remembered by path and by the SHA-256 of their content: a deleted file is forgotten, and a changed one is examined again. It was found while measuring how long the notification takes: from creating the file to handing the notification to macOS, 1.08, 1.09 and 2.59 seconds in three measurements (the FSEvents delay of up to 1.5 seconds and a 1.0 second buffer). 6 tests added. The Linux client's autostart watch already reported a changed or re-created file again; its comparison by modification time and size became a comparison by content in Linux 1.12.5.
@@ -449,15 +456,7 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 - The bundled apps are unchanged (AccessScope 0.3.7, PathScope 0.1.9, PersonalSOC 0.1.14).
 - The added text is in 10 languages (based on machine translation, not reviewed by native speakers).
 
-## 1.12.1
-
-- **Fixed: the honeytokens (decoy credential files) silently dropped every detection of a read.** To watch a decoy, the app itself holds the file open. On each detection it runs `lsof` to find who has it open, but the reader has usually exited by then, so only the app itself is left, and it was taken for the reader. A process of our own bundle counts as an "expected access", so the detection was dropped without a notification or a record. I installed the published 1.12.0 on a real Mac (a macOS 26 VM), confirmed that reading all five decoys produced no event at all, and then fixed it. The app's own process is now excluded, and when no reader is found it is reported as "could not be identified".
-- **Fixed: the honeytokens missed every read of a decoy after the first.** macOS (APFS) updates a file's access time only on the first read after a write (a second `cat` of the same file leaves it alone), and kqueue reports no reads. A detection that looked at the access time every 30 seconds saw only the first read of a decoy, and when the app had read an existing decoy itself after a restart (to check it), it saw none of the attacker's reads. The access time is now set back to one second before the modification time at start, when a related decoy is added, and after every detection, so the next read moves it again. The kqueue notification caused by that is ignored for 2 seconds.
-- On a real Mac (a VM), with the fixed build, the first read of a decoy, a second read of the same decoy, and a read of another decoy were all detected within 30 seconds.
-- The Linux honeytokens use a different mechanism (fanotify) and were not affected by this (Linux 1.12.1 fixed a different missed-read problem).
-- The bundled apps are unchanged (AccessScope 0.3.7, PathScope 0.1.9, PersonalSOC 0.1.14).
-
-## 1.10.0 - 1.12.0 (summarized)
+## 1.10.0 - 1.12.1 (summarized)
 
 The contents of these releases, grouped by theme. The full text of each entry is in this file's git history.
 
@@ -522,6 +521,11 @@ The contents of these releases, grouped by theme. The full text of each entry is
 - **AI service diagnostic fix** (1.12.0): "usable from the network" was shown even for services listening only on 127.0.0.1; only listeners reachable from the network are now diagnosed (the same construction as the bug confirmed on a real Linux machine).
 - **MCP config audit** (1.12.0): a new finding `injection_exposure` (medium) in `audit_mcp_configs`, once per file where the same config has both a server that makes third-party text readable (web fetch, browser, search, chat, email, GitHub and so on) and a server that can run commands or change files, the arrangement that indirect prompt injection (ATT&CK T1698) depends on. It is only a match against known package and image names; combinations across files are not added up, and arguments, environment variables and tokens are not included in the result.
 - **Bundled apps** (1.12.0): AccessScope 0.3.7, PathScope 0.1.9 and PersonalSOC 0.1.14 (see each app's entry), also delivered through the in-app update. Of the PersonalSOC changes, the ones that concern Mac are the new notice for an OS package CVE matching that could not be completed, and the order of the Settings tabs. The added wording is in 10 languages (based on machine translation, not reviewed by native speakers).
+- (1.12.1) **Fixed: the honeytokens (decoy credential files) silently dropped every detection of a read.** To watch a decoy, the app itself holds the file open. On each detection it runs `lsof` to find who has it open, but the reader has usually exited by then, so only the app itself is left, and it was taken for the reader. A process of our own bundle counts as an "expected access", so the detection was dropped without a notification or a record. I installed the published 1.12.0 on a real Mac (a macOS 26 VM), confirmed that reading all five decoys produced no event at all, and then fixed it. The app's own process is now excluded, and when no reader is found it is reported as "could not be identified".
+- (1.12.1) **Fixed: the honeytokens missed every read of a decoy after the first.** macOS (APFS) updates a file's access time only on the first read after a write (a second `cat` of the same file leaves it alone), and kqueue reports no reads. A detection that looked at the access time every 30 seconds saw only the first read of a decoy, and when the app had read an existing decoy itself after a restart (to check it), it saw none of the attacker's reads. The access time is now set back to one second before the modification time at start, when a related decoy is added, and after every detection, so the next read moves it again. The kqueue notification caused by that is ignored for 2 seconds.
+- (1.12.1) On a real Mac (a VM), with the fixed build, the first read of a decoy, a second read of the same decoy, and a read of another decoy were all detected within 30 seconds.
+- (1.12.1) The Linux honeytokens use a different mechanism (fanotify) and were not affected by this (Linux 1.12.1 fixed a different missed-read problem).
+- (1.12.1) The bundled apps are unchanged (AccessScope 0.3.7, PathScope 0.1.9, PersonalSOC 0.1.14).
 
 ## 1.9.6 - 1.9.54 (summarized)
 
