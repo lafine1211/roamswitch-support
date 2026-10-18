@@ -261,6 +261,18 @@ The full text of each item is in this file's git history.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.12.7
+
+- **Added: features for running AI agents under their own account** (Server Edition; name the accounts in `agent_users` in `server.conf`). They cover the parts of the NIST / NSA / CISA guidance of 16 October 2026 on incident readiness and response for AI agents (ten key practices) that one server can implement.
+  - **Outbound allowlist** (`agent_egress_allow`): only the destinations you list (`ADDR`, `ADDR/PREFIX`, `ADDR:PORT`, `[IPv6]:PORT`) are allowed; every other new outbound packet of those accounts is dropped, TCP and UDP alike (the server's own loopback and connections already open pass). Dropped packets are written to the kernel log and notified once an hour per account and destination. An empty list means no limit, not "deny all". Rules match addresses, not names, and an agent that can become `root` is not held. The intended use is to allow only one proxy.
+  - **A baseline held by `root`**: the reviewed state of the instruction files, skills and MCP server definitions is kept in `/var/lib/roamswitch/agent_setup/<account>.json` (owned by `root`, 0600), which the account cannot change. Create it with `sudo roamswitch audit-agent-setup --user NAME --accept`. Every `agent_setup_watch_secs` (default 300, 0 = off) the daemon audits the account's home and the working copies directly under it and notifies on a change or addition. An account with no baseline yet is left alone.
+  - **Decoy credentials** are also planted in the home of each `agent_users` account, with one watcher per account. The decoys under `/root` cannot be opened by an agent running as another account.
+- **Changed: the exec log's hash chain now covers the segment being written.** Every 10 seconds a `checkpoint` line holding the hash of all bytes so far is added, and `roamswitch events verify` finds an edit, removal or reordering of records before the newest checkpoint. Records after it (about 10 seconds at most) cannot be verified, and `verify` shows their number. Deleting the whole file still reads "nothing to verify". Once a minute the checkpoint hash is sent to event forwarding as `EXEC-CHECKPOINT`.
+- **Fixed: when an isolation killed the process (a reverse shell, for example), the process items of the evidence bundle were empty.** Saving started after the kill, when `/proc` could no longer be read. The process state is now saved before the kill, synchronously (at most 3 seconds). Measured, the time from receipt to action went from 42 ms to 123–130 ms. `roamswitch-incident-capture snapshot --pid` saves the process state first and runs the packet capture (up to 30 seconds) afterwards (`--no-packets` skips it).
+- Measured on an Ubuntu 24.04 VM with a real kernel. A reverse shell was cut about 3.4 seconds after it connected, and when the same operation was replayed with an allowlist in place, the connection was never established. A permitted destination was reached, a TCP and a UDP packet to others were dropped, and `root` was not restricted. Writing or deleting the baseline from the agent's account failed with "Permission denied", and two edited files were found at the next pass. A decoy read was recorded within a few milliseconds. 2066 unit tests pass.
+- There are now 153 configuration keys (116 in `server.conf` and 37 in `guard.yaml`; 3 added). The new wording exists in 10 languages (based on machine translation, not reviewed by native speakers).
+- The bundled apps are unchanged (AccessScope 0.3.7, PathScope 0.1.9, PersonalSOC 0.1.14).
+
 ### 1.12.6
 
 - **Added: the AI agent setup audit gains four detections and change detection against an accepted state** (the Client Edition's "AI Agent Setup Audit" screen, `roamswitch audit-agent-setup`, the Server Edition's command and TUI, and the MCP tool `audit_agent_setup`). It closes the gap that the instruction files, skills and MCP settings an AI agent reads could be swapped later without anyone noticing. The idea was taken from reading NVIDIA's SkillSpector (a scanner for AI agent skills); the rules are RoamSwitch's own, and no rule or regular expression was copied.
@@ -429,6 +441,12 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 ---
 
 ## RoamSwitch for Mac
+
+## 1.12.6
+
+- **Changed: the process execution log's hash chain now covers the segment being written** ("Verify chain"). While records come in, a `cp` line holding the hash of all bytes so far is added every 10 seconds. An edit, removal or reordering of records before a checkpoint is found even in the open segment. Records after the newest checkpoint (about 10 seconds at most) cannot be verified, and the result shows their number. Sealing, rotation and crash recovery are unchanged. Tested on its own: detection of edits, removals and reordering, the count after the newest checkpoint, and consistency after sealing.
+- **Added: the AI agent setup audit tells you when the file holding the change-detection baseline is rewritten or deleted from outside the app.** The baseline of the reviewed state is stored inside the user's own account. On a Mac the agent normally runs as that same user, so it could rewrite the baseline and make its own changes invisible. When you press "Mark this state as reviewed", the privileged helper now keeps the baseline file's SHA-256 where only `root` can change it, in `/Library/Application Support/RoamSwitch/agent_setup_witness/` (one file per user id, owned by `root`, 0600). The audit window compares the file with it every time and shows, in red, that the baseline "has been rewritten" or "was not found". The helper accepts calls only from this signed app, so an agent cannot call it. It does not stop the file from being written, and an agent that can become `root` can rewrite the held digest too. The `audit_agent_setup` MCP tool runs in another process that cannot call the helper, so only the audit window makes this comparison. A baseline accepted by an earlier version is not compared until you press "Mark this state as reviewed" again.
+- The bundled apps are unchanged (AccessScope 0.3.7, PathScope 0.1.9, PersonalSOC 0.1.14).
 
 ## 1.12.5
 
