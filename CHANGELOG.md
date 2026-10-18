@@ -39,6 +39,7 @@ A security diagnosis tool for access logs. It is a separate app (Apache-2.0): th
 
 The contents of these releases, grouped by theme. The full text of each entry is in this file's git history.
 
+- **Honeytoken (decoy credential file) notification repeating** (1.12.4, since 1.12.1): the honeytoken notification repeated every 30 seconds. When RoamSwitch detects an access to a decoy, it runs `lsof <decoy>` to find who holds the file. The helper's exec recorder judged that `lsof` to be "a command naming a decoy" and read the decoy's contents to confirm it was a real decoy. That read moved the file's access time, the app detected an access again and ran `lsof` again, and the loop produced a notification every 30 seconds for `~/.aws/credentials` and `~/.aws/config`. It became visible because 1.12.1 fixed the bug that silently dropped detections. On a real Mac, the history showed a detection every 30 seconds and the access time moving in step with the monitor's cycle. A direct child process of RoamSwitch itself (Developer ID signed, same team) is excluded before the decoy is read (a case where this exclusion did not apply remained, and 1.12.7 fixed it). The same command run by any other process is still reported as before. The Linux edition is not affected: it detects accesses differently (fanotify).
 - **First release** (0.1.0): from web server access logs (Apache and Nginx common/combined, nginx / Caddy / Traefik JSON, gzip) and SSH authentication logs (sshd logs, and journald on Linux) it finds attack attempts and shows them with the evidence log lines, the MITRE ATT&CK technique ID and a confidence level (confirmed, likely, hypothesis). It is read-only: it never changes logs and never raises privileges. The analysis uses neither an LLM nor the network. The Mac app can update itself (Settings → Update); on Linux it is updated by the package.
 - **What it finds** (0.1.0): SQL injection, path traversal, XSS, command and code injection, Log4Shell, Shellshock, template injection, SSRF, exploit paths of known vulnerabilities (Apache 2.4.49/50, PHPUnit, Laravel Ignition, Citrix, FortiOS, Spring4Shell, Confluence, Exchange and others), probing for secret files and admin pages, attack-tool User-Agents, mass attempts on non-existent paths, login brute force and distributed attempts (credential stuffing), web-shell-like access, chains from reconnaissance to attack, high-rate requests, SSH brute force, user-name probing, a success after failures and root password authentication, and instructions to an AI planted in logs. 0.2.0 added the User-Agents that HexStrike AI announces, httpx, CensysInspect and the api-recon bundled with ARTEX.
 - **Fewer misses and false alarms** (0.2.0): measured on our own labelled test data (982 attack cases and 292 normal-traffic cases as of 0.2.0; the data grew during the work). Attack detection went from 83.3% to 99.1% overall, and from 15.7% to 98.6% on hard variants such as encoding and obfuscation. The share of normal traffic that raised a finding of medium severity or higher went from 30% to under 2% (5 of 292). These are figures on our data and do not guarantee the result on your logs.
@@ -440,6 +441,13 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 
 ## RoamSwitch for Mac
 
+## 1.12.7
+
+- **Fixed: the honeytoken notification repeating every 30 seconds was still happening after the 1.12.4 fix** (since 1.12.1). The 1.12.4 exclusion worked only when the helper's exec recorder knew that the parent of `lsof` was RoamSwitch. When the recorder had not seen the app start (for example, the app had started before the helper), the parent's signature was unknown, so it was not excluded and the decoy's contents were read. That read moved the file's access time, and the loop of the app detecting again and running `lsof` again went on as before. The notification history of a Mac running 1.12.5 showed notifications for `~/.aws/credentials` and `~/.aws/config` every 30 seconds for about 5 hours, and notifications about an `lsof` run by RoamSwitch about every 10 minutes. When the parent is not in the exec record, the live process's signature is now checked (bundle ID, an Apple-issued certificate and the same team ID, the same requirement the helper imposes on its XPC peers), and if it is RoamSwitch itself the command is excluded before the decoy is read. A different binary merely placed at the same path, or an unsigned one, does not pass. The same command run by any other process is still reported as before. Checked with unit tests and with the signature check against the running app's process.
+- The Linux edition is not affected: it detects accesses differently (fanotify, where the event carries who opened the file, with no access-time polling and no exec rule that reads decoy contents).
+- The bundled apps are unchanged (AccessScope 0.3.7, PathScope 0.1.9, PersonalSOC 0.1.14).
+- That the notification stops on a real Mac after replacing the app with the fixed build will be checked after release.
+
 ## 1.12.6
 
 - **Changed: the process execution log's hash chain now covers the segment being written** ("Verify chain"). While records come in, a `cp` line holding the hash of all bytes so far is added every 10 seconds. An edit, removal or reordering of records before a checkpoint is found even in the open segment. Records after the newest checkpoint (about 10 seconds at most) cannot be verified, and the result shows their number. Sealing, rotation and crash recovery are unchanged. Tested on its own: detection of edits, removals and reordering, the count after the newest checkpoint, and consistency after sealing.
@@ -464,14 +472,7 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 - The number of finding ids went from 22 to 30. The added wording is in 10 languages (based on machine translation, and not reviewed by native speakers).
 - The bundled apps are unchanged (AccessScope 0.3.7, PathScope 0.1.9, PersonalSOC 0.1.14).
 
-## 1.12.4
-
-- **Fixed: the honeytoken (decoy credential file) notification repeated every 30 seconds** (since 1.12.1). When RoamSwitch detects an access to a decoy, it runs `lsof <decoy>` to find who holds the file. The helper's exec recorder judged that `lsof` to be "a command naming a decoy" and read the decoy's contents to confirm it was a real decoy. That read moved the file's access time, the app detected an access again and ran `lsof` again, and the loop produced a notification every 30 seconds for `~/.aws/credentials` and `~/.aws/config`. It became visible because 1.12.1 fixed the bug that silently dropped detections. On a real Mac, the history showed a detection every 30 seconds and the access time moving in step with the monitor's cycle. A direct child process of RoamSwitch itself (Developer ID signed, same team) is now excluded before the decoy is read. The same command run by any other process is still reported as before.
-- The Linux edition is not affected: it detects accesses differently (fanotify, where the event carries who opened the file, with no access-time polling and no exec rule that reads decoy contents).
-- The bundled apps are unchanged (AccessScope 0.3.7, PathScope 0.1.9, PersonalSOC 0.1.14).
-- That the notification stops after replacing the helper with the fixed one on a real Mac will be checked after release.
-
-## 1.10.0 - 1.12.3 (summarized)
+## 1.10.0 - 1.12.4 (summarized)
 
 The contents of these releases, grouped by theme. The full text of each entry is in this file's git history.
 
