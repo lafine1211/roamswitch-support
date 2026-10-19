@@ -489,6 +489,7 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 - **`get_guard_status` gets a new guard entry, `webRulesFolderScan`.** The last scan's counts appear in `readers` as `foldersUnreadable` (folders that could not be listed), `filesUnreadable` (files that did not open, or entries whose kind could not be read) and `filesTruncated` (files that were cut). While the last scan skipped anything, `liveState` is `partial`; it goes back once a scan skips nothing. There is no settings switch; it follows the Pro state.
 - **Not counted:** how many files were inside an unreadable subfolder (only that the folder was not examined is known). The static signature match of the download guard (`StaticSignatureScanner`) has the same kind of silent skip; it is unchanged this time.
 - All 1552 app tests and all 361 tests of the roamswitch-mcp mirror pass. The screens were checked through the build and tests only, not on a real display. The added texts are in 10 languages (based on machine translation, not reviewed by native speakers).
+- The bundled apps are unchanged (AccessScope 0.3.8, PathScope 0.1.9, PersonalSOC 0.1.14).
 
 ## 1.12.8
 
