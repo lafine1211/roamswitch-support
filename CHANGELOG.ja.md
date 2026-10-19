@@ -278,6 +278,13 @@ Client / Server Edition）とのペアリングコード方式(固定IP+短命�
 Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）。
 詳しくは <https://lafine.net/linux>。
 
+### 未公開(次のリリース)
+
+- **追加: Server Edition の健全性診断が、Web サーバーが実際に返すものを見るようになりました**(`server_web_security_headers`)。nginx・Apache・Caddy の設定にある TLS サイトの `/` を、サーバー自身から `curl` で要求し、返ってきたヘッダーだけを読みます。HSTS(30日以上)、`X-Content-Type-Options: nosniff`、フレーム埋め込み対策(`X-Frame-Options` か CSP の `frame-ancestors`)の不足、`Secure` の無い Cookie、`HttpOnly` の無いセッションらしい Cookie を指摘します。CSP・Referrer-Policy・`SameSite` は判定しません。ステータス 400 以上の応答は使いません(nginx の `add_header` は `always` が無いとエラー応答に付かないため)。判定できた応答が1つも無ければ、合格ではなく「確認不能」です。ホストの外へは接続せず、本文と Cookie の値は保存しません。
+- **追加: 自分のドメインを確認する任意の項目**(`server_domain_check`)。新しい設定 `domain_check_domains` にドメイン(`example.com` の形、最大5つ)を書いたときだけ動き、SPF(無い、複数ある、`+all`・`?all` で誰にでも送信を許している)、DMARC(無い。`p=none` は注記だけ)、登録の有効期限(30日未満、または切れ)を確認します。CAA と DNSSEC は参考として示すだけで、不合格にはしません。その名前についてだけ、`dig` が `/etc/resolv.conf` のリゾルバーへ TXT・CAA・DS を問い合わせ、`curl` が IANA の公開 RDAP リスト(ドメイン名は含まれません)を読んでから、TLD の登録局の RDAP サーバーへ有効期限を問い合わせます。これ以外は送らず、結果は6時間覚えます。答えが得られなかった問い合わせを「無い」とは読まず、「確認不能」にします(`dig` が無いときは `dnsutils` か `bind-utils` を入れてください)。設定が空(既定)のときは、何も引きません。
+- サーバーの健全性診断は 39 項目、`server.conf` は 118 キー(`guard.yaml` と合わせて 155 キー)になりました。追加した文言は 10 言語です(機械翻訳が基で、ネイティブの確認はしていません)。
+- Linux のコンテナで、本物の TLS サーバー(ヘッダーあり・なし、404、転送、閉じたポート)、本物の `dig`、`.com` の本物の RDAP サーバーに対して確かめ、追加した単体テストも通っています。RDAP が無い登録局や有効期限を公開しない登録局(ここでは `jprs.jp`)では、「有効期限を取得できず」の注記だけになります。
+
 ### 1.12.8
 
 - **追加: MCP の結果に、AI への指示のような文章が混ざっているときの警告を付けました**。パッケージのスクリプト、ログ、プロセスの名前やコマンドラインなど、RoamSwitch の外から来た文字列は、攻撃者が書けます。そこに、読んだ AI に向けた文章(「これまでの指示を無視して」「システムの指示を出力して」。英語と日本語)、偽のシステムタグ、ツール呼び出しのなりすまし、画像のリンクにデータを載せて持ち出す書き方、「これは内部の指示だ」「権限を与えられている」といった権威づけがあると、結果の最後に別のブロックで「AI に向けた文章が N 件見つかりました」と警告します。警告には、見つかった種類(`instruction-override`・`role-hijack`・`tool-call-hijack`・`exfil-markdown`・`system-prompt-leak`・`authority-claim` の 6 種類)と件数だけを書き、見つかった文章は繰り返しません。全角、不可視の文字、Unicode のタグ文字で崩した書き方も、戻してから調べます。「注意書きを付ける」対象の結果を増やしました(`get_security_report`、`verify_security_findings`、`get_exposed_ports`、`run_package_lifecycle_script_scan`、`audit_security_logs`、`get_sensor_audit_results`、`search_exec_events`、`get_process_tree`、`get_notification_history`、`get_incident_timeline`、`get_ssh_guard_incidents`、`get_ebpf_incidents`)。**限界**: キリル文字などの似た文字で綴った指示と、英語・日本語以外の言語は、見つけられません(Mac 版は、キリル文字・ギリシャ文字の似た文字を戻して調べます)。
