@@ -47,7 +47,7 @@ between them.
 | 🪤 Ransomware canary (decoy bait files) with incident history | ❌ | 🚀 |
 | 🔒 VPN tunnel + kill switch (WireGuard / Tailscale) on untrusted networks | ❌ | 🚀 |
 | 🎣 Link guard — block phishing/scam destinations via `/etc/hosts` sinkhole + content‑filter extension | ❌ | 🚀 |
-| 🧩 Persistence monitoring (new LaunchAgents/Daemons) & ClickFix shell‑history guard | ❌ | 🚀 |
+| 🧩 Persistence monitoring (new LaunchAgents/Daemons, shell start‑up files, login hooks, periodic scripts) & ClickFix shell‑history guard | ❌ | 🚀 |
 | 📂 Critical Path FIM — SHA‑256 baseline of root‑only system files, checked in the background | ❌ | 🚀 |
 | 🧾 Security log audit with automatic secret masking + log‑template anomaly detection | ✅ | ✅ |
 | 🧯 Unified containment incident timeline & 7‑day notification history | ✅ | ✅ |
