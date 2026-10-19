@@ -12,6 +12,10 @@ independently. Older releases are summarized in ranges.
 
 A security diagnosis tool for access logs. It is a separate app (Apache-2.0): the Server Edition .deb / .rpm packages carry only the command (`accessscope`; from 1.11.2 they also carry the PersonalSOC and PathScope commands); the Linux client edition and the Mac app carry the command and a window app.
 
+### Unreleased
+
+- **Added: the values the LLM writes are checked against what it was given.** An IP address, domain, CVE ID or hash in the LLM's text that is not in the summary and evidence lines it received is shown, in the LLM section of the report and on screen, under "Values not found in the collected material", as a possible invention. Only the strings are compared; the LLM is not asked.
+
 ### 0.3.8
 
 - **Added: what could not be read is now reported as "Not examined".** When the logs were not read in full (an unreadable log, a cut at the size limit, an over-long line, lines skipped outside the period, lines that could not be parsed, or command input that ended early on a timeout or similar), the report now says what was not read and how much, under the summary. Before, a part that could not be read could look like fewer detections. When everything was read, no output changes. Newly counted are lines that could not be parsed (in web logs, only at 10 lines and 5% or more; Docker logs are exempt because other output is mixed in) and command input that ended early (`journald`, the macOS unified log, `docker logs`; a timeout is `timeout`, the size limit is `size`, a failure is `failed`).
@@ -70,6 +74,10 @@ The contents of these releases, grouped by theme. The full text of each entry is
 
 ## PathScope
 
+### Unreleased
+
+- **Added: the values the LLM writes are checked against what it was given.** An IP address, domain, CVE ID or hash in the "Explain with LLM" text that is not in the summary it received is shown below the explanation under "Values not found in the collected material", as a possible invention. Only the strings are compared; the LLM is not asked.
+
 ### 0.1.9
 
 - **Changed: the command output is now Markdown headings and tables.** It prints, in this order, an overview table, a table of paths, a table of fix points (priority, steps, reason, affected paths), the detail of each number (ATT&CK, the fix command in a code block, notes), the scope of collection and the assumptions of the analysis. "What if I fixed this" (`--what-if-*`) and the comparison with last time (`--baseline`) are also bulleted. The assumptions of the analysis now appear in the result instead of on standard error. Pass `--plain` to get the previous sentence style. Collected strings such as file names are neutralized so that they cannot break the tables or the code fences. **If a script reads the output as text, add `--plain` or read the JSON (`--json-out`).**
@@ -109,6 +117,11 @@ The contents of these releases, grouped by theme. The full text of each entry is
 
 
 ## PersonalSOC
+
+### Unreleased
+
+- **Added: the values the LLM writes are checked against what it was given.** An IP address, domain, CVE ID or hash in the report or the hypotheses that appears nowhere in the log text, the analysis summary or the tool results is listed in the report under "Values not found in the collected material", as a possible invention. Only the strings are compared; the LLM is not asked.
+- **Added: the report ends with an appendix of the investigation results exactly as they were given to the LLM** (secrets masked, hidden characters removed), so a reviewer can read what the LLM read.
 
 ### 0.1.14
 
@@ -293,6 +306,10 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 - **Added: an optional check of your own domains** (`server_domain_check`). It runs only when you write domains in the new `domain_check_domains` setting (`example.com`, up to 5) and checks SPF (missing, more than one, or open to everyone with `+all` / `?all`), DMARC (missing; `p=none` is only noted), and the registration expiry (fewer than 30 days left, or already past). CAA and DNSSEC are shown for information and never fail the check. Only for those names, `dig` asks the resolver in `/etc/resolv.conf` for the TXT, CAA and DS records, and `curl` reads IANA's public RDAP list (it holds no domain name) and then asks the TLD registry's RDAP server for the expiry date. Nothing else is sent, and the result is remembered for six hours. A query that got no answer is never read as "missing". It is "unconfirmed" (install `dnsutils` or `bind-utils` if `dig` is missing). With the setting empty, which is the default, nothing is looked up.
 - The server health check now has 39 items and `server.conf` 118 keys (155 with `guard.yaml`). The added texts are in 10 languages (based on machine translation, not reviewed by native speakers).
 - Checked in a Linux container against real TLS servers (with and without the headers, a 404, a redirect, a closed port), real `dig` and the real RDAP servers of `.com`; the new unit tests pass. A registry without RDAP, or one that does not publish the expiry date (`jprs.jp` here), only gives the note "expiry date unavailable".
+- **Added: add processes that containment never touches** (Server Edition, `protected_processes` in `server.conf`). Automatic containment (ransomware, runtime guard, canary) never freezes or kills these, on top of the built-in list (init, container runtimes, sshd, package managers, RoamSwitch itself and so on). A name counts only while its executable runs from a system location, so a same-named fake in `/tmp` is not protected. An absolute path matches that executable only.
+- **Added: `roamswitch server allowlist test <rule> <process> [--exe PATH]`** (also `--pid PID`; no root needed; also under Tools in the server TUI). It changes nothing and shows whether the process is allowlisted and whether it is protected from freeze and kill.
+- **Added: state files that anchor trust are refused when a key appears twice.** This covers the accepted baseline of the agent setup, the allowlist, the state of paired Sensors, and the baselines of the critical-path FIM and the lockfile FIM. Until now, when a path appeared twice, the later entry was used without a word.
+- **Fixed: in the help entry "Accounts that run AI agents", the Korean and Chinese texts were swapped** (Korean screens showed Traditional Chinese).
 
 ### 1.12.8
 
@@ -485,6 +502,10 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 ---
 
 ## RoamSwitch for Mac
+
+## Unreleased
+
+- **Added: state files that anchor trust are refused when a key appears twice.** This covers the accepted baseline of the agent setup, the baselines of the critical-path FIM and the lockfile tamper guard, and the state of paired Sensors. Until now, when a path appeared twice, the later entry was used without a word.
 
 ## 1.12.9
 
