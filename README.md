@@ -33,7 +33,7 @@ between them.
 | Wi‑Fi auto‑detection & kernel packet blocking (`pf`) | ✅ | ✅ |
 | Per‑profile security levels (Trusted / Standard / Lockdown) | ✅ | ✅ |
 | Auto stop & restore of SSH / SMB / Screen Sharing / AirDrop | ✅ | ✅ |
-| 18‑point Mac security health check (FileVault / SIP / Gatekeeper / updates / XProtect / firewall / stealth / Wi‑Fi / ARP / SSH / sudo / ports / download, DNS & link protection / USB & accessory guards) | ✅ manual | ✅ + autonomous background sweep |
+| 19‑point Mac security health check (FileVault / SIP / Gatekeeper / updates / XProtect / firewall / stealth / Wi‑Fi / ARP / SSH / sudo / ports / download, DNS & link protection / USB & accessory guards / backups) | ✅ manual | ✅ + autonomous background sweep |
 | Malware tooling (XProtect / ClamAV status & scan) | ✅ manual | ✅ + auto virus‑definition updates |
 | Wi‑Fi encryption‑strength warnings, ARP‑spoofing detection, exposed‑port & USB monitoring | ✅ | ✅ |
 | 🚨 Ransomware‑like behavior detection → emergency Air‑Gap isolation (`pf`) | ❌ | 🚀 |
@@ -147,14 +147,14 @@ A separate edition for **Linux** (systemd + nftables) reproduces the same zero�
 model — autonomous `nftables` profile switching by gateway MAC, ransomware behaviour
 detection with emergency Air‑Gap isolation, unauthorized‑USB / BadUSB guard, a VPN tunnel
 with an nftables kill switch (WireGuard / Tailscale), a passive link guard, local CVE
-matching, a 27‑item security audit, a full CLI (`roamswitch`, `man roamswitch`) and a
-read‑only MCP server with 36 tools.
+matching, a 29‑item security audit, a full CLI (`roamswitch`, `man roamswitch`) and a
+read‑only MCP server with 39 tools.
 
 There are two mutually exclusive packages: **Client Edition** (`roamswitch`, tray app +
-web UI, 27‑item audit) and **Server Edition** (`roamswitch-server`, fully headless for
+web UI, 29‑item audit) and **Server Edition** (`roamswitch-server`, fully headless for
 cloud VPS/data centers — inbound default drop with SSH lockout prevention, Critical Path
 FIM, eBPF intrusion detection via Falco or Tetragon with autonomous containment, a
-resource‑exhaustion guard, Telegram/LINE/webhook alerts, and a 34‑item audit).
+resource‑exhaustion guard, Telegram/LINE/webhook alerts, and a 39‑item audit).
 
 - **Free — "Community Edition"**, every feature unlocked, no activation. Proprietary
   freeware (bundled EULA); the source is not published.

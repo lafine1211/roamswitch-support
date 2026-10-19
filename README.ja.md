@@ -32,7 +32,7 @@ Macのネットワーク境界を自律的に守るメニューバーアプリ�
 | Wi‑Fi 自動検知 & カーネルパケット遮断 (`pf`) | ✅ | ✅ |
 | プロファイル別セキュリティレベル（信頼 / 標準 / ロックダウン） | ✅ | ✅ |
 | SSH / SMB / 画面共有 / AirDrop の自動停止・復元 | ✅ | ✅ |
-| Mac セキュリティ総合診断 18 項目（FileVault / SIP / Gatekeeper / 自動更新 / XProtect / ファイアウォール / ステルス / Wi‑Fi 暗号化 / ARP / SSH / sudo / 公開ポート / ダウンロード・DNS・リンク保護 / USB・アクセサリ防御） | ✅ 手動 | ✅ + バックグラウンド自律巡回 |
+| Mac セキュリティ総合診断 19 項目（FileVault / SIP / Gatekeeper / 自動更新 / XProtect / ファイアウォール / ステルス / Wi‑Fi 暗号化 / ARP / SSH / sudo / 公開ポート / ダウンロード・DNS・リンク保護 / USB・アクセサリ防御 / バックアップ） | ✅ 手動 | ✅ + バックグラウンド自律巡回 |
 | マルウェア対策（XProtect / ClamAV の状態監査・スキャン） | ✅ 手動 | ✅ + ウイルス定義自動更新 |
 | Wi‑Fi 暗号化強度警告・ARPスプーフィング検知・公開ポート/USB 監視 | ✅ | ✅ |
 | 🚨 ランサムウェア様の暗号化活動検知 → 緊急 Air‑Gap 遮断 (`pf`) | ❌ | 🚀 |
@@ -143,14 +143,14 @@ MCP サーバーと、その検知ロジックは **オープンソース**（MI
 **Linux**（systemd + nftables）向けの別エディションが、同じゼロトラスト思想を再現しています。
 ゲートウェイ MAC による `nftables` プロファイルの自律切替、ランサムウェアの挙動検知と
 緊急 Air‑Gap 隔離、不正 USB / BadUSB ガード、VPN トンネル＋nftables キルスイッチ
-（WireGuard / Tailscale）、受動リンクガード、ローカル CVE 照合、27 項目のセキュリティ診断、
-CLI（`roamswitch` / `man roamswitch`）、36 ツールの読み取り専用 MCP サーバーを同梱します。
+（WireGuard / Tailscale）、受動リンクガード、ローカル CVE 照合、29 項目のセキュリティ診断、
+CLI（`roamswitch` / `man roamswitch`）、39 ツールの読み取り専用 MCP サーバーを同梱します。
 
 パッケージは排他の 2 種類です。**Client Edition**（`roamswitch`。トレイアプリ＋Web UI、
-27 項目診断）と、**Server Edition**（`roamswitch-server`。クラウド VPS・データセンター向けの
+29 項目診断）と、**Server Edition**（`roamswitch-server`。クラウド VPS・データセンター向けの
 完全ヘッドレス版。インバウンド既定拒否＋SSH 締め出し防止、クリティカルパス FIM、
 Falco / Tetragon 連携の eBPF 侵入検知と自律隔離、リソース枯渇ガード、
-Telegram / LINE / Webhook 通知、34 項目診断）。
+Telegram / LINE / Webhook 通知、39 項目診断）。
 
 - **無償「Community Edition」**、全機能開放、ライセンス認証不要。プロプライエタリ・
   フリーウェア（同梱 EULA）。ソースは公開していません。
