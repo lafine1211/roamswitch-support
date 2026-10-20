@@ -32,7 +32,7 @@ Macのネットワーク境界を自律的に守るメニューバーアプリ�
 | Wi‑Fi 自動検知 & カーネルパケット遮断 (`pf`) | ✅ | ✅ |
 | プロファイル別セキュリティレベル（信頼 / 標準 / ロックダウン） | ✅ | ✅ |
 | SSH / SMB / 画面共有 / AirDrop の自動停止・復元 | ✅ | ✅ |
-| Mac セキュリティ総合診断 19 項目（FileVault / SIP / Gatekeeper / 自動更新 / XProtect / ファイアウォール / ステルス / Wi‑Fi 暗号化 / ARP / SSH / sudo / 公開ポート / ダウンロード・DNS・リンク保護 / USB・アクセサリ防御 / バックアップ） | ✅ 手動 | ✅ + バックグラウンド自律巡回 |
+| Mac セキュリティ総合診断 21 項目（FileVault / SIP / Gatekeeper / 自動更新 / XProtect / ファイアウォール / ステルス / Wi‑Fi 暗号化 / ARP / SSH / sudo / 公開ポート / ダウンロード・DNS・リンク保護 / USB・アクセサリ防御 / バックアップ / プロキシ自動検出 / AI エージェントの認証情報ファイル） | ✅ 手動 | ✅ + バックグラウンド自律巡回 |
 | マルウェア対策（XProtect / ClamAV の状態監査・スキャン） | ✅ 手動 | ✅ + ウイルス定義自動更新 |
 | Wi‑Fi 暗号化強度警告・ARPスプーフィング検知・公開ポート/USB 監視 | ✅ | ✅ |
 | 🚨 ランサムウェア様の暗号化活動検知 → 緊急 Air‑Gap 遮断 (`pf`) | ❌ | 🚀 |
@@ -81,8 +81,8 @@ RoamSwitch には **テレメトリがありません**。利用状況・診断�
 - 使ったときだけ動くもの（リンク安全性診断での短縮 URL の展開は対象の URL へ直接アクセス、
   Sensor・VPN 機能、npm の署名確認）
 
-購入時の決済は Web サイト上で行います。同梱の MCP サーバーは読み取り専用でローカル stdio のみを
-使用します（ネットワーク動作は下の MCP の節に記載）。直近の外向き通信の実測（[`audit/`](audit/)）は
+購入時の決済は Web サイト上で行います。同梱の MCP サーバーには、設定・防御・ポート・デバイスを変えるツールがなく、
+通信はローカル stdio のみです（ネットワーク動作は下の MCP の節に記載）。直近の外向き通信の実測（[`audit/`](audit/)）は
 2026-08-29 の 1.4.7 で、これらの経路の一部より前のものです。
 
 Linux の Server Edition は、既定では、OS のパッケージ更新と、カーネル CVE マップのための
@@ -93,15 +93,17 @@ Linux の Server Edition は、既定では、OS のパッケージ更新と、�
 
 ## MCP サーバー連携（Claude Desktop / Claude Code）
 
-RoamSwitch には **読み取り専用** の MCP（Model Context Protocol）サーバーが同梱され、
-MCP 対応クライアントから Mac のセキュリティ状況を問い合わせられます。ロックダウン切替・
-隔離・取り出しなどの操作系ツールは含まれません。
+RoamSwitch には MCP（Model Context Protocol）サーバーが同梱され、
+MCP 対応クライアントから Mac のセキュリティ状況を問い合わせられます。設定・防御・ポート・
+デバイスを変えるツールは1つもありません。読むだけのツールがほとんどで、書き込むのは3つのツール
+（`run_active_vuln_scan`・`audit_security_logs`・`run_npm_audit_signatures`）が自分の記録ファイルを
+更新するときだけです。
 
 ```sh
 claude mcp add roamswitch /Applications/RoamSwitch.app/Contents/MacOS/RoamSwitchMCPServer
 ```
 
-提供ツール（全 31 種・すべて読み取り専用）: `get_security_report` / `verify_security_findings` /
+提供ツール（全 35 種）: `get_security_report` / `verify_security_findings` /
 `get_exposed_ports` / `get_guard_status` / `audit_url_safety` / `audit_secrets` /
 `audit_security_logs` / `get_app_help` / `run_active_vuln_scan` / `run_package_cve_scan` /
 `run_package_cve_scan_languages` / `run_package_lifecycle_script_scan` / `run_typosquat_scan` /
@@ -111,7 +113,9 @@ claude mcp add roamswitch /Applications/RoamSwitch.app/Contents/MacOS/RoamSwitch
 `get_honeytoken_status` / `get_browser_credential_watch_status` /
 `get_port_anomaly_incidents` / `get_runtime_threat_status` / `get_incident_timeline` /
 `search_exec_events` / `get_process_tree` / `get_network_history` /
-`get_sensor_audit_results` / `get_notification_history` / `audit_mcp_configs`。加えて `roamswitch://docs/*`
+`get_sensor_audit_results` / `get_notification_history` / `audit_mcp_configs` /
+`audit_agent_setup` / `get_detection_coverage` / `get_ssh_guard_incidents` /
+`run_dependency_source_scan`。加えて `roamswitch://docs/*`
 リソースを 4 種類提供します。インシデント状態系のツールはローカル状態のみを読むため、
 Air‑Gap 隔離中でも応答します。Claude Desktop / Claude Code / Codex CLI / OpenCode /
 Antigravity の設定手順は <https://roamswitch.com/mcp-setup.html>。
@@ -143,14 +147,14 @@ MCP サーバーと、その検知ロジックは **オープンソース**（MI
 **Linux**（systemd + nftables）向けの別エディションが、同じゼロトラスト思想を再現しています。
 ゲートウェイ MAC による `nftables` プロファイルの自律切替、ランサムウェアの挙動検知と
 緊急 Air‑Gap 隔離、不正 USB / BadUSB ガード、VPN トンネル＋nftables キルスイッチ
-（WireGuard / Tailscale）、受動リンクガード、ローカル CVE 照合、29 項目のセキュリティ診断、
-CLI（`roamswitch` / `man roamswitch`）、39 ツールの読み取り専用 MCP サーバーを同梱します。
+（WireGuard / Tailscale）、受動リンクガード、ローカル CVE 照合、30 項目のセキュリティ診断、
+CLI（`roamswitch` / `man roamswitch`）、39 ツールの MCP サーバー（設定を変えるツールはありません）を同梱します。
 
 パッケージは排他の 2 種類です。**Client Edition**（`roamswitch`。トレイアプリ＋Web UI、
-29 項目診断）と、**Server Edition**（`roamswitch-server`。クラウド VPS・データセンター向けの
+30 項目診断）と、**Server Edition**（`roamswitch-server`。クラウド VPS・データセンター向けの
 完全ヘッドレス版。インバウンド既定拒否＋SSH 締め出し防止、クリティカルパス FIM、
 Falco / Tetragon 連携の eBPF 侵入検知と自律隔離、リソース枯渇ガード、
-Telegram / LINE / Webhook 通知、39 項目診断）。
+Telegram / LINE / Webhook 通知、40 項目診断）。
 
 - **無償「Community Edition」**、全機能開放、ライセンス認証不要。プロプライエタリ・
   フリーウェア（同梱 EULA）。ソースは公開していません。

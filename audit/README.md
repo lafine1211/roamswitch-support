@@ -89,7 +89,7 @@ beacon.
 
 ## Defense & Penetration Verification (macOS VM)
 
-In addition to the Zero Telemetry egress audit, we provide automated tooling to verify RoamSwitch's 5 core defense boundaries (XPC client authorization, Packet Filter Air-Gap priority, port anomaly detection, read-only MCP invariant, and ARP integrity) on a macOS VM or physical test Mac:
+In addition to the Zero Telemetry egress audit, we provide automated tooling to verify RoamSwitch's 5 core defense boundaries (XPC client authorization, Packet Filter Air-Gap priority, port anomaly detection, MCP no-change invariant, and ARP integrity) on a macOS VM or physical test Mac:
 
 - **[Defense & Penetration Verification Guide (English)](README-SECURITY.md)** (`rs-defense-audit.sh`)
 - **[Verification Checklist (English)](CHECKLIST-SECURITY.txt)**

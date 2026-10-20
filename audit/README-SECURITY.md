@@ -30,7 +30,7 @@ The verification topology is divided between the **Host Mac (Operator / Remote A
 | 1 | **Privileged Helper XPC Boundary** | Spoofed / ad-hoc caller attempting XPC command injection | §3 Privileged Helper Design | Strict rejection via Team ID & `audit_token` client validation |
 | 2 | **Packet Filter (pf) Priority** | Air-Gap containment precedence over individual port rules | §4, §5 pf Handling & Containment | Fail-closed: all external egress is dropped (`block drop`) |
 | 3 | **Port Anomaly Guard** | Detection of newly spawned `0.0.0.0` global listeners | §6 Untrusted Network Defense | Distinguishes globally exposed sockets from localhost (`127.0.0.1`) |
-| 4 | **MCP Read-Only Invariant** | Verification of zero state-mutating APIs & JSON fuzzing | §8 MCP Security Model | 0 mutation tools exposed; resilient to deeply-nested JSON DoS |
+| 4 | **MCP No-Change Invariant** | No tool changes settings, protection, ports or devices (checked with each tool's `readOnlyHint`; the only writes are 3 documented tools) & JSON fuzzing | §8 MCP Security Model | Every tool except `run_active_vuln_scan`, `audit_security_logs` and `run_npm_audit_signatures` is read-only; those 3 only update their own record files; resilient to deeply-nested JSON DoS |
 | 5 | **ARP / Gateway Monitor** | Gateway MAC mismatch / spoofing detection | §11 Threat Model | Monitors ARP table integrity and triggers fail-safe containment |
 
 ---
@@ -99,7 +99,7 @@ chmod +x ~/rs-defense-audit.sh
 ~/rs-defense-audit.sh xpc      # XPC authorization boundary only
 ~/rs-defense-audit.sh pf       # Packet Filter & Air-Gap drop only
 ~/rs-defense-audit.sh port     # Port anomaly exposure detection only
-~/rs-defense-audit.sh mcp      # MCP server Read-Only invariant & fuzzing
+~/rs-defense-audit.sh mcp      # MCP server no-change invariant & fuzzing
 ~/rs-defense-audit.sh arp      # ARP gateway monitoring only
 ```
 

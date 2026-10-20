@@ -30,7 +30,7 @@
 | 1 | **特権ヘルパー XPC 境界** | 偽装プロセス・未承認クライアントからの XPC 呼び出し | §3 特権ヘルパーの設計 | Team ID / `audit_token` 検証により即時切断・要求拒絶 |
 | 2 | **パケットフィルタ (pf) 優先度** | Air-Gap 隔離発動時の全パケット drop 検証 | §4, §5 pf 処理・隔離 | 個別許可ルールに優先して全外向き通信が drop されること |
 | 3 | **ポートアノマリー検知** | `0.0.0.0` バインドの新規外部公開ポート検知 | §6 未信頼ネットワーク保護 | グローバル公開とローカル限定（`127.0.0.1`）が識別されること |
-| 4 | **MCP Read-Only 不変条件** | 状態変更ツールの不在 & 不正入力ファジング | §8 MCP セキュリティモデル | 変更 API ゼロ、巨大/ネスト JSON による DoS が起きないこと |
+| 4 | **MCP 無変更の不変条件** | 設定・防御・ポート・デバイスを変更するツールがないこと(各ツールの `readOnlyHint` で確認。書き込むのは文書化した3ツールだけ) & 不正入力ファジング | §8 MCP セキュリティモデル | `run_active_vuln_scan`・`audit_security_logs`・`run_npm_audit_signatures` 以外はすべて読み取り専用。この3つが書くのは自身の記録ファイルだけ。巨大/ネスト JSON による DoS が起きないこと |
 | 5 | **ARP / ゲートウェイ整合性** | ゲートウェイ MAC の急変・重複監視 | §11 脅威モデル | ARP キャッシュを監視し、整合性の破綻時に隔離が発動すること |
 
 ---
@@ -99,7 +99,7 @@ chmod +x ~/rs-defense-audit.sh
 ~/rs-defense-audit.sh xpc      # XPC 境界テストのみ
 ~/rs-defense-audit.sh pf       # パケットフィルタ & Air-Gap 検証のみ
 ~/rs-defense-audit.sh port     # ポートアノマリー検知テストのみ
-~/rs-defense-audit.sh mcp      # MCP サーバー Read-Only & ファジングのみ
+~/rs-defense-audit.sh mcp      # MCP サーバーの無変更の不変条件 & ファジングのみ
 ~/rs-defense-audit.sh arp      # ARP 監視検証のみ
 ```
 

@@ -33,7 +33,7 @@ between them.
 | Wi‑Fi auto‑detection & kernel packet blocking (`pf`) | ✅ | ✅ |
 | Per‑profile security levels (Trusted / Standard / Lockdown) | ✅ | ✅ |
 | Auto stop & restore of SSH / SMB / Screen Sharing / AirDrop | ✅ | ✅ |
-| 19‑point Mac security health check (FileVault / SIP / Gatekeeper / updates / XProtect / firewall / stealth / Wi‑Fi / ARP / SSH / sudo / ports / download, DNS & link protection / USB & accessory guards / backups) | ✅ manual | ✅ + autonomous background sweep |
+| 21‑point Mac security health check (FileVault / SIP / Gatekeeper / updates / XProtect / firewall / stealth / Wi‑Fi / ARP / SSH / sudo / ports / download, DNS & link protection / USB & accessory guards / backups / proxy auto-discovery / AI agent credential files) | ✅ manual | ✅ + autonomous background sweep |
 | Malware tooling (XProtect / ClamAV status & scan) | ✅ manual | ✅ + auto virus‑definition updates |
 | Wi‑Fi encryption‑strength warnings, ARP‑spoofing detection, exposed‑port & USB monitoring | ✅ | ✅ |
 | 🚨 Ransomware‑like behavior detection → emergency Air‑Gap isolation (`pf`) | ❌ | 🚀 |
@@ -84,7 +84,7 @@ need, which are published in the design document and the
 - only when you use them: expanding a short URL in the Link Safety sheet (the request
   goes directly to the target URL), the Sensor and VPN features, and the npm signature check
 
-Purchase checkout happens on the website. The bundled MCP server is read‑only and speaks
+Purchase checkout happens on the website. The bundled MCP server has no tool that changes settings, protections, ports or devices, and speaks
 local stdio only (its own network behavior is described in the MCP section below). The last
 egress measurement in [`audit/`](audit/) was made on version 1.4.7 on 2026-08-29 and predates
 several of these paths.
@@ -98,14 +98,16 @@ an operator sets them up.
 
 ## MCP server (for Claude Desktop / Claude Code)
 
-RoamSwitch ships a **read‑only** Model Context Protocol server so MCP clients can query
-your Mac's security posture. No lockdown/quarantine/eject actions are exposed.
+RoamSwitch ships a Model Context Protocol server so MCP clients can query
+your Mac's security posture. No tool changes settings, protections, ports or devices. Most tools only
+read, and the only writes are three tools updating their own record files (`run_active_vuln_scan`,
+`audit_security_logs`, `run_npm_audit_signatures`).
 
 ```sh
 claude mcp add roamswitch /Applications/RoamSwitch.app/Contents/MacOS/RoamSwitchMCPServer
 ```
 
-31 tools, all read‑only: `get_security_report`, `verify_security_findings`, `get_exposed_ports`,
+35 tools: `get_security_report`, `verify_security_findings`, `get_exposed_ports`,
 `get_guard_status`, `audit_url_safety`, `audit_secrets`, `audit_security_logs`, `get_app_help`,
 `run_active_vuln_scan`, `run_package_cve_scan`, `run_package_cve_scan_languages`,
 `run_package_lifecycle_script_scan`, `run_typosquat_scan`, `run_npm_audit_signatures`,
@@ -114,7 +116,8 @@ claude mcp add roamswitch /Applications/RoamSwitch.app/Contents/MacOS/RoamSwitch
 `get_forensic_evidence_bundles`, `get_honeytoken_status`, `get_browser_credential_watch_status`,
 `get_port_anomaly_incidents`, `get_runtime_threat_status`, `get_incident_timeline`,
 `search_exec_events`, `get_process_tree`, `get_network_history`, `get_sensor_audit_results`,
-`get_notification_history`, `audit_mcp_configs` — plus four `roamswitch://docs/*` resources. The incident‑state
+`get_notification_history`, `audit_mcp_configs`, `audit_agent_setup`, `get_detection_coverage`,
+`get_ssh_guard_incidents`, `run_dependency_source_scan` — plus four `roamswitch://docs/*` resources. The incident‑state
 tools read only local state, so they still answer while RoamSwitch has air‑gapped the network.
 `verify_security_findings` re‑evaluates items of `get_security_report` (by `checkId`) against the
 current state and returns, per item, `stillPresent`, `resolved` or `inconclusive` with a
@@ -147,14 +150,14 @@ A separate edition for **Linux** (systemd + nftables) reproduces the same zero�
 model — autonomous `nftables` profile switching by gateway MAC, ransomware behaviour
 detection with emergency Air‑Gap isolation, unauthorized‑USB / BadUSB guard, a VPN tunnel
 with an nftables kill switch (WireGuard / Tailscale), a passive link guard, local CVE
-matching, a 29‑item security audit, a full CLI (`roamswitch`, `man roamswitch`) and a
-read‑only MCP server with 39 tools.
+matching, a 30‑item security audit, a full CLI (`roamswitch`, `man roamswitch`) and an
+MCP server with 39 tools, none of which changes settings.
 
 There are two mutually exclusive packages: **Client Edition** (`roamswitch`, tray app +
-web UI, 29‑item audit) and **Server Edition** (`roamswitch-server`, fully headless for
+web UI, 30‑item audit) and **Server Edition** (`roamswitch-server`, fully headless for
 cloud VPS/data centers — inbound default drop with SSH lockout prevention, Critical Path
 FIM, eBPF intrusion detection via Falco or Tetragon with autonomous containment, a
-resource‑exhaustion guard, Telegram/LINE/webhook alerts, and a 39‑item audit).
+resource‑exhaustion guard, Telegram/LINE/webhook alerts, and a 40‑item audit).
 
 - **Free — "Community Edition"**, every feature unlocked, no activation. Proprietary
   freeware (bundled EULA); the source is not published.

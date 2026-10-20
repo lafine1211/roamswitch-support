@@ -43,6 +43,6 @@ PHASE 4: [INSIDE VM] VERIFY 5 DEFENSE BOUNDARY RESULTS
 4.1 [ ] XPC Client Authorization Boundary (§3) ------------ PASS
 4.2 [ ] Packet Filter (pf) Priority & Air-Gap (§4, §5) ---- PASS
 4.3 [ ] Port Anomaly & Global Exposure (§6) --------------- PASS
-4.4 [ ] MCP Server Read-Only Invariant (§8) --------------- PASS
+4.4 [ ] MCP Server No-Change Invariant (§8) --------------- PASS
 4.5 [ ] ARP Gateway Monitor & Integrity (§11) ------------- PASS
 4.6 [ ] Inspect ~/rs-defense-audit/run-*/report.md

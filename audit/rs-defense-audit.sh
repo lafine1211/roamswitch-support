@@ -9,7 +9,7 @@
 #   1. XPC Client Authorization Boundary (§3) — Unsigned/unauthorized caller rejection
 #   2. Packet Filter (pf) Priority & Air-Gap Containment (§4, §5) — Fail-closed traffic drop
 #   3. Port Anomaly & Global Exposure Detection (§6) — Detection of 0.0.0.0 vs 127.0.0.1
-#   4. MCP Read-Only Invariant & Parser Robustness (§8) — Zero mutation API & hostile JSON handling
+#   4. MCP Invariant & Parser Robustness (§8) — No tool changes settings/protection/ports/devices & hostile JSON handling
 #   5. ARP Anomaly & Fail-Safe Recovery (§5, §11) — Crash resilience and containment trigger
 #
 # Usage:
@@ -17,7 +17,7 @@
 #   ./rs-defense-audit.sh xpc                 # Test XPC authorization boundary only
 #   ./rs-defense-audit.sh pf                  # Test Packet Filter & Air-Gap containment
 #   ./rs-defense-audit.sh port                # Test Port Anomaly & global exposure detection
-#   ./rs-defense-audit.sh mcp                 # Test MCP Read-Only invariant & parser robustness
+#   ./rs-defense-audit.sh mcp                 # Test MCP no-change invariant & parser robustness
 #   ./rs-defense-audit.sh arp                 # Test ARP monitoring & anomaly detection
 #   ./rs-defense-audit.sh report --outdir DIR # Re-generate markdown report from logs
 #
@@ -255,10 +255,10 @@ test_port_anomaly() {
   kill "$pid_global" "$pid_local" 2>/dev/null || true
 }
 
-# -------------------------------------- 4. MCP Read-Only & Robustness ---
+# -------------------------------------- 4. MCP Invariant & Robustness ---
 test_mcp_readonly() {
   hr
-  say "4. Testing MCP Server Read-Only Invariant & Parser Robustness (§8)..."
+  say "4. Testing MCP Server Invariant (no tool changes settings, protection, ports or devices) & Parser Robustness (§8)..."
   local log="$OUTDIR/test_mcp.log"
 
   if [ ! -x "$MCP_BIN" ]; then
@@ -267,32 +267,82 @@ test_mcp_readonly() {
     return 0
   fi
 
-  say "Querying tools/list to enforce Read-Only invariant..."
+  say "Querying tools/list to check the invariant..."
   local tools_json
   tools_json=$({ printf '%s\n' "$MCP_INIT" '{"jsonrpc":"2.0","method":"notifications/initialized"}' \
     '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}'; sleep 3; } | "$MCP_BIN" 2>/dev/null || true)
   echo "$tools_json" > "$log"
 
-  local all_names
-  all_names=$(echo "$tools_json" | grep -oE '"name" *: *"[^"]+"' | sed -E 's/.*: *"([^"]+)"/\1/')
-  local total_count
-  total_count=$(printf '%s\n' "$all_names" | grep -c . || true)
+  # Invariant: no tool changes settings, protection, ports or devices. The only writes are the tools in
+  # WRITING_TOOLS, which update their own record files (scan log, log baseline, npm cache) and must say so with
+  # readOnlyHint=false. Every other tool must declare readOnlyHint=true and destructiveHint=false.
+  # Older builds publish no annotations; for those only the mutation-verb name check can run.
+  local WRITING_TOOLS="run_active_vuln_scan audit_security_logs run_npm_audit_signatures"
+  local verdict
+  verdict=$(printf '%s' "$tools_json" | RS_WRITING_TOOLS="$WRITING_TOOLS" python3 -c '
+import json, os, re, sys
+allowed = set(os.environ["RS_WRITING_TOOLS"].split())
+verbs = re.compile(r"^(set|enable|disable|delete|remove|unblock|block|lockdown|eject|kill|write|update|modify|change|exec|execute|restart|stop|install|uninstall|apply|fix|repair|isolate|reset|forget)(_|$)")
+tools = []
+for line in sys.stdin:
+    line = line.strip()
+    if not line:
+        continue
+    try:
+        msg = json.loads(line)
+    except ValueError:
+        continue
+    if isinstance(msg, dict) and isinstance(msg.get("result"), dict) and isinstance(msg["result"].get("tools"), list):
+        tools = msg["result"]["tools"]
+names = [t.get("name", "") for t in tools if isinstance(t, dict)]
+problems = []
+annotated = 0
+writers = []
+for t in tools:
+    n = t.get("name", "")
+    a = t.get("annotations")
+    if verbs.match(n):
+        problems.append(n + " (name looks like a change)")
+    if not isinstance(a, dict):
+        continue
+    annotated += 1
+    if a.get("destructiveHint") is True:
+        problems.append(n + " (destructiveHint=true)")
+    ro = a.get("readOnlyHint")
+    if n in allowed:
+        writers.append(n)
+        if ro is not False:
+            problems.append(n + " (writes its own record files but does not say readOnlyHint=false)")
+    elif ro is not True:
+        problems.append(n + " (not read-only and not one of the documented writing tools)")
+print("TOTAL=%d" % len(names))
+print("ANNOTATED=%d" % annotated)
+print("WRITERS=%s" % " ".join(sorted(writers)))
+print("PROBLEMS=%s" % "; ".join(problems))
+')
+  local total_count annotated_count writers problems
+  total_count=$(printf '%s\n' "$verdict" | sed -n 's/^TOTAL=//p')
+  annotated_count=$(printf '%s\n' "$verdict" | sed -n 's/^ANNOTATED=//p')
+  writers=$(printf '%s\n' "$verdict" | sed -n 's/^WRITERS=//p')
+  problems=$(printf '%s\n' "$verdict" | sed -n 's/^PROBLEMS=//p')
   if [ "${total_count:-0}" -lt 2 ]; then
-    # an empty/garbled catalog would otherwise "pass" with 0 mutating tools
+    # an empty/garbled catalog would otherwise "pass" with 0 findings
     fail "tools/list returned no usable tool catalog; the invariant could not be checked"
     echo "INCONCLUSIVE (no tool catalog)" > "$OUTDIR/result_mcp.txt"
     return 1
   fi
-
-  # Mutating verbs as a name PREFIX. Read-only scanners named run_*_scan are intentionally excluded.
-  local forbidden
-  forbidden=$(printf '%s\n' "$all_names" | grep -E '^(enable|disable|set|write|delete|update|modify|change|exec|run)([_A-Z]|$)' | grep -vE '^run_.*_scan$' || true)
-  local forbidden_count
-  forbidden_count=$(printf '%s\n' "$forbidden" | grep -c . || true)
-  if [ "${forbidden_count:-0}" -eq 0 ]; then
-    pass "Read-Only Invariant Confirmed: 0 mutating tools among $total_count in MCP catalog"
+  if [ -n "$problems" ]; then
+    fail "Invariant violated: $problems"
+    echo "FAIL" > "$OUTDIR/result_mcp.txt"
+    return 1
+  fi
+  if [ "${annotated_count:-0}" -eq "${total_count:-0}" ]; then
+    pass "Invariant Confirmed: $total_count tools, none changes settings, protection, ports or devices; only [${writers}] write, and only their own record files"
+  elif [ "${annotated_count:-0}" -eq 0 ]; then
+    warn "This build publishes no tool annotations (readOnlyHint); only the mutation-verb name check ran"
+    pass "No mutation-verb tool names among $total_count tools"
   else
-    fail "Read-Only Violation: Found $forbidden_count mutating tool(s) in MCP catalog: $(echo $forbidden)"
+    fail "Only $annotated_count of $total_count tools carry annotations"
     echo "FAIL" > "$OUTDIR/result_mcp.txt"
     return 1
   fi
@@ -394,7 +444,7 @@ generate_report() {
 | 1 | **XPC Authorization Boundary** | §3 Privileged Helper (Team ID & \`audit_token\` check) | **$res_xpc** |
 | 2 | **pf Ruleset & Air-Gap Priority** | §4, §5 Packet Filter priority & Fail-closed containment | **$res_pf** |
 | 3 | **Port Anomaly Guard** | §6 Global exposure detection (\`0.0.0.0\` vs \`127.0.0.1\`) | **$res_port** |
-| 4 | **MCP Read-Only Invariant** | §8 Read-Only MCP catalog & Parser fuzz robustness | **$res_mcp** |
+| 4 | **MCP No-Change Invariant** | §8 MCP catalog (no tool changes settings, protection, ports or devices) & Parser fuzz robustness | **$res_mcp** |
 | 5 | **ARP Anomaly & Gateway Monitor** | §11 Gateway MAC monitoring & Fail-safe containment | **$res_arp** |
 
 ---
@@ -418,7 +468,7 @@ SKIPPED / INCONCLUSIVE mean the boundary was not actually exercised in this run.
 1. Privileged Helper Authorization (unapproved caller, Team ID \`$TEAM_ID\`): $res_xpc
 2. Firewall Fail-Closed Invariant (Air-Gap drop): $res_pf
 3. Port Anomaly Containment (global vs localhost listeners, detected by the MCP server): $res_port
-4. MCP Read-Only Protection (no mutating tools; survives hostile JSON): $res_mcp
+4. MCP No-Change Invariant (no tool changes settings, protection, ports or devices; survives hostile JSON): $res_mcp
 5. Gateway Integrity (ARP table observation only): $res_arp
 EOF
 
