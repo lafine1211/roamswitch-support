@@ -532,6 +532,10 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 
 ## RoamSwitch for Mac
 
+## Unreleased
+
+- **Fixed: when the process execution recorder's chain check ("Verify chain") found a problem, the reasons were shown in English.** They now follow the display language (10 languages). The translations are machine-generated and have not been checked by native speakers (other than Japanese).
+
 ## 1.14.0
 
 - **Added: notification when web server workers crash (Pro)**. Reads the error logs of nginx and Apache (Homebrew and the macOS built-in one) and notifies when workers die of a crash signal three times within five minutes.
