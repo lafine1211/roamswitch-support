@@ -12,6 +12,10 @@ independently. Older releases are summarized in ranges.
 
 A security diagnosis tool for access logs. It is a separate app (Apache-2.0): the Server Edition .deb / .rpm packages carry only the command (`accessscope`; from 1.11.2 they also carry the PersonalSOC and PathScope commands); the Linux client edition and the Mac app carry the command and a window app.
 
+### Unreleased
+
+- **Fixed: values the LLM wrote that are not in the collected material are now shown on the terminal too** (`accessscope scan --llm`). Before, they appeared only in the Markdown report (`--report`) and the window app. The terminal output (also with `--plain`) now shows the same "Values not found in the collected material" list right after the LLM text, and `--format json` has them in a new `llm.ungrounded` key. Nothing is shown when there are none.
+
 ### 0.4.1
 
 - **Added: identifier walking (`web_id_enum`) is detected**. Numbers such as receipt or order numbers swapped in one after another at the same place are found by the match between the order of arrival and the size of the values, whatever the IP. A walk split over many IPs is found too (3 or more IPs: medium, likely; fewer: low, hypothesis). Scattered values, one value asked many times and ordinary browsing are not flagged. Verified crawlers and clients that declare automation are skipped.
