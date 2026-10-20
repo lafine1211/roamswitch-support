@@ -562,6 +562,15 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 ## Unreleased
 
 - **Fixed: when the process execution recorder's chain check ("Verify chain") found a problem, the reasons were shown in English.** They now follow the display language (10 languages). The translations are machine-generated and have not been checked by native speakers (other than Japanese).
+- **Fixed: the notice for disabling a login shell after a web shell detection was recorded twice in the notification history and in event forwarding.** It is recorded once.
+- **Fixed: change detection for install-time code said "nothing was added" for folders you never marked as reviewed.** It now shows how many folders were not compared (window and MCP `uncoveredFolders`). When no node_modules folder is found it says there is nothing to compare.
+- **Fixed: the dependency CVE match (per language and Homebrew) showed the same CVE more than once.** It is merged into one finding with the nearest fixed version (the smallest).
+- **Fixed: the per-language dependency CVE match said "none found" for ecosystems that have no CVE data.** It now shows, per ecosystem, how many dependencies were not checked (window and MCP `dependencyCountByEcosystem` and `ecosystemsWithoutMap`).
+- **Added: the AI-agent setup audit flags settings files that every user can write** (`agent_settings_writable`, high; finding kinds go from 39 to 40). It covers Claude Code's settings.json, VS Code's tasks.json and GitHub Actions workflows. Only a mode the other users can write (666 and the like) counts; a group-writable mode (664) is not flagged.
+- **Fixed: the event forwarding file destination could be saved in a place that cannot be written.** When the folder cannot be written, the reason is shown on saving and forwarding does not use it at start-up. The messages about the settings and the result of the test send now follow the display language (10 languages).
+- **Fixed: English sentences appeared in the Japanese screen.** The helper sandbox notice, and the reasons shown when restoring from a ransomware snapshot (a wording mismatch that left one untranslated, a missing translation, and the system's English text for a failed copy) now follow the display language.
+- **Fixed: in ransomware containment, an unsigned program with a listed name (such as `~/Downloads/node`) was left out of the suspects by its name alone.** For a program whose signature is not valid, the name protects only when the program is in a system location (/System, /usr, /bin, /sbin, /Library/Apple); for an interpreter such as node or python, only when the script it runs is in one. Programs with a valid signature are protected as before.
+- **Fixed: in the high-entropy ransomware detection, the figure of a partly encrypted file was mixed into the "average entropy" of all files.** The average of the files judged as a whole and the highest window of the files judged by a part are now shown separately. What counts toward a burst, and the containment, are unchanged.
 
 ## 1.14.0
 
