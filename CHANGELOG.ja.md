@@ -12,7 +12,7 @@ Linux 版（別系列・1.x）でバージョン番号は独立しています�
 
 アクセスログのセキュリティ診断ツールです。RoamSwitchとは別のアプリ(Apache-2.0)で、Server Editionのdeb・rpmにはコマンド(`accessscope`)だけ(1.11.2からは、PersonalSOCとPathScopeのコマンドも同梱します)、クライアント版のLinuxとMacにはコマンドと画面アプリを同梱します。
 
-### 0.3.9
+### 0.4.0
 
 - **追加: LLM が書いた値を、渡した材料と照合します**。LLM の文章にある IP アドレス・ドメイン・CVE 番号・ハッシュのうち、渡した要約と根拠の行にないものを、報告書の LLM の節と画面に「集めた材料に現れない値」として、作り話の可能性があるものとして示します。比べるのは文字列だけで、LLM には聞きません。
 - **追加: CVE ルールを 4 つ足しました(合計 68 ルール・73 CVE)**。Apache Tomcat の部分 PUT(CVE-2025-24813。書き込み可能なデフォルトサーブレットへ `.session` ファイルを PUT する形。`PUT /名前/session` のような通常の REST の形は対象にしません)と、GitLab のリポジトリ API(CVE-2026-85706)の 3 つです。GitLab の 3 つは、クエリに `file.path` を直接渡す形、`repository` や `commits` の文字を `%72`・`%63` に符号化して経路の判定を避ける形、`commits/` や `commits.json` と末尾を変える形を見つけます。正規の `POST .../repository/commits` と、`GET` の一覧は検知しません。ルールの出典の日付は 2026-10-19 です。**限界**: ログに残るリクエストの形だけを見ます。Tomcat の続く `Content-Range` ヘッダや Cookie はログに出ないので、攻撃が成功したかは分かりません。
@@ -71,7 +71,7 @@ Linux 版（別系列・1.x）でバージョン番号は独立しています�
 
 ## PathScope
 
-### 0.1.10
+### 0.2.0
 
 - **追加: LLM が書いた値を、渡した材料と照合します**。「LLMで解説」の文章にある IP アドレス・ドメイン・CVE 番号・ハッシュのうち、渡した要約にないものを、解説の下に「集めた材料に現れない値」として、作り話の可能性があるものとして示します。比べるのは文字列だけで、LLM には聞きません。
 - **追加: 同梱の既知の脆弱性データを 53 件から 64 件にしました**。これまでの選び方は、CISA の KEV(実際の攻撃で悪用)と、FIRST の EPSS が高いもの(悪用される可能性が高い)の 2 つでした。3 つ目として、Metasploit Framework に公開のローカル権限昇格モジュールがある CVE を足しました(11 件。内訳は KEV 50、EPSS のみ 3、公開モジュール 11)。Ubuntu のカーネル(overlayfs の CVE-2023-2640・CVE-2023-32629 など)、snapd、needrestart、Enlightenment、macOS(MacDirtyCow の CVE-2022-46689、CVE-2024-27822)が入ります。KEV と EPSS で入ったものは変わりません。CVE の ID は人が選んだ一覧(`packaging/cve/public-exploit-cves.json`)から読み、モジュールのコードは取り込みません。入る条件(ローカルから、機密性と完全性が高、権限が HIGH でない、配布元の修正版がある)は、KEV と EPSS と同じです。
@@ -114,7 +114,7 @@ Linux 版（別系列・1.x）でバージョン番号は独立しています�
 
 ## PersonalSOC
 
-### 0.1.15
+### 0.2.0
 
 - **追加: LLM が書いた値を、渡した材料と照合します**。報告と仮説にある IP アドレス・ドメイン・CVE 番号・ハッシュのうち、ログの本文・解析の要約・ツールの結果のどこにもないものを、報告書の「集めた材料に現れない値」に、作り話の可能性があるものとして挙げます。比べるのは文字列だけで、LLM には聞きません。
 - **追加: 報告書の最後に、LLM に渡した調査結果を、渡したとおりに付録として載せます**(秘密は伏せ字、不可視文字は除去済み)。審査する人が、LLM が読んだものを読めます。
@@ -284,7 +284,7 @@ Client / Server Edition）とのペアリングコード方式(固定IP+短命�
 Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）。
 詳しくは <https://lafine.net/linux>。
 
-### 1.12.9
+### 1.13.0
 
 - **追加: Server Edition の健全性診断が、Web サーバーが実際に返すものを見るようになりました**(`server_web_security_headers`)。nginx・Apache・Caddy の設定にある TLS サイトの `/` を、サーバー自身から `curl` で要求し、返ってきたヘッダーだけを読みます。HSTS(30日以上)、`X-Content-Type-Options: nosniff`、フレーム埋め込み対策(`X-Frame-Options` か CSP の `frame-ancestors`)の不足、`Secure` の無い Cookie、`HttpOnly` の無いセッションらしい Cookie を指摘します。CSP・Referrer-Policy・`SameSite` は判定しません。ステータス 400 以上の応答は使いません(nginx の `add_header` は `always` が無いとエラー応答に付かないため)。判定できた応答が1つも無ければ、合格ではなく「確認不能」です。ホストの外へは接続せず、本文と Cookie の値は保存しません。
 - **追加: 自分のドメインを確認する任意の項目**(`server_domain_check`)。新しい設定 `domain_check_domains` にドメイン(`example.com` の形、最大5つ)を書いたときだけ動き、SPF(無い、複数ある、`+all`・`?all` で誰にでも送信を許している)、DMARC(無い。`p=none` は注記だけ)、登録の有効期限(30日未満、または切れ)を確認します。CAA と DNSSEC は参考として示すだけで、不合格にはしません。その名前についてだけ、`dig` が `/etc/resolv.conf` のリゾルバーへ TXT・CAA・DS を問い合わせ、`curl` が IANA の公開 RDAP リスト(ドメイン名は含まれません)を読んでから、TLD の登録局の RDAP サーバーへ有効期限を問い合わせます。これ以外は送らず、結果は6時間覚えます。答えが得られなかった問い合わせを「無い」とは読まず、「確認不能」にします(`dig` が無いときは `dnsutils` か `bind-utils` を入れてください)。設定が空(既定)のときは、何も引きません。
@@ -321,7 +321,7 @@ Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）
 - **追加: AI エージェント設定の監査(`audit-agent-setup`)が、Claude Code の設定ファイルを読みます**(指摘の種類は 34 から 39)。`~/.claude` と、登録済みのプロジェクトフォルダの `.claude` にある `settings.json` と `settings.local.json` が対象です。`agent_settings_bypass`(権限モードが `bypassPermissions`、またはその警告を出さない設定)、`agent_settings_broad_allow`(どんなシェルコマンドでも確認なしで許可する `permissions.allow`)、`agent_settings_hook`(プロジェクトの設定にあるフック。取得して実行・復号して実行の形をしたフックは、どこにあっても high)、`agent_settings_endpoint_override`(`ANTHROPIC_BASE_URL` が公式以外のホストを指す設定。プロジェクトの設定にあれば high)を指摘します。`agent_settings_weakened` は、確認済みにした後で設定が緩くなったときだけ指摘します。禁止ルールが減った、広い許可が増えた、フックが増えた・変わった、権限モードが上がった、サンドボックスがオフになった、警告がオフになった、のどれかです。厳しくなる変更は指摘しません。ルールやコマンドの文字は結果にも基準にも入れず、ダイジェストだけを保存します。設定を記録する前の版で確認済みにした状態は、もう一度確認済みにするまで、設定を比べません。
 - **追加: インストールスクリプトの一覧に、確認済みの状態からの差分を足しました**。`roamswitch scan-scripts --accept` で今の状態を確認済みにすると、以降の `scan-scripts` が、インストール時に動くコードが増えたパッケージを示します。スクリプトの追加(`script_added`)、コマンドの変更(`script_changed`)、コンパイル済みコードの追加(`native_added`。`binding.gyp`、`.node`・`.so`・`.dylib`・`.dll` のファイル、実行ファイル)、これらを持つ新しいパッケージ(`new_package_with_install_code`)です。なくなったものは示しません。画面アプリの「インストールスクリプト」にも、同じ内容の帯と「今の状態を確認済みにする」のボタンがあります。確認済みにできるのは人だけで、スキャンも MCP ツールも基準を動かしません。MCP の `run_package_lifecycle_script_scan` は、`baselineAcceptedAt` と `drift` を返します。基準には、コマンドの文字ではなくダイジェストを、`~/.config/roamswitch/package_install_baseline.json` に 0600 で保存します。
 - リバースシェルの監視(パイプと UDP の形を含む)、`netconf_watch`、`name_resolution_exposure`、認証情報の種類は、偽の `/proc` と一時ファイルで確かめたもので、実機のプロセスや実際の DHCP の応答では確かめていません。GTK のスイッチは、ビルドまでで、画面では見ていません。
-- 同梱のアプリは、AccessScope を 0.3.9、PathScope を 0.1.10、PersonalSOC を 0.1.15 にしました。
+- 同梱のアプリは、AccessScope を 0.4.0、PathScope を 0.2.0、PersonalSOC を 0.2.0 にしました。
 
 ### 1.12.8
 
@@ -508,7 +508,7 @@ Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）
 
 ## RoamSwitch for Mac
 
-## 1.12.10
+## 1.13.0
 
 - **追加: バックアップの最新性の診断**(`backup_recency`)。Time Machine の設定と最後のバックアップの時刻を読み、7 日以内なら合格です。バックアップ先が未設定、記録が無い、7 日より前、のいずれかなら不合格です。Arq などの別のアプリのバックアップや、権限で読めないときは「不明」にして、点数には入れません。ローカルスナップショットは、外のバックアップには数えません。**限界**: 復元できるかは検査しません。バックアップ先を設定した Mac での動作は、実機では確かめていません(設定の形は、文書にある形の固定データで試しました)。
 - **追加: パッケージ CVE の検出を、理由と期限を付けて受容できます**。パッケージ CVE の画面の各行に「受容…」と「取り消す」のボタンがあり、理由は必須、期限は 30・90・180・365 日から選びます。受容した検出は一覧に残り、「要対応」の数には入れず、別に数えます。期限が切れると通常の検出に戻り、インシデントのタイムラインに記録します(起動時と 6 時間ごとに確認します)。受容は、パッケージのバージョンも含めて照合するので、同じパッケージが別の脆弱なバージョンに変わったときに、前の受容が効き続けることはありません。**MCP からは受容できません**。`run_package_cve_scan` と `run_package_cve_scan_languages` が返すのは件数だけです。
@@ -537,7 +537,7 @@ Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）
 - **追加: AI エージェント設定の監査が、Claude Code の設定ファイルを読みます**(指摘の種類は 34 から 39)。`~/.claude` と、登録済みのプロジェクトフォルダの `.claude` にある `settings.json` と `settings.local.json` が対象です。`agent_settings_bypass`(権限モードが `bypassPermissions`、またはその警告を出さない設定)、`agent_settings_broad_allow`(どんなシェルコマンドでも確認なしで許可する `permissions.allow`)、`agent_settings_hook`(プロジェクトの設定にあるフック。取得して実行・復号して実行の形をしたフックは、どこにあっても high)、`agent_settings_endpoint_override`(`ANTHROPIC_BASE_URL` が公式以外のホストを指す設定。プロジェクトの設定にあれば high)を指摘します。`agent_settings_weakened` は、確認済みにした後で設定が緩くなったときだけ指摘します。禁止ルールが減った、広い許可が増えた、フックが増えた・変わった、権限モードが上がった、サンドボックスがオフになった、警告がオフになった、のどれかです。厳しくなる変更は指摘しません。ルールやコマンドの文字は結果にも基準にも入れず、ダイジェストだけを保存します。設定を記録する前の版で確認済みにした状態は、もう一度確認済みにするまで、設定を比べません。
 - **追加: インストールスクリプトの一覧に、確認済みの状態からの差分を足しました**(Pro)。「インストールスクリプト (npm) (Pro)」タブの「今の状態を確認済みにする」を押した後は、インストール時に動くコードが増えたパッケージを、一覧の上に示します。スクリプトの追加(`script_added`)、コマンドの変更(`script_changed`)、コンパイル済みコードの追加(`native_added`。`binding.gyp`、`.node`・`.so`・`.dylib`・`.dll` のファイル、実行ファイル)、これらを持つ新しいパッケージ(`new_package_with_install_code`)です。なくなったものは示しません。確認済みにできるのは人だけで、スキャンも MCP ツールも基準を動かしません。MCP の `run_package_lifecycle_script_scan` は、`baselineAcceptedAt` と `drift` を返します。基準には、コマンドの文字ではなくダイジェストを、`~/Library/Application Support/RoamSwitch/package_install_baseline.json` に 0600 で保存します。
 - アプリの全テスト(1830 件)が通ります(スキップ 1 件は以前からです)。リバースシェル検知とネットワーク設定の監視は、単体テストまでで、実機の通信では確かめていません。画面の表示は、ビルドとテストまでで、実機の画面では見ていません。追加した文言は 10 言語です(機械翻訳を元にしており、ネイティブの確認は受けていません)。
-- 同梱のアプリは、AccessScope を 0.3.9、PathScope を 0.1.10、PersonalSOC を 0.1.15 にしました。
+- 同梱のアプリは、AccessScope を 0.4.0、PathScope を 0.2.0、PersonalSOC を 0.2.0 にしました。
 
 ## 1.12.9
 
