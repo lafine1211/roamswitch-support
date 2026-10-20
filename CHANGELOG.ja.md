@@ -296,6 +296,7 @@ Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）
 
 ### 未リリース
 
+- **追加: 部分暗号化(ファイルの先頭だけ、または数ブロックおきの書き換え)も、ランサムウェアのバーストの数に入れます**。内容を4KiBの窓に分け、7.9 bits/byte 以上の窓が2つ以上ある16KiB以上のファイルを、高エントロピーの書き込みとして数えます。これまでは、ファイル全体の平均が低く見えて、凍結も通知もしませんでした。バーストの条件(5秒に20ファイル)、許可リストの書き手の除外、凍結、Air-Gap、通知は、これまでと同じです。macOS 版と同じ規則で、`config.json` の `ransomware_window_entropy_enabled` を `false` にすると、この規則だけ止められます。16バイトや256バイトなど、窓より細かい書き換えは見えません。使い捨ての VM で、tar や deb の展開、git、node_modules、apt、画像や動画の複写がバーストにならないことを確かめました。許可リストにない書き手が、圧縮済みのデータを多く持つ SQLite を5秒に20個以上書くと、バーストになります。
 - **修正: 日本語の表示でも、SSH 総当たりガードが「検知のみ」になる理由が英語でした**(Server Edition)。`roamswitch server bans` の「理由」と、TUI の同じ行を、表示の言語に合わせます。fail2ban があるときに検知のみにする動きは、変わりません。
 - **修正: 検知の範囲の一覧(`roamswitch coverage`、MCP の `get_detection_coverage`)で、Falco も Tetragon もないサーバーの T1562.001・T1562.006 が「稼働中」と出ていました**(Server Edition)。ハートビートのファイルがあるだけで稼働中にしていました。直近の確認が返ったとき(`ok`)だけ稼働中にし、無言(`silent`)・待機(`idle`)・無効(`disabled`)は停止中、確認前や判定できないときは不明にします。「担当ガードが停止中」の数と、ガードの一覧も同じ判定です。
 - **修正: ハニートークンの通知が、`server.conf` の言語を見ていませんでした**(Server Edition)。サービスに `LANG` がないと、`language` が `ja`(既定)でも英語で通知していました。Server Edition では `server.conf` の `language` に従います。
