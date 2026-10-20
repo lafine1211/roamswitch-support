@@ -295,6 +295,15 @@ The full text of each item is in this file's git history.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### Unreleased
+
+- **Fixed: the reason the SSH brute-force guard only detects was in English even in a Japanese display** (Server Edition). The "Reason" line of `roamswitch server bans` and the same line in the TUI now follow the display language. Detecting only while fail2ban guards sshd is unchanged.
+- **Fixed: the detection coverage list (`roamswitch coverage`, the MCP `get_detection_coverage`) showed T1562.001 and T1562.006 as on for a server with neither Falco nor Tetragon** (Server Edition). The mere existence of the heartbeat file counted as running. Now only a probe that came back (`ok`) is on; silent (`silent`), waiting (`idle`) and disabled (`disabled`) are off, and a state that is not yet known is unknown. The count of covered techniques whose guard is off and the guard list use the same rule.
+- **Fixed: honeytoken notifications ignored `language` in `server.conf`** (Server Edition). Without `LANG` in the service they came out in English even when `language` was `ja` (the default). On the Server Edition they now follow `language` in `server.conf`.
+- **Fixed: `roamswitch notifications | head` and similar commands printed a panic message when the reader closed the output early**. When the pipe is closed the command now ends without a message, with exit code 141. Daemons are unchanged.
+- **Fixed: in `roamswitch events verify`, only the reason for a broken hash chain was in English**. It now follows the display language (the CLI in Japanese and English, the TUI in ten languages). The reason MCP returns stays in English.
+- **Fixed: after a process-level isolation, the isolated process still looked as if it were running once it had ended** (`roamswitch server ebpf`, the TUI). An ended process is marked "exited", and one line says that the rule blocking traffic covers everything the account (or the container) sends, so it stays, and that `sudo roamswitch emergency-restore` lifts it. The rule and the way to lift it are unchanged.
+
 ### 1.14.1
 
 - **Fix: the Web access guard did not read the per-site Apache access logs** (Server Edition). It read only the two default files (`/var/log/apache2/access.log` and `other_vhosts_access.log`) and the `access_log` files named in the nginx configuration. With Apache, a site that has its own `CustomLog` is not written to the shared logs, so the guard saw nothing of that site. It now looks, every 10 minutes, for the files named by `CustomLog` and `TransferLog` in the Apache configuration (`apache2.conf`, `sites-enabled`, `conf-enabled`, `httpd.conf`, `conf.d`) and reads them. Piped logs (`|rotatelogs ...`) and `/dev/` are not read.

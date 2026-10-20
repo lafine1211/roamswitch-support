@@ -286,6 +286,15 @@ Client / Server Edition）とのペアリングコード方式(固定IP+短命�
 Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）。
 詳しくは <https://lafine.net/linux>。
 
+### 未リリース
+
+- **修正: 日本語の表示でも、SSH 総当たりガードが「検知のみ」になる理由が英語でした**(Server Edition)。`roamswitch server bans` の「理由」と、TUI の同じ行を、表示の言語に合わせます。fail2ban があるときに検知のみにする動きは、変わりません。
+- **修正: 検知の範囲の一覧(`roamswitch coverage`、MCP の `get_detection_coverage`)で、Falco も Tetragon もないサーバーの T1562.001・T1562.006 が「稼働中」と出ていました**(Server Edition)。ハートビートのファイルがあるだけで稼働中にしていました。直近の確認が返ったとき(`ok`)だけ稼働中にし、無言(`silent`)・待機(`idle`)・無効(`disabled`)は停止中、確認前や判定できないときは不明にします。「担当ガードが停止中」の数と、ガードの一覧も同じ判定です。
+- **修正: ハニートークンの通知が、`server.conf` の言語を見ていませんでした**(Server Edition)。サービスに `LANG` がないと、`language` が `ja`(既定)でも英語で通知していました。Server Edition では `server.conf` の `language` に従います。
+- **修正: `roamswitch notifications | head` のように出力が途中で閉じられると、panic のメッセージが出ていました**。パイプが閉じたら、何も表示せず、終了コード 141 で終わります。常駐のプロセスは変わりません。
+- **修正: `roamswitch events verify` で、ハッシュチェーンが壊れた理由だけが英語でした**。表示の言語に合わせます(CLI は日本語と英語、TUI は 10 言語)。MCP が返す理由は、これまでどおり英語です。
+- **修正: プロセス単位の隔離で、プロセスが終了したあとも、隔離中のプロセスが動いているように見えました**(`roamswitch server ebpf`、TUI)。終了したプロセスには「終了済み」と付け、通信を止める規則はアカウント(コンテナなら、そのコンテナ)の通信全体に掛かっていて残ること、解除は `sudo roamswitch emergency-restore` であることを、1 行で示します。規則と解除の方法は、変わりません。
+
 ### 1.14.1
 
 - **修正: Web アクセスガードが、Apache のサイトごとのアクセスログを読んでいませんでした**(Server Edition)。読んでいたのは、既定の 2 本(`/var/log/apache2/access.log` と `other_vhosts_access.log`)と、nginx の設定の `access_log` だけでした。サイトごとに `CustomLog` を持つ Apache では、そのサイトのアクセスは共有のログに書かれないので、ガードはそのサイトを何も見ていませんでした。Apache の設定(`apache2.conf`、`sites-enabled`、`conf-enabled`、`httpd.conf`、`conf.d`)の `CustomLog` と `TransferLog` に書かれたファイルを、10 分ごとに探して読みます。パイプのログ(`|rotatelogs ...`)と `/dev/` は読みません。
