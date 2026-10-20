@@ -118,6 +118,10 @@ The contents of these releases, grouped by theme. The full text of each entry is
 
 ## PersonalSOC
 
+### Unreleased
+
+- **Fixed: `--llm` with a file now also lists the values the LLM wrote that are not in the summary it was given** (`personalsoc sshd <file> --llm name` and the like). Before, only `personalsoc scan --llm` and the report did this, so an IP address, domain, CVE ID or hash the LLM made up went unnoticed on this path. The same "Values not found in the collected material" list now follows the LLM's text (the material is the summary it was given). Nothing is printed when there are no such values.
+
 ### 0.2.0
 
 - **Added: the values the LLM writes are checked against what it was given.** An IP address, domain, CVE ID or hash in the report or the hypotheses that appears nowhere in the log text, the analysis summary or the tool results is listed in the report under "Values not found in the collected material", as a possible invention. Only the strings are compared; the LLM is not asked.
