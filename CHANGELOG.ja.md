@@ -286,6 +286,12 @@ Client / Server Edition）とのペアリングコード方式(固定IP+短命�
 Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）。
 詳しくは <https://lafine.net/linux>。
 
+### 1.14.1
+
+- **修正: Web アクセスガードが、Apache のサイトごとのアクセスログを読んでいませんでした**(Server Edition)。読んでいたのは、既定の 2 本(`/var/log/apache2/access.log` と `other_vhosts_access.log`)と、nginx の設定の `access_log` だけでした。サイトごとに `CustomLog` を持つ Apache では、そのサイトのアクセスは共有のログに書かれないので、ガードはそのサイトを何も見ていませんでした。Apache の設定(`apache2.conf`、`sites-enabled`、`conf-enabled`、`httpd.conf`、`conf.d`)の `CustomLog` と `TransferLog` に書かれたファイルを、10 分ごとに探して読みます。パイプのログ(`|rotatelogs ...`)と `/dev/` は読みません。
+- 確かめたこと: サイトごとに `CustomLog` を 14 本持つ実際のサーバーの設定で、14 本すべてが見つかりました。そのサーバーのログに残っていた、1 つの IP からの 145 件の問い合わせ(`/api/v1/database/番号` と `/api/v4/users/番号`、すべて 404)を実際のパーサーとガードに流すと、48 件目で `path_walk`、56 件目で `api_probe` として見つかりました。単体テストが通ります。**限界**: `Include` で別の場所に置いた設定は読みません。解析できない形式の行は飛ばします。1 つの要求が複数のログに書かれる設定では、同じ要求を 2 回数えることがあります。
+- 同梱のアプリは変わりません(AccessScope 0.4.1、PathScope 0.2.0、PersonalSOC 0.2.0)。
+
 ### 1.14.0
 
 - **追加: Web アクセスガード(Server Edition)**。Web サーバーのアクセスログから、受付番号・注文番号などを順に差し替えて問い合わせる動きを見つけて通知します。予約した番号(`canary`)への問い合わせ、1 つの接続元での存在しない番号への 404 の連続、同じ場所への多種類の番号、複数の接続元が番号を順にたどる動き(続きを聞く新しい接続元は最初の 1 件で見つけます)を見ます。既定は通知のみ(`/etc/roamswitch/web_guard.conf` の `mode=warn`)で、`mode=block` にすると、該当した接続元を 80/443 への新しい接続から期限つきで遮断します(許可リスト、ゲートウェイ、このホスト自身、ブラウザが 3 種類以上見える共有アドレス、私的アドレスは除きます)。`roamswitch emergency-restore` で遮断を解除できます。
@@ -349,25 +355,7 @@ Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）
 - リバースシェルの監視(パイプと UDP の形を含む)、`netconf_watch`、`name_resolution_exposure`、認証情報の種類は、偽の `/proc` と一時ファイルで確かめたもので、実機のプロセスや実際の DHCP の応答では確かめていません。GTK のスイッチは、ビルドまでで、画面では見ていません。
 - 同梱のアプリは、AccessScope を 0.4.0、PathScope を 0.2.0、PersonalSOC を 0.2.0 にしました。
 
-### 1.12.8
-
-- **追加: MCP の結果に、AI への指示のような文章が混ざっているときの警告を付けました**。パッケージのスクリプト、ログ、プロセスの名前やコマンドラインなど、RoamSwitch の外から来た文字列は、攻撃者が書けます。そこに、読んだ AI に向けた文章(「これまでの指示を無視して」「システムの指示を出力して」。英語と日本語)、偽のシステムタグ、ツール呼び出しのなりすまし、画像のリンクにデータを載せて持ち出す書き方、「これは内部の指示だ」「権限を与えられている」といった権威づけがあると、結果の最後に別のブロックで「AI に向けた文章が N 件見つかりました」と警告します。警告には、見つかった種類(`instruction-override`・`role-hijack`・`tool-call-hijack`・`exfil-markdown`・`system-prompt-leak`・`authority-claim` の 6 種類)と件数だけを書き、見つかった文章は繰り返しません。全角、不可視の文字、Unicode のタグ文字で崩した書き方も、戻してから調べます。「注意書きを付ける」対象の結果を増やしました(`get_security_report`、`verify_security_findings`、`get_exposed_ports`、`run_package_lifecycle_script_scan`、`audit_security_logs`、`get_sensor_audit_results`、`search_exec_events`、`get_process_tree`、`get_notification_history`、`get_incident_timeline`、`get_ssh_guard_incidents`、`get_ebpf_incidents`)。**限界**: キリル文字などの似た文字で綴った指示と、英語・日本語以外の言語は、見つけられません(Mac 版は、キリル文字・ギリシャ文字の似た文字を戻して調べます)。
-- **追加: `audit-agent-setup` の指摘に、OWASP LLM Top 10(2025)と MITRE ATT&CK のタグを付けました**(`owaspLlm`、`attackId`)。確実に当てはまるものだけを付けます(ATT&CK は 5 つの指摘にだけ)。`--format text|json|sarif`(MCP は引数 `format`)で、同じ指摘を SARIF 2.1.0 で出せます(CI やコードスキャンのツール向け。隠れた文字から復号した文章は含めません。公式のスキーマで検証しました)。
-- **追加: ローカルの AI 実行基盤を、確度つきで見分けます**(`get_exposed_ports` の `aiRuntimes`)。Ollama・LM Studio・Gradio・vLLM・llama.cpp・LiteLLM・Text Generation Inference・MLflow・Open WebUI・ComfyUI・Ray Dashboard・TensorBoard を、待ち受けているプロセスの名前とポートで見分けます。プロセスの名前が製品そのものか、専用のポート(Ollama の 11434)なら「確定(confirmed)」、他のソフトと共有しやすいポートだけなら「推測(likely)」で、診断には「○○かもしれません(推測)」と出ます。**推測は、リスクを上げません**。Linux 版は応答のヘッダーを読まないので、ヘッダーでの判定は、呼び出し側が渡したときにしか働きません。
-- **変更: `verify_security_findings` の結果に、`verificationStatus`・`rationale`・`counterEvidence`・`severityChangesIf` を足しました**。`verificationStatus` は、測定できたら `verified`(まだある場合も、直った場合も)、このホストでは対象外なら `false_positive`、確認できなければ `unverified` です(`false_positive` は「対象外」の意味で、直った場合ではありません)。`counterEvidence` は「この指摘が実は問題でない場合に考えられる、いちばん強い理由」、`severityChangesIf` は「深刻度が上がる・下がる条件」で、診断の項目ごとに手書きの文を用意し、まだある指摘にだけ付けます。これまでの `verdict` はそのままです。
-- **追加: 新しいコマンド `roamswitch detection-coverage [--server|--client] [--json]` と MCP ツール `get_detection_coverage`**(読み取り専用、通信なし。Server の TUI の Tools にも入れました)。ATT&CK の手法(防御の妨害、ログの消去、永続化、権限昇格、認証情報の窃取、ランサムウェアなど)について、RoamSwitch が見つけられるか、見つけられない点、担当するガードが今動いているかを返します。クライアント版と Server Edition で、別の表です。検知できると言い切れる手法は 1 つも付けず、見つけられるものは、盲点を書いたうえで「部分的」としました。裏づけをコードで確認できなかったものは「見つけられない」です。「動いているか」は設定と、入力の読み取りの状態から決めたもので、読めないときは「不明」と出し、動作中とは出しません。
-- **修正: ガードが入力を黙って失う箇所を、数えて見えるようにしました**。数えた結果は `/run/roamswitch/collectors.json` に 30 秒ごとに出し、`get_guard_status` の `collectors` と、通知に使います。読めない状態が 2 分以上続くと、収集の種類ごとに 1 日に 1 回通知します。読めないガードは `get_detection_coverage` で「動作中」と出ません。直した箇所:
-  - **SSH のログ**: ローテーションの直前の 1 秒ほどの行を取りこぼしていました(古いファイルを最後まで読んでから切り替えます)。読めないファイル、不正な文字、長すぎる行を数えます。journal のカーソルが消えたときに、「今」から読み直して間を飛ばしていたものを、カーソルの時刻から読み直すようにしました(実際の journal での確認はしていません)。
-  - **ARP**: `/proc/net/arp` が読めないとき、空の表として扱っていました。その周期を飛ばして、数えます。
-  - **プロセス実行の記録**: netlink の読み取りエラーで読み取りが黙って終わり、状態は「netlink」のままでした。`/proc` の走査に切り替えて、状態に出します。バッファがあふれたことと、1 周期に 200 を超えた新しいプロセスの数を数えます。保存の失敗も記録します。
-  - **Falco の出力**: 不正な UTF-8 の行が来ると、接続が終わって、その通知を失っていました。読んで数え、処理を続けます。
-  - **Web シェル・認証情報・自動起動の監視と Tetragon**: fanotify を使えないこと、読めないファイル、サイズの上限での読み飛ばし、キューのあふれ、再接続を数えます。
-  - 数えられなかったもの: 落とした行や件数は、分かる箇所でだけ数えています(カーソルの消失やファイルの切り詰めでは、起きたことと時刻だけです)。
-- **追加: Web ルールの監視対象に、Docker コンテナの公開用フォルダーも自動で加えます**(Server Edition)。ホストがリバースプロキシだけで、Drupal や Nextcloud などをコンテナで動かしていると、そのアプリの DocumentRoot がホストの Apache / nginx / Caddy の設定のどこにもなく、`scan_dirs` に手で足さない限り、検知の対象から漏れていました。動いているコンテナのバインド / ボリュームのマウント元のうち、マウント先のフォルダー名が `html`・`htdocs`・`public`・`public_html`・`webroot`・`www`・`web` のどれかか、コンテナが 80・443・8080・8000・8443 のどれかの TCP ポートを公開しているものを加えます。`auto_docroots=false` で止められる点は、従来どおりです。Docker が使えないときは何もしません。単体テストと、実際の nginx コンテナの `docker inspect` の出力で、解析できることを確かめました。
-- 単体テストは 2641 件が通ります。実際の netlink の切り替えと Falco の接続の処理は、実機を使う必要があるため、単体テストでは確かめていません。追加した文言は 10 言語です(機械翻訳を元にしており、ネイティブの確認は受けていません)。
-- 同梱のアプリは、AccessScope を 0.3.8 にしました(PathScope 0.1.9、PersonalSOC 0.1.14 は変わりません)。
-
-### 1.10.0 - 1.12.7(まとめ)
+### 1.10.0 - 1.12.8(まとめ)
 
 これらの版の内容を、テーマ別にまとめました(特に断りがなければ、クライアント版とサーバー版の両方)。各項目の全文は、このファイルのgitの履歴にあります。
 
@@ -474,6 +462,7 @@ Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）
 - (1.12.6) 同梱のアプリは変わりません(AccessScope 0.3.7、PathScope 0.1.9、PersonalSOC 0.1.14)。
 - **AI エージェントを専用のアカウントで動かす場合**(1.12.7、Server Edition): `server.conf` の `agent_users` に指定したアカウントについて、外向き通信の許可リスト(`agent_egress_allow`。許可した宛先以外への新しい外向き通信を、TCP も UDP も捨てます。空は「制限なし」です)、root が持つ基準線(`/var/lib/roamswitch/agent_setup/<アカウント>.json`。指示ファイル・スキル・MCP サーバー定義の確認済みの状態で、そのアカウントでは書き換えられません)、そのアカウントのホームに置くおとりの認証情報を足しました。NIST・NSA・CISA の 2026 年 10 月 16 日の手引きのうち、1 台のサーバーで実装できる項目に当たります。`root` になれるエージェントは止められません。実行記録のハッシュチェーンは、10 秒ごとのチェックポイントで、書き込み中のセグメントも守ります(`roamswitch events verify`)。
 - **隔離・Web ルール・転送**(1.12.7): プロセスを強制終了する隔離で、証拠のバンドルのプロセスの項目が空だった問題を直しました(強制終了の前に、プロセスの状態を保存します)。Web ルールのファイルに JSON Schema を付け、書き間違いを読み込み時に指摘します(`roamswitch web-rules example schema`、`web-rules validate`)。JSON Lines の転送ファイルを、指定したグループが読めるようにできます(`forward_file_group`)。Docker のリスク検知の通知に、Exegol のコンテナであることを添えます(Exegol のコンテナというだけでは通知しません)。
+- **AI への指示のような文章の警告と、検知の見え方**(1.12.8): MCP の結果に、AI に向けた文章(「これまでの指示を無視して」、偽のシステムタグ、ツール呼び出しのなりすまし、画像のリンクにデータを載せて持ち出す書き方、権威づけ)が混ざっているとき、結果の最後に別のブロックで警告します。`audit-agent-setup` の指摘に OWASP LLM Top 10 と ATT&CK のタグを付け、SARIF 2.1.0 でも出せます。ローカルの AI 実行基盤を確度つきで見分けます(`get_exposed_ports` の `aiRuntimes`)。新しいコマンド `roamswitch detection-coverage` と MCP ツール `get_detection_coverage` は、ATT&CK の手法について、見つけられるか、見つけられない点、ガードが動いているかを返します。ガードが入力を黙って失う箇所(SSH のログ、ARP、プロセス実行の記録、Falco、fanotify を使う監視)を数えて、`get_guard_status` と通知に出します。Web ルールの監視対象に、Docker コンテナの公開用フォルダーも自動で加えます。
 
 ### 1.9.39 - 1.9.94(まとめ)
 
