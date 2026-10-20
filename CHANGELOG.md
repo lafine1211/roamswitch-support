@@ -12,6 +12,11 @@ independently. Older releases are summarized in ranges.
 
 A security diagnosis tool for access logs. It is a separate app (Apache-2.0): the Server Edition .deb / .rpm packages carry only the command (`accessscope`; from 1.11.2 they also carry the PersonalSOC and PathScope commands); the Linux client edition and the Mac app carry the command and a window app.
 
+### Unreleased
+
+- **Added: identifier walking (`web_id_enum`) is detected**. Numbers such as receipt or order numbers swapped in one after another at the same place are found by the match between the order of arrival and the size of the values, whatever the IP. A walk split over many IPs is found too (3 or more IPs: medium, likely; fewer: low, hypothesis). Scattered values, one value asked many times and ordinary browsing are not flagged. Verified crawlers and clients that declare automation are skipped.
+
+
 ### 0.4.0
 
 - **Added: the values the LLM writes are checked against what it was given.** An IP address, domain, CVE ID or hash in the LLM's text that is not in the summary and evidence lines it received is shown, in the LLM section of the report and on screen, under "Values not found in the collected material", as a possible invention. Only the strings are compared; the LLM is not asked.
@@ -293,6 +298,16 @@ The full text of each item is in this file's git history.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### Unreleased
+
+- **Added: web access guard (Server Edition)**. Reads the web server's access log and reports receipt numbers, order numbers and similar identifiers being swapped in one after another. It watches for a question for a reserved number (`canary`), a run of 404 answers for numbers that do not exist from one client, many different numbers at the same endpoint, and several clients walking the numbers in order (a new client that asks for the next numbers is found on its first request). The default is notification only (`mode=warn` in `/etc/roamswitch/web_guard.conf`); with `mode=block`, a matched client is blocked from new connections to ports 80/443 for a limited time (the allow list, the gateway, this host itself, a shared address behind which three or more browsers show up, and private addresses are excluded). `roamswitch emergency-restore` lifts the block.
+- **Added: web gate (`roamswitch-webgate`, optional)**. A small component that answers nginx's `auth_request` and guards only the endpoints that take numbers. It runs on a Unix socket only and never reaches the network. A per-endpoint budget of new numbers per minute holds back an attack that keeps changing IP. If the gate is down, requests are let through. `roamswitch web-gate-config <path>` prints the nginx configuration (it changes nothing).
+- **Added: `roamswitch web-id-check`**. Asks your own site for consecutive numbers (up to 10) with no login and checks whether different contents come back per number.
+- **Added: notification when nginx or Apache workers crash (Server Edition)**. Reads the error log and notifies when workers die of a crash signal three times within five minutes. The master process replaces each worker, so no other check saw this before.
+- **Fixed: the web rules watcher could miss a file written again right away (Server Edition)**. A web shell written over a harmless file within two seconds was not scanned. The file is now scanned again when the wait is over.
+- **Fixed: the client edition's memory of scanned files now uses the change time to the nanosecond**. A file overwritten with the same size within the same second could be taken as already scanned.
+
+
 ### 1.13.0
 
 - **Added: the Server Edition health check now looks at what the web server really sends** (`server_web_security_headers`). From the server itself, `curl` requests `/` of every TLS site found in the nginx, Apache and Caddy configuration and reads only the response headers. It reports a missing HSTS (30 days or more), `X-Content-Type-Options: nosniff` and protection against framing (`X-Frame-Options` or the CSP `frame-ancestors`), cookies without `Secure`, and session-like cookies without `HttpOnly`. CSP, Referrer-Policy and `SameSite` are not judged. A response with status 400 or above is not used (nginx leaves `add_header` out of error responses unless `always` is given); if no response could be judged the result is "unconfirmed", not a pass. Nothing outside the host is contacted, and neither the body nor cookie values are stored.
@@ -520,6 +535,12 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 ---
 
 ## RoamSwitch for Mac
+
+## Unreleased
+
+- **Added: notification when web server workers crash (Pro)**. Reads the error logs of nginx and Apache (Homebrew and the macOS built-in one) and notifies when workers die of a crash signal three times within five minutes.
+- **Fixed: a file re-created at the same path right after a quarantine is now scanned**. Files at that path were skipped for 60 seconds after a quarantine, so a web shell re-created right away was missed.
+
 
 ## 1.13.0
 
