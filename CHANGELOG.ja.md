@@ -278,6 +278,10 @@ Client / Server Edition）とのペアリングコード方式(固定IP+短命�
 Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）。
 詳しくは <https://lafine.net/linux>。
 
+### 未リリース
+
+- **修正: SELinux が有効な RHEL 系(Fedora・RHEL・AlmaLinux・Rocky Linux)で、デーモンが権限不足で動いていました**。ラベルのないデーモンは、汎用の `init_t` で動き、SELinux が `authorized_keys` と setuid ファイル(`su`・`sudo`・`passwd` など)の読み取り、カナリアファイルの作成、`setpgid` を拒否していました。デーモンは止まらずに動き続けるので、気づかないまま、SSH 鍵の監査、setuid ファイルの監視、カナリアの設置などが効いていなかった可能性があります。rpm の導入時に、デーモンのファイル(サーバー版は `/usr/lib/roamswitch/roamswitch-server-daemon`、クライアント版は `/usr/bin/roamswitch-daemon`)へ `initrc_exec_t` のラベルを付け、通常の init 起動サービスと同じ `initrc_t` で動かします。Fedora 42(SELinux 有効)で、起動後 25 秒間の拒否が 81 件から 0 件になり、カナリアファイル 12 個が作られました。`semanage`(`policycoreutils-python-utils`、rpm の Recommends に追加)があれば、ラベルの規則を残すので、再ラベルしても保たれます。なければ `chcon` で付け、再ラベルまでしか持たない旨を表示します。パッケージを削除すると、規則も消えます。deb は対象外です。**限界**: 確かめたのは Fedora 42(aarch64)だけで、RHEL 本体や Rocky・Alma では確かめていません。権限は、専用のポリシーで絞ったものではなく、`initrc_t` の範囲です。
+
 ### 1.15.1
 
 - **追加: 乱数の記録**(Server Edition。既定はオフ)。ランサムウェアは、ファイルの鍵を、被害に遭ったマシンの中で、OS の乱数から作ります。`server.conf` に `prn_record=true` と書くと、`getrandom` が返した乱数と、`/dev/urandom`・`/dev/random` の読み取りで返った乱数を、期限つきで記録します。攻撃のあとに、そのファミリー向けの復号ツールが鍵を作り直すための材料です。RoamSwitch は復号しません。`sudo roamswitch-prn-recorder export --output FILE` で、KDDI 総合研究所の復号ツール Memento が読める形式(`memento.prn/v1`)に書き出せます。

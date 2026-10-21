@@ -287,6 +287,10 @@ The full text of each item is in this file's git history.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### Unreleased
+
+- **Fix: on RHEL-family hosts with SELinux enabled (Fedora, RHEL, AlmaLinux, Rocky Linux) the daemon ran with too few permissions**. Without a label of its own the daemon ran as the generic `init_t`, and SELinux denied reading `authorized_keys` and the setuid binaries (`su`, `sudo`, `passwd` and others), creating the decoy files, and `setpgid`. The daemon kept running, so the SSH key audit, the setuid file watch and the decoy placement may have been silently ineffective. The rpm now labels the daemon file (`/usr/lib/roamswitch/roamswitch-server-daemon` on the Server Edition, `/usr/bin/roamswitch-daemon` on the client) `initrc_exec_t` at install time, so it runs as `initrc_t` like an ordinary init-started service. On Fedora 42 with SELinux enabled, the denials in the first 25 seconds after start went from 81 to 0, and 12 decoy files were created. When `semanage` (`policycoreutils-python-utils`, added to the rpm Recommends) is present, the label rule is kept and survives a relabel; without it the label is set with `chcon` and the install says that it lasts only until the next relabel. Removing the package removes the rule. The deb is not affected. **Limits**: verified on Fedora 42 (aarch64) only, not on RHEL itself, Rocky or Alma. The permissions are those of `initrc_t`, not a dedicated policy that narrows them.
+
 ### 1.15.1
 
 - **Added: a record of random bytes** (Server Edition, off by default). A ransomware makes the keys of its files from random bytes it gets on the machine. With `prn_record=true` in `server.conf`, what `getrandom` returned and what reads of `/dev/urandom` and `/dev/random` returned are recorded for a limited time, as the material a decryptor made for that family needs to rebuild the keys after an attack. RoamSwitch does not decrypt. `sudo roamswitch-prn-recorder export --output FILE` writes them in `memento.prn/v1`, the format the Memento decryptor of KDDI Research reads.
