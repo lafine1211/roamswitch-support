@@ -527,6 +527,12 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 
 ## RoamSwitch for Mac
 
+## Unreleased
+
+- **Fixed: in the agent-setup audit and MCP configuration audit windows, the "detail" line was in English even in other display languages** (`mode 666 is writable by every user`, `enableAllProjectMcpServers is true`, and so on). It now follows the display language (10 languages). The `detail` in MCP responses and SARIF stays English, because machines read it. The translations are based on machine translation and have not been checked by native speakers (other than Japanese).
+- **Fixed: the critical-file tamper watch announced the same change that nobody had accepted (sudoers.d, pam.d and the like) at every app launch.** The baseline never advances on its own, so the same change is found every time. What was announced is now saved and carried over, and cleared when you accept the state with "Update the critical-file baseline to the current state…" in the menu. On the first launch after this update, a change that is still waiting is announced once.
+- **Fixed: when the vulnerability acceptance file could not be read or was damaged, accepting a new one erased every acceptance in it.** Nothing is saved or revoked on a file that cannot be read, is damaged or has an unknown version. A damaged file is left as it is, and a copy of its contents is kept once in the same folder. The window now says why saving failed: cannot be read, damaged, or other.
+
 ## 1.15.1
 
 - **Fixed: the dependency-lockfile guard used too much CPU.** Every time one file in a watched folder changed, it walked the whole folder (up to 6 levels deep) again on the main thread. With a development folder watched (about 62,000 entries, about 0.58 s per walk), a scan ran every 2 to 4 seconds while files were being edited, and RoamSwitch used 5 to 25% of a CPU. It now scans only when a lockfile is created, changed or removed, or a folder appears, goes or moves. A change under `.git`, `node_modules`, `target` and the like, which the walk never enters, no longer counts. The scan runs off the main thread, one at a time.
