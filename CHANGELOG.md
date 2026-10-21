@@ -12,6 +12,10 @@ independently. Older releases are summarized in ranges.
 
 A security diagnosis tool for access logs. It is a separate app (Apache-2.0): the Server Edition .deb / .rpm packages carry only the command (`accessscope`; from 1.11.2 they also carry the PersonalSOC and PathScope commands); the Linux client edition and the Mac app carry the command and a window app.
 
+### Unreleased
+
+- **Fixed: the help of `accessscope` now matches how it works.** It said "LLM analysis cannot run as root", but since 0.3.4 the command line runs it as root too (the LLM then runs with root's rights). The `--json` line now says it is the same as `--format json` (the values `text|json|csv|sarif` are listed at the end of the help). The text is fixed in all 10 languages.
+
 ### 0.4.2
 
 - **Fixed: values the LLM wrote that are not in the collected material are now shown on the terminal too** (`accessscope scan --llm`). Before, they appeared only in the Markdown report (`--report`) and the window app. The terminal output (also with `--plain`) now shows the same "Values not found in the collected material" list right after the LLM text, and `--format json` has them in a new `llm.ungrounded` key. Nothing is shown when there are none.
@@ -107,6 +111,10 @@ The contents of these releases, grouped by theme. The full text of each entry is
 - (0.1.7) **Updated: the known-vulnerability data is now the CISA KEV catalog 2026.10.04 (data generated 2026-10-05).** This is the data used by the check of installed software versions against known vulnerabilities (0.1.5); until now it was the 2026.10.02 catalog (generated 2026-10-04). The vulnerability entries in the data are the same as before; only the catalog version and the generation date changed. The data date shown in the result is newer, which gives more time before the notice that appears when the data is over 45 days old. The data is bundled with the app, and nothing is looked up over the network during an analysis. There are no other changes.
 
 ## PersonalSOC
+
+### Unreleased
+
+- **Fixed: `--llm` with a file now prints the detections first** (`personalsoc sshd <file> --llm name` and the like). Before, it printed only the LLM's draft, although its heading says to check the facts in the detections above. Now it prints the same detections as without `--llm`, then the draft and the list of values not in the collected material. The detections stay even if the LLM fails.
 
 ### 0.2.1
 
