@@ -569,6 +569,7 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 
 ## Unreleased
 
+- **Fixed: a Mac without Pro was asked for the "Input Monitoring" permission (receive keyboard input) after the first launch.** It is asked only when you turn on the Unauthorized USB / BadUSB Physical Port Guard. If you do not allow it, the guard's settings show why, with a button that opens the setting. The Accessibility permission is also asked only after you decide to turn the guard on.
 - **Fixed: when the process execution recorder's chain check ("Verify chain") found a problem, the reasons were shown in English.** They now follow the display language (10 languages). The translations are machine-generated and have not been checked by native speakers (other than Japanese).
 - **Fixed: the notice for disabling a login shell after a web shell detection was recorded twice in the notification history and in event forwarding.** It is recorded once.
 - **Fixed: change detection for install-time code said "nothing was added" for folders you never marked as reviewed.** It now shows how many folders were not compared (window and MCP `uncoveredFolders`). When no node_modules folder is found it says there is nothing to compare.
