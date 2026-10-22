@@ -527,6 +527,14 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 
 ## RoamSwitch for Mac
 
+## Unreleased
+
+- **Fixed: in the ransomware entropy detection, interpreters that ship with macOS (`perl`, `python3`, `ruby`, shells and the like) were treated as "safe writers" whatever script they ran.** A script that rewrites part of many files, run with the system `perl`, started the detection and the Air-Gap, yet `perl` was not paused and every file was rewritten. An interpreter is now safe only when the script it runs is in an OS location (`-c` and standard input, where the script is unknown, are not safe). Homebrew and other package-manager `node` and `python3` stay as before.
+- **Fixed: the entropy detection named Spotlight (`mds` and others) as the writer.** Spotlight opens every changed file to read it, so it looked like the writer every time. A process that only has a file open to read, and the OS background services, are no longer the writer. `lsof` is taken three times, 0.15 s apart; when nothing is found, a program that started shortly before the burst and is tied to the watched folders is paused if there is only one. If there is still no one, the alert says "The writer could not be identified" and only the network is cut.
+- **Fixed: when an entropy burst led to the Air-Gap, the "cause" in the notification, menu and guide read "tampering with ransomware decoy files".** No decoy was touched. It now says "many files rewritten in a short time (entropy burst)".
+- **Fixed: a listener bound to an alias address on `lo0` (the loopback interface) was reported as "port exposed" and blocked automatically.** A listener on an address that is configured on `lo0` is not exposed. `0.0.0.0` and `::` are still exposed.
+- **Fixed: Apple-signed interpreters under `/System/Library`, such as Apple's `ruby`, were not detected when they opened a port.** An interpreter is no longer taken for a system service because of its signature.
+
 ## 1.16.0
 
 - **Fixed: in the agent-setup audit and MCP configuration audit windows, the "detail" line was in English even in other display languages** (`mode 666 is writable by every user`, `enableAllProjectMcpServers is true`, and so on). It now follows the display language (10 languages). The `detail` in MCP responses and SARIF stays English, because machines read it. The translations are based on machine translation and have not been checked by native speakers (other than Japanese).
