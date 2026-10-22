@@ -78,7 +78,7 @@ need, which are published in the design document and the
 - the update check (the Sparkle appcast, at launch and every 24 hours, all users)
 - license activation (only when you enter a key)
 - the link guard's signed threat feed (Pro)
-- package CVE data (all users, fetched about once every 30 days)
+- package CVE data (all users, fetched about once a week)
 - ClamAV definition updates (Pro, automatic)
 - the DNS threat guard, which switches the system DNS resolver (Pro)
 - only when you use them: expanding a short URL in the Link Safety sheet (the request
@@ -91,7 +91,7 @@ several of these paths.
 
 On Linux, the Server Edition makes no external connection by default other than OS package
 updates and a signed, receive‑only, anonymous HTTPS GET to lafine.net for the kernel CVE map (the manifest is
-checked daily and the data fetched about every 30 days; on by default since 1.11.0; nothing about the host is sent; turn it off with
+checked daily and the data fetched about once a week; on by default since 1.11.0; nothing about the host is sent; turn it off with
 `roamswitch server config set cve_kernel_map_updates_enabled false`). Other external
 communications, such as the npm signature check and notification webhooks, are on only when
 an operator sets them up.
