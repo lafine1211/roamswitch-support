@@ -12,6 +12,15 @@ independently. Older releases are summarized in ranges.
 
 A security diagnosis tool for access logs. It is a separate app (Apache-2.0): the Server Edition .deb / .rpm packages carry only the command (`accessscope`; from 1.11.2 they also carry the PersonalSOC and PathScope commands); the Linux client edition and the Mac app carry the command and a window app.
 
+### 1.0.1
+
+- **Fixed: on a site that answers every URL with the same page, a flood of "suspected effect" 2xx responses pushed the severity to High.** Such a site varies by a few bytes (a token in the page), and only a size exactly equal to the usual page counted as "the usual page", so the wobble was counted as "unusual response". Two things were added:
+  - A size close to the usual one (0.2% of the size, 2 to 12 bytes) counts as the same page. For responses under 500 bytes, a few bytes are a difference in content, so only an identical size is compared.
+  - Even with no normal request in the log, 2xx responses of a similar size returned for 4 or more different file names (`.env`, `.git/config`, `phpinfo.php` and the like) count as that same page. One file read in several spellings (variants of `../../etc/passwd`) keeps a single file name, so it does not count.
+  - On real access logs (3 sites, about 2 weeks), the "unusual 2xx" of "probing of secret and configuration files and admin pages" fell from 634 to 76, and the overall risk from 23 to 11.
+- **Changed: `203[.]0[.]113[.]9` and `example[.]com` in the LLM's text are shown with plain dots** (IPs and domains only; a `[.]` between letters or digits is restored, and a lone `[.]` in a regular-expression explanation is left as it is). The material is still given to the LLM in the defanged form. The list "Values not in the material" is also written with plain dots (report, terminal, JSON, window).
+- Checks: the 508 workspace tests pass.
+
 ### 1.0.0
 
 - **Changed: when the `--llm` analysis fails, the exit code is now 5. This is why the version is 1.0.0.** Before, a failed LLM only wrote to standard error, appeared neither in the report nor in the exit code, and the exit code was 0 when nothing was detected. The failure is now written in the report (one line in the Markdown and terminal output, `llm.failed` in JSON) and the exit code is 5. A detection (3) and `--fail-on-partial` (4) take priority. A script or CI that treated an LLM failure as exit code 0 must now handle 5. PersonalSOC ends with 1 on the same failure.
@@ -24,11 +33,7 @@ A security diagnosis tool for access logs. It is a separate app (Apache-2.0): th
 
 - **Fixed: the help of `accessscope` now matches how it works.** It said "LLM analysis cannot run as root", but since 0.3.4 the command line runs it as root too (the LLM then runs with root's rights). The `--json` line now says it is the same as `--format json` (the values `text|json|csv|sarif` are listed at the end of the help). The text is fixed in all 10 languages.
 
-### 0.4.2
-
-- **Fixed: values the LLM wrote that are not in the collected material are now shown on the terminal too** (`accessscope scan --llm`). Before, they appeared only in the Markdown report (`--report`) and the window app. The terminal output (also with `--plain`) now shows the same "Values not found in the collected material" list right after the LLM text, and `--format json` has them in a new `llm.ungrounded` key. Nothing is shown when there are none.
-
-### 0.1.0 - 0.4.1 (summarized)
+### 0.1.0 - 0.4.2 (summarized)
 
 The contents of these releases, grouped by theme. The full text of each entry is in this file's git history.
 
@@ -67,6 +72,7 @@ The contents of these releases, grouped by theme. The full text of each entry is
 - (0.4.0) **Added: the values the LLM writes are checked against what it was given.** An IP address, domain, CVE ID or hash in the LLM's text that is not in the summary and evidence lines it received is shown, in the LLM section of the report and on screen, under "Values not found in the collected material", as a possible invention. Only the strings are compared; the LLM is not asked.
 - (0.4.0) **Added: 4 CVE rules (68 rules and 73 CVEs in total).** One is the Apache Tomcat partial PUT (CVE-2025-24813): a PUT of a `.session` file to a writable default servlet. Ordinary REST shapes such as `PUT /name/session` are not matched. The other three are for the GitLab repository API (CVE-2026-85706): `file.path` passed directly in the query, `repository` or `commits` encoded as `%72` or `%63` to get around route matching, and the `commits/` and `commits.json` endings. A normal `POST .../repository/commits` and `GET` listings are not flagged. The rules carry the date 2026-10-19. **Limit**: only the request shape in the log is checked. The `Content-Range` header and the cookie that follow a Tomcat attack do not appear in the log, so success cannot be told.
 - (0.4.1) **Added: identifier walking (`web_id_enum`) is detected**. Numbers such as receipt or order numbers swapped in one after another at the same place are found by the match between the order of arrival and the size of the values, whatever the IP. A walk split over many IPs is found too (3 or more IPs: medium, likely; fewer: low, hypothesis). Scattered values, one value asked many times and ordinary browsing are not flagged. Verified crawlers and clients that declare automation are skipped.
+- **The check of the LLM's values also appears in the terminal** (0.4.2): IPs, domains, CVE IDs and hashes that are not in the material appear right after the LLM's text in the terminal output (`--plain` too), in the same list as in the report. `--format json` carries them in the new key `llm.ungrounded`. Nothing is shown when there are no such values.
 
 ## PathScope
 
@@ -312,6 +318,15 @@ The full text of each item is in this file's git history.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.17.5
+
+- **Added: the web access guard finds the probing of secret and configuration files even on a site that answers 200 to every path** (Server Edition, `probe_walk`). The existing `path_walk` counts paths that do not exist (404), so on a site that answers 200 to every path the probing was invisible and nobody was blocked. `probe_walk` counts secret, configuration and admin paths such as `.env`, `.git`, `.aws`, `actuator` and `phpmyadmin`, whatever the answer. A client that asks, within `window_secs`, for 6 or more different kinds (`probe_walk_limit`, default 6), or for 12 or more different paths of the secret kinds (`.env`, `.git` and the like; `path_walk_limit`), is treated like `path_walk`: a notice, and a block when `recon=block`. It is never reported together with `path_walk`.
+  - What is counted is the kind. A WordPress administrator who opens many paths under `/wp-admin/` still shows one kind. Things that ordinary sites also have, such as `/cgi-bin/` and `/swagger`, only add to the number of kinds.
+  - Run through the real guard, about 2 weeks of the logs of 3 real sites (all answering 200 to every path) gave 49 scanners that had been missed. Search-engine crawlers and the operator's own IP were not matched.
+  - The setting is `probe_walk_limit` in `web_guard.conf` (3 to 10000). The notice joins the notice for probing of the site's structure (one summary a day by default).
+- The bundled apps change (AccessScope 1.0.1; PersonalSOC 1.0.0 and PathScope 1.0.0 are unchanged). See the entry of AccessScope 1.0.1 for what changed there.
+- Checks: 2,607 tests of roamswitch-core, daemon, server-daemon, server-tui and cli pass. The web access guard has 35 unit tests, including the new detection (probing of a site that answers 200 to every path, an administrator's many paths, `probe_walk_limit`).
+
 ### 1.17.4
 
 - **Changed: the heading of a Server Edition alert now also carries the IP address after the host name** (Telegram, LINE, webhook). The heading is `🚨 [RoamSwitch Server Alert · host name (IP address)] title`. When one chat receives the alerts of several servers, the address tells apart machines even if their names look alike. The address is the first one `hostname -I` returns. If it cannot be read, only the host name is written (no made-up value). If the host name cannot be read but the address can, only the address is written. If neither can be read, the heading is the old one.
@@ -344,28 +359,7 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 - Verification: 3475 workspace tests pass. 1 more fails only when the whole suite runs in the container: the diagnosis item-count test is unstable in a full run. It passes alone.
 - The bundled apps are unchanged (AccessScope 1.0.0, PersonalSOC 1.0.0, PathScope 1.0.0).
 
-### 1.17.2
-
-- **Added: a PHP check, `roamswitch php-check [--json]`** (client edition and Server Edition). It covers the two critical PHP core vulnerabilities that php.net fixed on 2026-10-21: GHSA-w8hw-w9fx-j79w (CVE-2026-109618, corruption through memory exhaustion) and GHSA-6wmf-4rv5-p3rp (CVE-2026-109619, stale global state). Both lead to remote code execution. The fixed releases are 8.2.35, 8.3.36, 8.4.27 and 8.5.12. PHP 8.1 and older get no fix from the PHP project. The command only reads: it uses no network and changes nothing.
-  - **Version and how PHP runs**: each PHP found is compared with the fixed release of its branch. For a PHP installed from an OS package the version number does not change when a fix is added, so the verdict comes from the package changelog (does it name both CVEs?). Apache mod_php (the most exposed setup), PHP-FPM and FrankenPHP are told apart.
-  - **Settings**: `session.upload_progress.enabled` (on when nothing sets it) and, on PHP 8.5, `fatal_error_backtraces` (on when nothing sets it; the strongest confirmed path of CVE-2026-109619). The CLI settings and the web settings differ, so they are read from php.ini, the FPM pools and the Apache configuration, not from `php -r`.
-  - **Session files**: checked for injected code with the rules below. Reading them needs root (`sudo roamswitch php-check`).
-  - **Result**: the exit code is 1 when a finding of high severity or worse is left. It judges these two advisories only. Whether other vulnerabilities are fixed has to be checked separately.
-- **Added: PHP session files are checked for injected code** (Server Edition and `roamswitch web-scan`). One path of CVE-2026-109619 is `session.upload_progress`, which writes client-chosen text into the session file. The web rules got a file kind `session` (a name of `sess_` and an ID only, no extension) and two rules. The bundled rules went from 18 to 20.
-  - `php-session-upload-progress-code` (critical). The `upload_progress` marker next to a PHP open tag. This is what an injection leaves.
-  - `php-session-code` (high). A PHP open tag. A session file holds data only; with a tag in it, a page that includes the file runs the code.
-  - **Server Edition**: the write watcher and the periodic scan read the session directories: `session.save_path` (php.ini and FPM pools), `/var/lib/php/sessions`, `/var/lib/php/session`, `/var/lib/php5`, `/tmp`, `/var/tmp`, and the `/tmp` that systemd `PrivateTmp=` gives to PHP, Apache and nginx. Only the `sess_` files directly inside a directory are read; subfolders are not entered.
-  - **`roamswitch web-scan`**: with no folder, it now checks the same directories in addition to the document roots. The `web-scan` help says so.
-- **Added: the autostart watch also covers the files Python runs by itself at every start** (client edition, `persistence_watch_enabled`). Python runs `.pth` files in `site-packages` (each line that begins with `import` is executed), `sitecustomize.py` and `usercustomize.py` every time it starts, in any program. If a supply-chain release adds one of them, every Python of that environment runs it, `pip` included (ATT&CK T1546.018). The watch looks at the `site-packages` and `dist-packages` of the Python installations and at virtual environments under the home folders (found by `pyvenv.cfg`, four folders deep, searched again every minute). A module that a `.pth` file imports from its own folder is judged in the same way. Only code that reads three or more kinds of credential store, decodes data and runs it, runs what it downloaded, or has the shape of a reverse shell is notified. Ordinary `.pth` files (editable installs, `_virtualenv.pth`, `distutils-precedence.pth`) are only recorded. Code that hides its strings, environments inside containers and environments deeper than four folders are not seen. The Server Edition does not have this watch.
-- **Fixed: denying unprivileged user namespaces stopped systemd units that use `PrivateUsers=`** (Server Edition, `harden_userns_enabled`, on by default). `user.max_user_namespaces=0` also refuses the namespaces that root creates, so `colord` and `power-profiles-daemon` failed to start with `Failed to set up user namespacing: No space left on device`. RoamSwitch now sets `kernel.unprivileged_userns_clone` to 0 when the kernel has it and `kernel.apparmor_restrict_unprivileged_userns` to 1 when the kernel has it. Both refuse unprivileged processes only. `user.max_user_namespaces=0` is used only on a kernel with neither. A server where it is already 0 is fixed by rebooting the host. The user namespace item of the diagnosis also counts an AppArmor restriction as safe (10 languages).
-- **Fixed: `ksmbd` was not among the shared services stopped on an untrusted network** (client edition). ksmbd, the SMB server built into the kernel, is a unit of its own (`ksmbd.service`), separate from `smbd`. It kept running and kept port 445 open on an untrusted network. It is now stopped, and restored when you return to a trusted network. The README and the knowledge base (10 languages) were updated to match.
-- **Fixed: a shell started by a Node.js service was outside EXR-001** (client edition and Server Edition). EXR-001 notifies as a web shell when a service account (`www-data`, `nginx`, `apache` and the like) starts a shell whose parent is a service process. `node` and `nodejs` were not in the list of service processes, so a shell started by a Node.js application was not reported even under a matching account. A Node.js application is its own server, with no nginx or php-fpm in between. They are now in the list. A `node` that a person runs by hand, under an account that is not a service account, is still outside the rule.
-- **Fixed: `exec_rule_service_users` replaced the built-in service accounts** (client edition and Server Edition). The settings screen describes it as "extra service accounts", but setting a value dropped the built-in list (`www-data` and the others). It now adds to the list. The list is used by EXR-001 and by the ptrace-attach and library-injection (`LD_PRELOAD` and the like) rules.
-- **Changed: Server Edition alerts name the host they come from** (Telegram, LINE, webhook). The heading is now `🚨 [RoamSwitch Server Alert · host name] title`, because one chat often receives the alerts of several servers. The host name is read from `/proc/sys/kernel/hostname`, or from `/etc/hostname` if that cannot be read. When neither can be read, the heading is the same as before.
-- Verification: 3410 workspace tests pass. 2 more fail only when the whole suite runs in the container: the diagnosis item-count test is unstable in a full run (it passes alone), and one test needs a neighbouring repository.
-- The bundled apps are unchanged (AccessScope 1.0.0, PersonalSOC 1.0.0, PathScope 1.0.0).
-
-### 1.10.0 - 1.17.1 (summarized)
+### 1.10.0 - 1.17.2 (summarized)
 
 Everything in these releases, grouped by topic (Client and Server Edition unless marked). The full text of each entry is in the git history of this file.
 
@@ -536,6 +530,9 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 - (1.17.0) **What was not checked**: nothing was checked on a real systemd, nft or Server host (only tests in Docker and a postinst check with a fake `systemctl`). The same holds for the time of the first SUID scan on a large file system (30 minutes is an unmeasured default), the DNS setting and restoring through `resolvectl`, UDP DNAT to containers on a real Docker, and the added text (translations are based on machine translation and have not been checked by native speakers, other than Japanese). The check that logs arrive for the egress block, metadata watch and agent-egress rules was not added. The after-install message of deb and rpm is in English only, because the shell has no language mechanism.
 - (1.17.0) The bundled apps are now AccessScope, PersonalSOC and PathScope, all 1.0.0.
 - (1.17.1) **Fix: on a host that runs Docker, the diagnosis warned that IP forwarding was enabled** (`server_ip_forwarding_disabled`). Docker turns `ip_forward` on to route container traffic, but the diagnosis reported it as router behaviour. When the Docker socket (`/var/run/docker.sock`) and a `docker0` or `br-*` network exist, forwarding now passes and the reason "needed by Docker for container traffic" is shown (10 languages). A host without Docker is warned as before.
+- **PHP check and session files** (1.17.2): added `roamswitch php-check [--json]` (Client and Server Edition). For the two critical PHP vulnerabilities php.net fixed on 2026-10-21 (CVE-2026-109618 and CVE-2026-109619; fixed in 8.2.35, 8.3.36, 8.4.27 and 8.5.12), it reads, without changing anything, the PHP version (for OS packages, the CVEs in the package changelog), how PHP runs (mod_php, PHP-FPM, FrankenPHP), the settings `session.upload_progress.enabled` and `fatal_error_backtraces`, and the session files. The web rules gained the file type `session` and two rules (`php-session-upload-progress-code`, `php-session-code`), so the bundled rules number 20. The Server Edition watches the session save paths (`session.save_path` and others), and `roamswitch web-scan` without a folder also checks the same paths.
+- **Files Python runs at every start** (1.17.2, Client): the autostart watch looks at `.pth` files in `site-packages`, `sitecustomize.py`, `usercustomize.py` and the module a `.pth` file imports (ATT&CK T1546.018). It notifies only about code that reads several kinds of credential stores, decodes data and runs it, downloads content and runs it, or has the shape of a reverse shell; ordinary `.pth` files are only logged.
+- **Fixes** (1.17.2): the in-kernel SMB server `ksmbd.service` joined the sharing services stopped on an untrusted network. Shells started by a Node.js service are covered by EXR-001 (`node` and `nodejs` joined the list of service processes). `exec_rule_service_users` added to the default service accounts instead of replacing them, as the settings text says. The setting that refuses unprivileged user namespaces no longer stops systemd units that use `PrivateUsers=` (`colord`, `power-profiles-daemon`). A Server Edition alert now says which host it comes from.
 
 ### 1.9.39 - 1.9.94 (summarized)
 
@@ -587,6 +584,12 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 
 ## RoamSwitch for Mac
 
+## 1.17.5
+
+- **Changed: the bundled AccessScope is now 1.0.1.** There are fewer false High and Medium findings on a site that answers every URL with the same page, and the IPs and domains in the LLM's text are written with plain dots (see the AccessScope 1.0.1 entry). The window app can also be updated from AccessScope's own settings ("Update").
+- The features of RoamSwitch itself are unchanged from 1.17.4. The version matches the Linux edition.
+- Bundled apps: AccessScope 1.0.1, PersonalSOC 1.0.0, PathScope 1.0.0.
+
 ## 1.17.4
 
 - **Changed: the self-monitoring watchdog is now named "RoamSwitch Self-Monitoring"** (10 languages). System Settings (Notifications, Login Items) showed it as "RoamSwitchWatchdog".
@@ -603,32 +606,7 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 - Checks: all app tests (2366; the 1 skipped test is a pre-existing one) pass, including 12 watchdog tests. Nothing was checked on a real Mac; the checks are the build and the tests.
 - The bundled apps are unchanged (AccessScope 1.0.0, PersonalSOC 1.0.0, PathScope 1.0.0).
 
-## 1.17.2
-
-- **Added: the Link Guard notifies you about traffic to the external servers of security-testing tools** (when the Link Guard system extension is approved). Tools that test for SSRF, XXE and the like make the victim connect to a public callback server to prove that an attack worked. A normal app has almost no reason to contact these servers. The list is interact.sh, oast.pro, oast.live, oast.site, oast.online, oast.fun, oast.me, burpcollaborator.net, oastify.com, dnslog.cn and ceye.io, with their subdomains. A name that only ends in the same letters, such as `toast.pro`, does not match. You get the notice "Traffic to a security-test callback server".
-  - It is a notice only. The connection is never blocked, and never held in warn mode.
-  - One notice per host per hour.
-  - A host on the allow list is not announced, and nothing is announced while the Link Guard is off. The notice has no "Allow" or "Block" button.
-  - The verdicts for feeds, blocklists, JA3, homographs and brand impersonation still win, as before.
-  - While the system extension is not approved and only the `/etc/hosts` list is in use, this notice does not appear.
-  - A line of the kind `notice` is written to `events.log`. Older versions of the app skip that line.
-- **Added: "Domain check" in Settings** (in the watched-folders screen). It checks your own domains for what lets someone forge your mail and for lapsing registration. By default it checks nothing. You write the domains to check, one per line (up to 20; letters, digits, hyphens and dots only; write an internationalised domain in the `xn--` form), and it runs only when you press the "Domain check" button. It does not run on a schedule, and it is not added to the diagnosis.
-  - **Needs action**: no SPF record, several SPF records, or SPF that allows everyone with `+all` or `?all`. No DMARC record (`p=none` is a first step, so it is only informational). A registration that has fewer than 30 days left or has expired. For a domain with MX records, MTA-STS that is announced but whose policy file cannot be fetched, is malformed, or whose `mx` list does not cover every real MX host.
-  - **Informational**: whether CAA and DNSSEC are present. MTA-STS not in use, `mode: testing`, `mode: none`, a `max_age` under one day.
-  - **Where data is sent**: this Mac's DNS resolver (`dig` asks for TXT, CAA, DS and MX, and the `_mta-sts` TXT record when there is an MX). The RDAP server of the domain's TLD registry (`curl` reads the expiry date; it also reads IANA's public list to find the registry, and that request holds no domain name). For a domain with MX and `_mta-sts` TXT records, the domain's own `mta-sts` host (the policy file; certificate checked, redirects not followed). Nothing is sent anywhere else. The Settings screen says what is sent.
-  - When a lookup got no answer (timeout, SERVFAIL, REFUSED), it is not read as "missing"; it is reported as "could not be checked".
-- **Added: timeline records carry a cause record and references to the evidence bundle.** A detection record and the evidence bundle saved because of it were not linked on the timeline. The ransomware containment (decoy files, entropy) and the XProtect-linked containment now pass the id of the detection record to the evidence capture.
-  - The capture record (a new kind, `forensicCapture`, "Evidence bundle saved") becomes a child of the detection record. The detection record gets a reference to the bundle. The bundle's `manifest.json` gets `triggerEventID`.
-  - The activity log shows "Triggered by: …" and "Evidence bundle: …" on the row. The MCP `get_incident_timeline` gains `parentEventID`, `rootEventID` and `evidenceRefs` (added only; existing fields do not change).
-  - A parent that is missing, would make a loop, or would pass 16 levels is dropped. The record itself is always kept. A record keeps at most 8 references, and each holds only the bundle name, the file name and a SHA-256; no file content. Old files read as before.
-- **Fix: self-monitoring (automatic restart after an abnormal exit) could not be turned on** (1.17.0 and 1.17.1). The menu showed "Self-monitoring: not included in this app" and the consent step could not be reached. macOS answers "not found" for an agent that was never registered, and the app read that as "not in the app". When the registration file and the program are inside the app, it is now treated as "off" and the consent step opens. Two more things were fixed with it.
-  - The watchdog program was treated as the app itself because it shared the app's kind, so it could not restart a crashed app. It is now a small app of its own (`Contents/Library/LoginItems/RoamSwitchWatchdog.app`).
-  - The notice that the app had quit sometimes never reached the watchdog. It now also checks every 2 seconds.
-  - An old registration made with the script (`manage_watchdog.sh`) is replaced when you turn it on in the app. After approval, the watchdog started at the next login in what was checked (one virtual machine).
-- Checks: all app tests (2365; the 1 skipped test is a pre-existing one) pass. The self-monitoring registration and the app restart were checked in a virtual machine. Nothing else was checked on a real Mac; the checks are the build and the tests.
-- The bundled apps are unchanged (AccessScope 1.0.0, PersonalSOC 1.0.0, PathScope 1.0.0).
-
-## 1.10.0 - 1.17.1 (summarized)
+## 1.10.0 - 1.17.2 (summarized)
 
 The contents of these releases, grouped by theme. The full text of each entry is in this file's git history.
 
@@ -817,6 +795,8 @@ The contents of these releases, grouped by theme. The full text of each entry is
   - **Session files**: checked with the rules above; an injection is "critical" or "high".
   - **Result**: with anything "high" or worse it says "action needed" with the count. It judges these two advisories only.
 - (1.17.1) **Added: the autostart watch (Pro) also covers the files Python runs by itself at every start** (the same judgement as on Linux). Python runs `.pth` files in `site-packages` (each line that begins with `import` is executed), `sitecustomize.py` and `usercustomize.py` every time it starts, in any program. If a supply-chain release adds one of them, every Python of that environment runs it, `pip` included (ATT&CK T1546.018). The watch looks at the `site-packages` of the Python installations (Homebrew, python.org, the system's, pyenv, uv, pipx, conda and the like) and at virtual environments under the home folder (found by `pyvenv.cfg`, four folders deep, searched again every minute; Desktop, Documents, Downloads and Library are not walked, because that would raise a permission prompt). A module that a `.pth` file imports from its own folder is judged in the same way. Only code that reads three or more kinds of credential store, decodes data and runs it, runs what it downloaded, or has the shape of a reverse shell is notified. Ordinary `.pth` files are only recorded. Code that hides its strings, environments elsewhere and environments inside containers are not seen.
+- **Link protection and the domain check** (1.17.2): link protection notifies about connections to the external servers of vulnerability-scanning tools (interact.sh, oast.pro, oast.live, oast.site, oast.online, oast.fun, oast.me, burpcollaborator.net, oastify.com, dnslog.cn, ceye.io and their subdomains), when the system extension is approved (notice only, once an hour per host). Settings gained a "Domain check" (SPF, DMARC, CAA, DNSSEC, MTA-STS and the registration expiry of your own domains, checked only when you press the button).
+- **Timeline and self-monitoring** (1.17.2): timeline records carry the record that caused them and references to the evidence bundle (`parentEventID`, `rootEventID`, `evidenceRefs`). Fixed self-monitoring (automatic restart after a crash) that could not be turned on. The watchdog is now a small app (`Contents/Library/LoginItems/RoamSwitchWatchdog.app`), and a registration left by the old script is replaced when you turn it on in the app.
 
 ## 1.9.6 - 1.9.54 (summarized)
 
