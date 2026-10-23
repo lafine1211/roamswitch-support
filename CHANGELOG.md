@@ -603,7 +603,11 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
   - The capture record (a new kind, `forensicCapture`, "Evidence bundle saved") becomes a child of the detection record. The detection record gets a reference to the bundle. The bundle's `manifest.json` gets `triggerEventID`.
   - The activity log shows "Triggered by: …" and "Evidence bundle: …" on the row. The MCP `get_incident_timeline` gains `parentEventID`, `rootEventID` and `evidenceRefs` (added only; existing fields do not change).
   - A parent that is missing, would make a loop, or would pass 16 levels is dropped. The record itself is always kept. A record keeps at most 8 references, and each holds only the bundle name, the file name and a SHA-256; no file content. Old files read as before.
-- Checks: all app tests (2362; the 1 skipped test is a pre-existing one) pass. Nothing was checked on a real Mac; the checks are the build and the tests.
+- **Fix: self-monitoring (automatic restart after an abnormal exit) could not be turned on** (1.17.0 and 1.17.1). The menu showed "Self-monitoring: not included in this app" and the consent step could not be reached. macOS answers "not found" for an agent that was never registered, and the app read that as "not in the app". When the registration file and the program are inside the app, it is now treated as "off" and the consent step opens. Two more things were fixed with it.
+  - The watchdog program was treated as the app itself because it shared the app's kind, so it could not restart a crashed app. It is now a small app of its own (`Contents/Library/LoginItems/RoamSwitchWatchdog.app`).
+  - The notice that the app had quit sometimes never reached the watchdog. It now also checks every 2 seconds.
+  - An old registration made with the script (`manage_watchdog.sh`) is replaced when you turn it on in the app. After approval, the watchdog started at the next login in what was checked (one virtual machine).
+- Checks: all app tests (2365; the 1 skipped test is a pre-existing one) pass. The self-monitoring registration and the app restart were checked in a virtual machine. Nothing else was checked on a real Mac; the checks are the build and the tests.
 - The bundled apps are unchanged (AccessScope 1.0.0, PersonalSOC 1.0.0, PathScope 1.0.0).
 
 ## 1.17.1
