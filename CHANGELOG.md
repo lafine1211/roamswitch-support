@@ -312,6 +312,12 @@ The full text of each item is in this file's git history.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.17.4
+
+- **Changed: the heading of a Server Edition alert now also carries the IP address after the host name** (Telegram, LINE, webhook). The heading is `🚨 [RoamSwitch Server Alert · host name (IP address)] title`. When one chat receives the alerts of several servers, the address tells apart machines even if their names look alike. The address is the first one `hostname -I` returns. If it cannot be read, only the host name is written (no made-up value). If the host name cannot be read but the address can, only the address is written. If neither can be read, the heading is the old one.
+- Checks: the workspace tests (3,535; excluding the 1 diagnostic item-count test that is flaky only in a whole-workspace run in the container; it passes alone and in CI) pass. Building the heading and reading the `hostname -I` output are covered by unit tests.
+- The bundled apps are unchanged (AccessScope 1.0.0, PersonalSOC 1.0.0, PathScope 1.0.0).
+
 ### 1.17.3
 
 - **Added: the Link Guard notifies you about traffic to the external servers of security-testing tools** (client edition). Tools that test for SSRF, XXE and the like make the victim connect to a public callback server to prove that an attack worked. A normal app has almost no reason to contact these servers. The list is interact.sh, oast.pro, oast.live, oast.site, oast.online, oast.fun, oast.me, burpcollaborator.net, oastify.com, dnslog.cn and ceye.io, with their subdomains. A name that only ends in the same letters, such as `toast.pro`, does not match. When a DNS question or a connection is seen, you get the notice "Traffic to a security-test callback server".
@@ -359,12 +365,7 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 - Verification: 3410 workspace tests pass. 2 more fail only when the whole suite runs in the container: the diagnosis item-count test is unstable in a full run (it passes alone), and one test needs a neighbouring repository.
 - The bundled apps are unchanged (AccessScope 1.0.0, PersonalSOC 1.0.0, PathScope 1.0.0).
 
-### 1.17.1
-
-- **Fix: on a host that runs Docker, the diagnosis warned that IP forwarding was enabled** (`server_ip_forwarding_disabled`). Docker turns `ip_forward` on to route container traffic, but the diagnosis reported it as router behaviour. When the Docker socket (`/var/run/docker.sock`) and a `docker0` or `br-*` network exist, forwarding now passes and the reason "needed by Docker for container traffic" is shown (10 languages). A host without Docker is warned as before.
-- The bundled apps are unchanged (AccessScope 1.0.0, PersonalSOC 1.0.0, PathScope 1.0.0).
-
-### 1.10.0 - 1.17.0 (summarized)
+### 1.10.0 - 1.17.1 (summarized)
 
 Everything in these releases, grouped by topic (Client and Server Edition unless marked). The full text of each entry is in the git history of this file.
 
@@ -534,6 +535,7 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 - (1.17.0) **What you need to do**: a Server Edition that uses `agent_users` should audit each account with `sudo roamswitch audit-agent-setup --user NAME`, read the result, and make the baseline with `--accept`. Until then, changes in that account are not watched. Decoys cannot be placed in `/home`, so decoys for `agent_users` need `ReadWritePaths=-/home/<account>` in `/etc/systemd/system/roamswitch-server.service.d/agent-users.conf` (step 13 of `server setup` writes it after you confirm). Decoys and file-scan quarantine can write only inside `/var/www`, `/srv`, `/root`, `/opt` and `/etc/roamswitch`; for any other place, run `sudo systemctl edit roamswitch-server` and add `ReadWritePaths=-/path`. After editing `server.conf` by hand, run `sudo roamswitch server restart`. A host that needs incoming UDP must write the ports in `allowed_udp_ports`. Check the document roots watched by web shell detection with `roamswitch web-rules status`, and with 0 write them in `scan_dirs` of `web_rules.conf`.
 - (1.17.0) **What was not checked**: nothing was checked on a real systemd, nft or Server host (only tests in Docker and a postinst check with a fake `systemctl`). The same holds for the time of the first SUID scan on a large file system (30 minutes is an unmeasured default), the DNS setting and restoring through `resolvectl`, UDP DNAT to containers on a real Docker, and the added text (translations are based on machine translation and have not been checked by native speakers, other than Japanese). The check that logs arrive for the egress block, metadata watch and agent-egress rules was not added. The after-install message of deb and rpm is in English only, because the shell has no language mechanism.
 - (1.17.0) The bundled apps are now AccessScope, PersonalSOC and PathScope, all 1.0.0.
+- (1.17.1) **Fix: on a host that runs Docker, the diagnosis warned that IP forwarding was enabled** (`server_ip_forwarding_disabled`). Docker turns `ip_forward` on to route container traffic, but the diagnosis reported it as router behaviour. When the Docker socket (`/var/run/docker.sock`) and a `docker0` or `br-*` network exist, forwarding now passes and the reason "needed by Docker for container traffic" is shown (10 languages). A host without Docker is warned as before.
 
 ### 1.9.39 - 1.9.94 (summarized)
 
@@ -585,6 +587,16 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 
 ## RoamSwitch for Mac
 
+## 1.17.4
+
+- **Changed: the self-monitoring watchdog is now named "RoamSwitch Self-Monitoring"** (10 languages). System Settings (Notifications, Login Items) showed it as "RoamSwitchWatchdog".
+- **Changed: the screens now say that self-monitoring starts working at your next login after you approve it** (Settings, Help, the knowledge base and the manual; 10 languages). On one virtual machine, the watchdog did not start right after approval; it started at the next login.
+- **Changed: the menu bar menu groups related items under headings.** The "Malware protection (XProtect & ClamAV)" submenu runs in this order: antivirus, web/mail/links, ransomware and credentials, suspicious behavior detection, logs/tamper detection/forwarding, manual audits, function checks. The "Ports and devices" submenu runs: network spoofing and sniffing, ports and intrusion detection, vulnerability scans and sensors, followed by USB and Bluetooth. Before, on/off items, submenus and manual checks were mixed. The headings are in 10 languages. In the main menu, self-monitoring now sits next to "Launch at login".
+- **Changed: "Launch at login" is marked like the other on/off items.** It shows ✅ when on and 🚀 when off, instead of the system check mark.
+- **Known: on a Mac updated from 1.17.2, the watchdog's icon may stay blank in System Settings > Notifications.** The 1.17.2 watchdog had no icon, and macOS keeps that blank state in its icon cache. A new version number does not clear it, and neither does `lsregister` or restarting Notification Center. When a notification actually appears, it carries the RoamSwitch icon. On a disposable macOS virtual machine, restarting the Mac fixed it; this was confirmed once. If it does not, run `sudo rm -rf /Library/Caches/com.apple.iconservices.store` and restart. A freshly installed Mac shows it correctly from the start. The name is updated without a new version number.
+- Checks: all app tests (2,374; the 1 skipped test is a pre-existing one) pass, including tests for the menu order and headings and the watchdog name in 10 languages.
+- The bundled apps are unchanged (AccessScope 1.0.0, PersonalSOC 1.0.0, PathScope 1.0.0).
+
 ## 1.17.3
 
 - **Fix: the self-monitoring watchdog app had no icon.** Since 1.17.2 the watchdog is a small app of its own (`Contents/Library/LoginItems/RoamSwitchWatchdog.app`). System Settings (Notifications, Login Items) showed it with a blank icon. It now carries the RoamSwitch icon (`AppIcon.icns`, `CFBundleIconFile`). The release check and a test now fail when the icon is missing.
@@ -616,22 +628,7 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 - Checks: all app tests (2365; the 1 skipped test is a pre-existing one) pass. The self-monitoring registration and the app restart were checked in a virtual machine. Nothing else was checked on a real Mac; the checks are the build and the tests.
 - The bundled apps are unchanged (AccessScope 1.0.0, PersonalSOC 1.0.0, PathScope 1.0.0).
 
-## 1.17.1
-
-- **Added: PHP session files are checked for injected code** (the daily scan and the manual scan). This prepares for the two critical PHP core vulnerabilities that php.net fixed on 2026-10-21: GHSA-w8hw-w9fx-j79w (CVE-2026-109618, corruption through memory exhaustion) and GHSA-6wmf-4rv5-p3rp (CVE-2026-109619, stale global state). Both lead to remote code execution. One path of CVE-2026-109619 is `session.upload_progress`, which writes client-chosen text into the session file. The web rules got a file kind `session` (a name of `sess_` and an ID only, no extension) and two rules. The bundled rules went from 18 to 20 (the same as on Linux).
-  - `php-session-upload-progress-code` (critical). The `upload_progress` marker next to a PHP open tag. This is what an injection leaves.
-  - `php-session-code` (high). A PHP open tag. A session file holds data only; with a tag in it, a page that includes the file runs the code.
-  - **Where it looks**: the daily scan (Pro) and "Check development web folders now" in Settings also check the PHP session directories: `session.save_path` of the installed PHPs (php.ini and FPM pools), `/tmp`, `/private/var/tmp` and this Mac's temporary folder when a setting is empty, and MAMP's `/Applications/MAMP/tmp/php`. A directory is listed one level deep and only its `sess_` files are read. A scan of a folder you picked looks at that folder only.
-- **Added: a "Check PHP settings" button in Settings** (in the watched-folders screen, under "Web shell detection rules"). It checks whether the PHP on this Mac is exposed to the two advisories above. It only reads and uses no network. A PHP executable is started only to print its version.
-  - **Version**: the `php`, `php-fpm` and `frankenphp` found in Homebrew (`/opt/homebrew` and `/usr/local`, `php@*`), Herd, MAMP and PATH are compared with the fixed releases (8.2.35, 8.3.36, 8.4.27, 8.5.12). A version before the fixed release is "high". PHP 8.1 and older have no fix from the PHP project and are "high". A branch newer than 8.5 cannot be judged and is "medium". The check does not read OS package changelogs, so it judges by the version number only.
-  - **How PHP runs and settings**: Apache mod_php is "medium". PHP-FPM and FrankenPHP are "info". `session.upload_progress.enabled` (on when nothing sets it) is "medium" when on. On PHP 8.5, `fatal_error_backtraces` when on is "high" for a build before the fix and "medium" otherwise. Settings are read from php.ini, the FPM pools and the Apache configuration files.
-  - **Session files**: checked with the rules above; an injection is "critical" or "high".
-  - **Result**: with anything "high" or worse it says "action needed" with the count. It judges these two advisories only.
-- **Added: the autostart watch (Pro) also covers the files Python runs by itself at every start** (the same judgement as on Linux). Python runs `.pth` files in `site-packages` (each line that begins with `import` is executed), `sitecustomize.py` and `usercustomize.py` every time it starts, in any program. If a supply-chain release adds one of them, every Python of that environment runs it, `pip` included (ATT&CK T1546.018). The watch looks at the `site-packages` of the Python installations (Homebrew, python.org, the system's, pyenv, uv, pipx, conda and the like) and at virtual environments under the home folder (found by `pyvenv.cfg`, four folders deep, searched again every minute; Desktop, Documents, Downloads and Library are not walked, because that would raise a permission prompt). A module that a `.pth` file imports from its own folder is judged in the same way. Only code that reads three or more kinds of credential store, decodes data and runs it, runs what it downloaded, or has the shape of a reverse shell is notified. Ordinary `.pth` files are only recorded. Code that hides its strings, environments elsewhere and environments inside containers are not seen.
-- Checks: all app tests (2306; the 1 skipped test is a pre-existing one) pass. Nothing was checked on a real Mac; the checks are the build and the tests.
-- The bundled apps are unchanged (AccessScope 1.0.0, PersonalSOC 1.0.0, PathScope 1.0.0).
-
-## 1.10.0 - 1.17.0 (summarized)
+## 1.10.0 - 1.17.1 (summarized)
 
 The contents of these releases, grouped by theme. The full text of each entry is in this file's git history.
 
@@ -810,6 +807,16 @@ The contents of these releases, grouped by theme. The full text of each entry is
 - (1.17.0) **Changed: the onboarding and the help now match how the app works.** The sentence "the free version alone runs all the basic automatic defense" was wrong; what runs free is switching per network and manual checks. A new page explains the notification permission and the permissions needed later (Full Disk Access, system extension, Accessibility, Location). Right after you first enable Pro, one notification lists the protections that turned on, the ones you have to turn on yourself, and why some do not work yet. The help FAQ and the knowledge base (10 languages) are updated too. The added texts are based on machine translation and have not been reviewed by native speakers (other than Japanese).
 - (1.17.0) **Added: an active check result shows whether the same check was judged safe last time** (`previouslySafeAt` of the MCP `run_active_vuln_scan`). It is set only when the last result of the same check on the same port was "safe". Runs that could not connect are skipped. It does not claim that a fix was reverted; it returns only the fact in the log.
 - (1.17.0) **Fixed: the knowledge base entry "ransomware recovery" was returned in no language.** It was not registered in the catalog. It is registered now.
+- (1.17.1) **Added: PHP session files are checked for injected code** (the daily scan and the manual scan). This prepares for the two critical PHP core vulnerabilities that php.net fixed on 2026-10-21: GHSA-w8hw-w9fx-j79w (CVE-2026-109618, corruption through memory exhaustion) and GHSA-6wmf-4rv5-p3rp (CVE-2026-109619, stale global state). Both lead to remote code execution. One path of CVE-2026-109619 is `session.upload_progress`, which writes client-chosen text into the session file. The web rules got a file kind `session` (a name of `sess_` and an ID only, no extension) and two rules. The bundled rules went from 18 to 20 (the same as on Linux).
+  - `php-session-upload-progress-code` (critical). The `upload_progress` marker next to a PHP open tag. This is what an injection leaves.
+  - `php-session-code` (high). A PHP open tag. A session file holds data only; with a tag in it, a page that includes the file runs the code.
+  - **Where it looks**: the daily scan (Pro) and "Check development web folders now" in Settings also check the PHP session directories: `session.save_path` of the installed PHPs (php.ini and FPM pools), `/tmp`, `/private/var/tmp` and this Mac's temporary folder when a setting is empty, and MAMP's `/Applications/MAMP/tmp/php`. A directory is listed one level deep and only its `sess_` files are read. A scan of a folder you picked looks at that folder only.
+- (1.17.1) **Added: a "Check PHP settings" button in Settings** (in the watched-folders screen, under "Web shell detection rules"). It checks whether the PHP on this Mac is exposed to the two advisories above. It only reads and uses no network. A PHP executable is started only to print its version.
+  - **Version**: the `php`, `php-fpm` and `frankenphp` found in Homebrew (`/opt/homebrew` and `/usr/local`, `php@*`), Herd, MAMP and PATH are compared with the fixed releases (8.2.35, 8.3.36, 8.4.27, 8.5.12). A version before the fixed release is "high". PHP 8.1 and older have no fix from the PHP project and are "high". A branch newer than 8.5 cannot be judged and is "medium". The check does not read OS package changelogs, so it judges by the version number only.
+  - **How PHP runs and settings**: Apache mod_php is "medium". PHP-FPM and FrankenPHP are "info". `session.upload_progress.enabled` (on when nothing sets it) is "medium" when on. On PHP 8.5, `fatal_error_backtraces` when on is "high" for a build before the fix and "medium" otherwise. Settings are read from php.ini, the FPM pools and the Apache configuration files.
+  - **Session files**: checked with the rules above; an injection is "critical" or "high".
+  - **Result**: with anything "high" or worse it says "action needed" with the count. It judges these two advisories only.
+- (1.17.1) **Added: the autostart watch (Pro) also covers the files Python runs by itself at every start** (the same judgement as on Linux). Python runs `.pth` files in `site-packages` (each line that begins with `import` is executed), `sitecustomize.py` and `usercustomize.py` every time it starts, in any program. If a supply-chain release adds one of them, every Python of that environment runs it, `pip` included (ATT&CK T1546.018). The watch looks at the `site-packages` of the Python installations (Homebrew, python.org, the system's, pyenv, uv, pipx, conda and the like) and at virtual environments under the home folder (found by `pyvenv.cfg`, four folders deep, searched again every minute; Desktop, Documents, Downloads and Library are not walked, because that would raise a permission prompt). A module that a `.pth` file imports from its own folder is judged in the same way. Only code that reads three or more kinds of credential store, decodes data and runs it, runs what it downloaded, or has the shape of a reverse shell is notified. Ordinary `.pth` files are only recorded. Code that hides its strings, environments elsewhere and environments inside containers are not seen.
 
 ## 1.9.6 - 1.9.54 (summarized)
 
