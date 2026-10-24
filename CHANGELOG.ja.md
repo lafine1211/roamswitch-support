@@ -309,6 +309,17 @@ Client / Server Edition）とのペアリングコード方式(固定IP+短命�
 Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）。
 詳しくは <https://lafine.net/linux>。
 
+### 1.17.6
+
+- **追加: 重要ファイルの監視が、別のフォルダーから監視対象の名前へ移し込まれたファイルも、その場で見つけます**(Server Edition)。これまでは、同じフォルダーでの差し替え(パッケージ管理や `install` の方式)と直接の書き込みは、その場で検知しましたが、`/tmp` で作ったファイルを `mv` で `/usr/sbin/sshd` などへ移す形は、周期スキャン(`fim_check_interval_secs`、既定 300 秒)まで見えませんでした。動作中の sshd へ直接書き込むと `Text file busy` で失敗するので、実際の差し替えは、別のファイルを作って移す形になります。いまは、監視対象のフォルダーに inotify の `IN_MOVED_TO` も張り、移し込まれた名前が監視対象なら、その場でハッシュを確かめて通知します。
+  - 実機の測定(特権つきの Ubuntu 24.04 のコンテナで、実際のデーモンと動作中の sshd): 同じフォルダーでの差し替えは、移した 126 ミリ秒後に、`/tmp` からの移し込みは、8 ミリ秒後に検知しました。変更前は、`/tmp` からの移し込みが、約 280 秒後(周期スキャン)でした。
+  - 移し込みでは、書き込んだプロセスを特定できないので、通知の「誰が」は「特定できない」と出ます。書き込みと移し込みが続くときの同じ内容は、通知の側でまとめます。
+- **追加: `roamswitch php-check` が、修正のない CVE-2026-115560 も調べます**(クライアント版と Server Edition)。PHP 公式が 2026-10-23 に勧告を出した、リモートコード実行の経路です。修正は次の定期リリースで、影響する版の範囲は未公表なので、PHP の版では判定できません。起きるのは、次の 3 つがそろったときだけです。設定ファイル(`php.ini`、FPM のプール、Apache の設定)で `session.serialize_handler` が `php_binary` か `php_serialize`、アプリのコードが `session_start()` の前に `ini_set()` で `php` へ切り替える、`session.upload_progress.enabled` が有効のまま。3 つがそろうと「高」(終了コード 1)で、`session.upload_progress.enabled` を 0 にして PHP を再起動するよう案内します。設定だけ、またはコードだけのときは「情報」です。
+  - コードは、`/var/www`、`/srv`、`/usr/share/nginx/html`、`/usr/local/apache2/htdocs` の `.php`・`.phtml`・`.inc`(Composer の `vendor` の下も)を読みます。`node_modules` と `.git` は除き、シンボリックリンクはたどりません。読む上限は 4 万ファイル、1 ファイル 2 MiB です。2 行にまたがる `ini_set(` の呼び出しも見つけます。
+  - `--json` の `advisories` に `CVE-2026-115560` が入ります。10 言語の知識ベースも更新しました。
+- 検証: eBPF の XDP クレートを除くワークスペースのテストが、すべて通ります。新しいモジュールの単体テスト 4 件、php-check の単体テスト 5 件を含みます。診断の項目数のテスト(MCP)は、状態で増える `guard_effect:*` の項目を数えないようにして、全体を流したときの揺れをなくしました。
+- 同梱のアプリは変わりません(AccessScope 1.0.1、PersonalSOC 1.0.0、PathScope 1.0.0)。
+
 ### 1.17.5
 
 - **追加: Web アクセスガードが、どのパスにも 200 を返すサイトでも、秘密・設定ファイルの探索を見つけます**(Server Edition、`probe_walk`)。これまでの `path_walk` は、存在しない(404)パスを数えるので、どのパスにも 200 を返すサイトでは、探索が見えず、遮断もされませんでした。`.env`・`.git`・`.aws`・`actuator`・`phpmyadmin` のような秘密・設定ファイルや管理画面のパスを、応答にかかわらず数えます。1 つの接続元が `window_secs` の中で、異なる種類を 6 種類以上(`probe_walk_limit`、既定 6)、または、秘密の種類(`.env` や `.git` など)の異なるパスを 12 種類以上(`path_walk_limit`)問い合わせると、`path_walk` と同じ扱い(通知、`recon=block` なら遮断)になります。`path_walk` とは同時に出しません。
@@ -570,6 +581,15 @@ Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）
 ---
 
 ## RoamSwitch for Mac
+
+## 1.17.6
+
+- **追加: 自動起動の登録の監視が、アドホック署名のプログラムも見ます**(Pro)。LaunchAgent・LaunchDaemon の監視は、署名が壊れていないかで判定していたので、証明書のない署名(アドホック署名。Apple シリコンでは、`clang` や `cargo` が作る実行ファイルがすべてこれです)のプログラムは、署名の検証を通って見逃していました。macOS のランサムウェア Heartbreaker(2026-10)は、この形で `~/Library/LaunchAgents/com.network.startup.plist` に居座ります。いまは、署名がアドホックで、プログラムがダウンロード・デスクトップ・一時フォルダー・隠しフォルダー(`.local`・`.cargo` などの普通のものを除く)にある登録も、「新しい自動起動登録を検知しました」と知らせます。Homebrew や、`/Applications` のアプリには、影響しません。
+  - 使い捨ての macOS 26.6 の仮想マシンで測りました。Heartbreaker と同じ形の plist(ダウンロードフォルダーのアドホック署名のプログラムを指す)は、置いてから約 1 秒で通知しました(`bash` の Base64 実行の plist は約 2 秒)。Apple 署名の `/usr/bin/true` を指す plist は、通知しませんでした。
+  - 登録そのものは止められません(EndpointSecurity は使いません)。書かれたあとに知らせます。
+- **追加: PHP の点検が、修正のない CVE-2026-115560 も調べます**。条件と、「高」「情報」の分け方は、Linux 版の `php-check` と同じです。コードは、Homebrew(`/opt/homebrew/var/www`、`/usr/local/var/www`)、MAMP、`/Library/WebServer/Documents`、`~/Sites`、`~/Herd` の PHP ファイルを読みます。
+- 検証: Mac のテスト 2461 件が通ります。LaunchAgent の判定は、本物の plist と、本物にコンパイルしたプログラムと、本物の `codesign` で確かめるテストを含みます。
+- 同梱のアプリ: AccessScope 1.0.1、PersonalSOC 1.0.0、PathScope 1.0.0。
 
 ## 1.17.5
 

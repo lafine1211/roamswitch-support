@@ -318,6 +318,17 @@ The full text of each item is in this file's git history.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.17.6
+
+- **Added: the critical-path file integrity monitor now sees a file moved onto a watched name from another folder at once** (Server Edition). A replacement made in the same folder (the way package managers and `install` work) and a direct write were already caught on the spot, but a file built in `/tmp` and moved with `mv` onto `/usr/sbin/sshd` and the like stayed unseen until the periodic scan (`fim_check_interval_secs`, 300 seconds by default). A direct write to a running sshd fails with `Text file busy`, so a real replacement is a new file moved into place. The monitor now also sets an inotify `IN_MOVED_TO` watch on the watched folders, and when the moved-in name is a watched file it checks the hash and notifies at once.
+  - Measured with the real daemon and a running sshd in a privileged Ubuntu 24.04 container: a same-folder replacement was reported 126 ms after the move, and a move from `/tmp` 8 ms after. Before the change a move from `/tmp` was reported about 280 seconds later (the periodic scan).
+  - A move does not tell which process wrote the file, so the "who" of the notification says it could not be identified. Identical repeats of a write and a move are merged by the notification layer.
+- **Added: `roamswitch php-check` also checks CVE-2026-115560, which has no fix yet** (Client and Server Edition). It is the remote code execution path that PHP announced on 2026-10-23. The fix comes with the next regular release and the affected versions are not published, so the PHP version cannot decide it. It needs three things at once: `session.serialize_handler` set to `php_binary` or `php_serialize` in the configuration (`php.ini`, an FPM pool, the Apache configuration); application code that switches it back to `php` with `ini_set()` before `session_start()`; and `session.upload_progress.enabled` still on. All three give a High finding (exit code 1) with the advice to set `session.upload_progress.enabled` to 0 and restart PHP. Only the configuration or only the code is Info.
+  - The code is read from the `.php`, `.phtml` and `.inc` files in `/var/www`, `/srv`, `/usr/share/nginx/html` and `/usr/local/apache2/htdocs` (Composer's `vendor` included). `node_modules` and `.git` are skipped and symbolic links are not followed; the limit is 40,000 files and 2 MiB per file. An `ini_set(` call split over two lines is found too.
+  - `advisories` in `--json` now lists `CVE-2026-115560`. The built-in knowledge base (10 languages) is updated.
+- Verification: the workspace tests, without the eBPF XDP crate, all pass, including 4 unit tests of the new module and 5 of php-check. The diagnostic item-count test (MCP) no longer counts the `guard_effect:*` items that appear with the host's state, so it does not flap when the whole workspace runs.
+- The bundled apps are unchanged (AccessScope 1.0.1, PersonalSOC 1.0.0, PathScope 1.0.0).
+
 ### 1.17.5
 
 - **Added: the web access guard finds the probing of secret and configuration files even on a site that answers 200 to every path** (Server Edition, `probe_walk`). The existing `path_walk` counts paths that do not exist (404), so on a site that answers 200 to every path the probing was invisible and nobody was blocked. `probe_walk` counts secret, configuration and admin paths such as `.env`, `.git`, `.aws`, `actuator` and `phpmyadmin`, whatever the answer. A client that asks, within `window_secs`, for 6 or more different kinds (`probe_walk_limit`, default 6), or for 12 or more different paths of the secret kinds (`.env`, `.git` and the like; `path_walk_limit`), is treated like `path_walk`: a notice, and a block when `recon=block`. It is never reported together with `path_walk`.
@@ -583,6 +594,15 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 ---
 
 ## RoamSwitch for Mac
+
+## 1.17.6
+
+- **Added: the start-up item watch also looks at programs signed ad hoc** (Pro). The LaunchAgent and LaunchDaemon watch judged a program by whether its signature was intact, so a program with an ad-hoc signature (one with no certificate behind it; on Apple silicon every executable that `clang` or `cargo` builds has one) passed the check and was missed. The macOS ransomware Heartbreaker (2026-10) settles in through `~/Library/LaunchAgents/com.network.startup.plist` in exactly this way. A registration whose program is signed ad hoc and sits in the Downloads folder, on the Desktop, in a temporary folder or in a hidden folder (ordinary ones such as `.local` and `.cargo` excepted) is now reported as "A new auto-launch registration was detected". Homebrew and apps in `/Applications` are not affected.
+  - Measured in a disposable macOS 26.6 virtual machine. A plist shaped like Heartbreaker's (pointing at an ad-hoc signed program in the Downloads folder) was reported about 1 second after it was placed (a `bash` Base64 plist, about 2 seconds). A plist pointing at the Apple-signed `/usr/bin/true` was not reported.
+  - The registration itself cannot be stopped (EndpointSecurity is not used); the report comes after it is written.
+- **Added: the PHP check also looks at CVE-2026-115560, which has no fix yet.** The conditions and the split between High and Info are the same as in the Linux `php-check`. The code is read from the PHP files of Homebrew (`/opt/homebrew/var/www`, `/usr/local/var/www`), MAMP, `/Library/WebServer/Documents`, `~/Sites` and `~/Herd`.
+- Verification: the 2461 Mac tests pass, including a test that judges a real plist, a program really compiled on the machine and the real `codesign`.
+- Bundled apps: AccessScope 1.0.1, PersonalSOC 1.0.0, PathScope 1.0.0.
 
 ## 1.17.5
 
