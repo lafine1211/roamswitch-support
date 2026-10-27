@@ -12,6 +12,24 @@ independently. Older releases are summarized in ranges.
 
 A security diagnosis tool for access logs. It is a separate app (Apache-2.0): the Server Edition .deb / .rpm packages carry only the command (`accessscope`; from 1.11.2 they also carry the PersonalSOC and PathScope commands); the Linux client edition and the Mac app carry the command and a window app.
 
+### 1.0.3
+
+- **Added: detections for web reconnaissance and tunnelling.** Hunting for secret and configuration files (`web_asset_harvest`), API probing (`web_api_probe`), parameter fuzzing (`web_param_fuzz`), site walking (`web_probe_walk`), and a suspected HTTP tunnel (`web_tunnel_suspect`). The known gaps missed in the evaluation data went from 14 to 6. A tunnel cannot be stated as fact because the log has no body, so it is shown as a suspicion.
+- **Added: host records are read to raise the confidence of a web attack** (RoamSwitch execution records and the Linux `audit.log`). When an account on the web-server side (`www-data`, `apache`, `nginx` and so on) starts a shell or a reconnaissance command, or creates a script in the web root, within 5 seconds after the attack request, the confidence goes up (hypothesis → likely). It becomes "confirmed" only when, besides the shell, there is a fetch to the outside or a script created in the web root, and the request was answered with 2xx. Host records have no IP, so the link is by time only. If the clocks of the web log and the host records disagree, a pair is missed or an unrelated event is linked.
+- **Added: more log formats.** CRI container logs (Kubernetes, containerd), Cloudflare Logpush, Envoy / Istio (text and JSON), Google Cloud (`httpRequest` of load balancers and Cloud Run), the MySQL general log, and the MariaDB Audit Plugin log. For MySQL and MariaDB it looks at a success after failures and a login from an unfamiliar source.
+- **Added: the output of `gcloud logging read --format=json` (a JSON array) is read as it is.** So is JSON downloaded from the Cloud Logging console. An array that is cut short, or larger than 256 MiB, is reported as unreadable instead of silently becoming empty.
+- **Added: new commands and screen features.** `--export-roamswitch` (a draft of the Web Access Guard `web_guard.conf`), `accessscope fleet` (aggregation over several machines), `--print-schedule`, `--notify`, `suppress check`, `--what-if-suppress`, `--format brief-json`, and the step-by-step investigation `--llm-investigate`.
+- **Changed: with `--llm-investigate`, up to 6 times, as the LLM asks, more of what the diagnosis holds can be sent to the LLM service.** What can be sent: request and byte counts per IP (the top IPs by requests), a tally of URL paths that take numeric values, a record of stages that span several logs, and the log lines that serve as evidence (secrets are masked). IPs are neutralized or replaced by pseudonyms. Raw logs are neither kept nor sent. Without it, nothing changes (also written in EULA section 5-4).
+- **Fixed (found by checking against output written by real servers):**
+  - MySQL general log: the line for a connection that failed authentication was counted as a success, so each refused attempt erased the failure count and "a success after failures" was never seen.
+  - The time of MySQL `log_timestamps=SYSTEM` (`+09:00`) could not be read. A log that begins with the first-start initialization SQL was not recognized.
+  - Container logs (CRI and Docker): a quiet container with few accesses and a long start-up output was not recognized as a web log.
+  - Execution records: the first line of the file and the checkpoint lines were counted as unreadable lines.
+  - Google Cloud: lines with `status` 0 (a connection with no response) or with no such field were discarded. They are read as 0.
+  - Linux `audit.log`: a `/dev/tcp/` in a hexadecimal argument longer than 256 bytes, or in an argument split over several lines beyond about 4 KB, was missed, so an attack that should have been "confirmed" (shell, connection to the outside, 2xx) stayed at "likely".
+- The translations in the 10 languages were reviewed (the German word for confidence went from `Sicherheit`, which can also mean safety, to `Konfidenz`; the word for hit counts; the word order of format names; and others).
+- Checks: formats checked against real output are MySQL 8.4, MariaDB 11.8 and 12.3, Envoy 1.34, containerd 2.1.3 CRI, RoamSwitch execution records, `audit.log` of Ubuntu 24.04 (auditd 3.1.2) and AlmaLinux 9.8 (auditd 3.1.5, SELinux enforcing), and `gcloud` output (Cloud Run). Cloudflare Logpush, Google Cloud load balancers and Podman were only compared with the vendors' documentation. In the evaluation data, 1146 of 1152 attacks are found, and the false positives of medium or higher are 0 of 404. The 641 workspace tests pass (3 ignored).
+
 ### 1.0.2
 
 - **Fixed: the sentence for a failed `--llm` analysis showed the internal notation `Some(1)` for the exit code.** It now shows only the number, "terminated by signal N" when it ended by a signal, and "terminated abnormally" when neither is known (10 languages). With an empty standard error only the state is returned, and the one line in the report drops the trailing punctuation of the reason before it is inserted, so it no longer ends in a doubled full stop. **Exit code 5 is unchanged.**
@@ -30,15 +48,7 @@ A security diagnosis tool for access logs. It is a separate app (Apache-2.0): th
 - **Changed: `203[.]0[.]113[.]9` and `example[.]com` in the LLM's text are shown with plain dots** (IPs and domains only; a `[.]` between letters or digits is restored, and a lone `[.]` in a regular-expression explanation is left as it is). The material is still given to the LLM in the defanged form. The list "Values not in the material" is also written with plain dots (report, terminal, JSON, window).
 - Checks: the 508 workspace tests pass.
 
-### 1.0.0
-
-- **Changed: when the `--llm` analysis fails, the exit code is now 5. This is why the version is 1.0.0.** Before, a failed LLM only wrote to standard error, appeared neither in the report nor in the exit code, and the exit code was 0 when nothing was detected. The failure is now written in the report (one line in the Markdown and terminal output, `llm.failed` in JSON) and the exit code is 5. A detection (3) and `--fail-on-partial` (4) take priority. A script or CI that treated an LLM failure as exit code 0 must now handle 5. PersonalSOC ends with 1 on the same failure.
-- **Fixed: `--fail-on` quietly exited with 0 even when some logs could not be read.** The `--fail-on` verdict covers only what could be read. When some part could not be examined (logs that could not be read, a cut-off at the size limit, lines that were too long, lines skipped outside the period, lines that could not be parsed), it still exits with 0 if nothing was detected, and now prints a notice on standard error.
-- **Added: `--fail-on-partial`.** Together with `--fail-on`, it ends with exit code 4 when some part could not be examined (a detection still gives 3 first). It is not the default, because the parts that could not be examined include logs outside the period and long lines, so making it the default would break existing CI.
-- **Exit codes**: 0 no problem, 1 no readable log or output could not be written, 2 wrong usage, 3 `--fail-on` matched, 4 `--fail-on-partial` and some part could not be examined, 5 the `--llm` analysis failed. When two or more apply, the smaller number wins (3 and 4 take priority over 5). The usage text (10 languages) and the README list the flags and the exit codes.
-- Verification: 504 workspace tests pass and 1 fails (2 ignored). The failure predates this change; `timeout_kills_grandchildren` is a problem of the container environment.
-
-### 0.1.0 - 0.4.3 (summarized)
+### 0.1.0 - 1.0.0 (summarized)
 
 The contents of these releases, grouped by theme. The full text of each entry is in this file's git history.
 
@@ -79,8 +89,37 @@ The contents of these releases, grouped by theme. The full text of each entry is
 - (0.4.1) **Added: identifier walking (`web_id_enum`) is detected**. Numbers such as receipt or order numbers swapped in one after another at the same place are found by the match between the order of arrival and the size of the values, whatever the IP. A walk split over many IPs is found too (3 or more IPs: medium, likely; fewer: low, hypothesis). Scattered values, one value asked many times and ordinary browsing are not flagged. Verified crawlers and clients that declare automation are skipped.
 - **The check of the LLM's values also appears in the terminal** (0.4.2): IPs, domains, CVE IDs and hashes that are not in the material appear right after the LLM's text in the terminal output (`--plain` too), in the same list as in the report. `--format json` carries them in the new key `llm.ungrounded`. Nothing is shown when there are no such values.
 - **Help fix** (0.4.3): the help of `accessscope` said "LLM analysis cannot run as root"; it now matches the behavior (since 0.3.4 the command line runs as root too, and the LLM then runs with root's rights). The `--json` line now says it is the same as `--format json` (10 languages).
+- **Changed: when the `--llm` analysis fails, the exit code is now 5. This is why the version is 1.0.0.** Before, a failed LLM only wrote to standard error, appeared neither in the report nor in the exit code, and the exit code was 0 when nothing was detected. The failure is now written in the report (one line in the Markdown and terminal output, `llm.failed` in JSON) and the exit code is 5. A detection (3) and `--fail-on-partial` (4) take priority. A script or CI that treated an LLM failure as exit code 0 must now handle 5. PersonalSOC ends with 1 on the same failure. (1.0.0)
+- **Fixed: `--fail-on` quietly exited with 0 even when some logs could not be read.** The `--fail-on` verdict covers only what could be read. When some part could not be examined (logs that could not be read, a cut-off at the size limit, lines that were too long, lines skipped outside the period, lines that could not be parsed), it still exits with 0 if nothing was detected, and now prints a notice on standard error. (1.0.0)
+- **Added: `--fail-on-partial`.** Together with `--fail-on`, it ends with exit code 4 when some part could not be examined (a detection still gives 3 first). It is not the default, because the parts that could not be examined include logs outside the period and long lines, so making it the default would break existing CI. (1.0.0)
+- **Exit codes**: 0 no problem, 1 no readable log or output could not be written, 2 wrong usage, 3 `--fail-on` matched, 4 `--fail-on-partial` and some part could not be examined, 5 the `--llm` analysis failed. When two or more apply, the smaller number wins (3 and 4 take priority over 5). The usage text (10 languages) and the README list the flags and the exit codes. (1.0.0)
+- Verification: 504 workspace tests pass and 1 fails (2 ignored). The failure predates this change; `timeout_kills_grandchildren` is a problem of the container environment. (1.0.0)
 
 ## PathScope
+
+### 1.0.2
+
+**Changes in behavior come first.**
+
+- **Changed: the `kvm` group is no longer treated as a basis for a path to root.** Being able to open `/dev/kvm` is not root privilege in itself.
+- **Changed: of the executables with `cap_setuid`, only the interpreters listed in GTFOBins are counted as able to become root.** Ordinary tools such as `newuidmap` were being reported as "critical".
+- **Changed: what `--export-roamswitch` writes is now Falco rules** (for RoamSwitch Server). Check them and put them in `/etc/falco/rules.d/` yourself; they are not applied automatically.
+
+- **Added: multi-step privilege escalation (user → user → root) is found.**
+- **Added: configuration parsing was widened.** Deterministic parsers for sudoers, cron and doas, systemd `EnvironmentFile`, and tracking of macOS dylibs and `@rpath`.
+- **Added: kernel conditions** (`unprivileged_bpf`, `io_uring`, kernel modules) **are reflected in the match against known vulnerabilities.**
+- **Added: `--check-agent-users`, credentials in other users' home directories, and uid detection of services that root listens on.**
+- **Added: the output formats `--format=markdown|plain|json|sarif`, and the command in 10 languages.**
+- **Fixed: configuration files that could not be read are recorded as "range that could not be read" instead of being skipped silently.** `/etc/sudoers` that only root can read, and content that is not UTF-8, were skipped, so `NOPASSWD` and the like were not read yet "no path" could be taken as safe.
+- **Fixed: a Prolog lexer was added to the verifier.** It closes a way past the deny list by mixing up quotation marks.
+- **Fixed: the Falco rules it writes were checked against a real Falco and corrected** (reproducible with `packaging/falco/live-check.sh`).
+  - `mv` fired twice for one operation (after the failing `RENAME_NOREPLACE` it retries). Only a successful `rename` fires now.
+  - A failed `execve` during the PATH search also fired. Only a successful `execve` fires now.
+  - Every read of `/etc/shadow` by `sudo`, `su`, `sshd`, `passwd`, `chage` and `unix_chkpwd` fired (15 of 17 ordinary uses). The list of authentication tools is excluded. Another user's key is excluded when the owner reads it.
+  - An operation reaching `/run/docker.sock` through systemd socket activation was missed. Both `/run` and `/var/run` are watched. Connections by root are excluded.
+  - A write through a symbolic link and `chmod` are not visible to a Falco rule (written in `docs/DESIGN.md`).
+- The translations in the 10 languages were reviewed (missing parts of the Spanish and Portuguese usage text, the German "root listens" that read as "eavesdrops", and others).
+- Checks: the 328 workspace tests pass (on a Mac, without the window app). The Falco rules were checked on Ubuntu 24.04 (kernel 6.8, Falco 0.39.2): execution, write, replace, read and socket connection fire as intended, and ordinary use does not fire them. On Ubuntu 26.04 (kernel 7.0, Falco 0.45.1) it goes as far as loading, and the read and socket rules firing. The list of authentication tools was checked on a real Ubuntu 26.04 machine: on a public-key login only `sshd-session` and `unix_chkpwd` open `/etc/shadow`, and with `sudo-rs` password authentication it is `unix_chkpwd` that opens it.
 
 ### 1.0.1
 
@@ -103,14 +142,7 @@ The contents of these releases, grouped by theme. The full text of each entry is
 - **Fixed: the GUI's automatic save to the history said nothing when it could not save.** That covered a database that could not be opened and a failed save. The result's "assumptions of the analysis" now says "could not be saved to the history: reason".
 - Verification: 275 workspace tests pass and 7 fail (3 ignored). All the failures predate this change: `timeout_kills_grandchildren` is a problem of the container environment, and the 6 `collector-macos` tests are Mac-only and fail on Linux.
 
-### 0.2.0
-
-- **Added: the values the LLM writes are checked against what it was given.** An IP address, domain, CVE ID or hash in the "Explain with LLM" text that is not in the summary it received is shown below the explanation under "Values not found in the collected material", as a possible invention. Only the strings are compared; the LLM is not asked.
-- **Added: the bundled known-vulnerability data grows from 53 to 64 entries.** Until now an entry was chosen because it is in the CISA KEV (exploited in real attacks) or because its FIRST EPSS score is high (likely to be exploited). A third basis is added: a CVE for which the Metasploit Framework has a public local privilege escalation module (11 entries; 50 from KEV, 3 EPSS only, 11 public module). It covers Ubuntu kernel flaws (overlayfs CVE-2023-2640 and CVE-2023-32629, and others), snapd, needrestart, Enlightenment and macOS (MacDirtyCow CVE-2022-46689, CVE-2024-27822). Entries from KEV and EPSS do not change. The CVE IDs come from a hand-picked list (`packaging/cve/public-exploit-cves.json`). No module code is included. The entry conditions are the same as for KEV and EPSS: local attack, high confidentiality and integrity impact, no high privilege required, and a fixed version from the vendor.
-- **Changed: entries added for a public module are not described as "exploited".** The reason text, the fix summary and the data note now separate three cases: exploited in real attacks, likely to be exploited, and a public exploit module exists. The third states that the module only exists and that exploitation is not confirmed (10 languages).
-- **Changed: CVEs that need a condition now carry it.** User namespaces for CVE-2022-34918, CVE-2023-2640 and CVE-2023-32629, and the SUID `enlightenment_sys` for CVE-2022-37706. A path is not reported where the condition is not met.
-
-### 0.1.0 - 0.1.9 (summarized)
+### 0.1.0 - 0.2.0 (summarized)
 
 The contents of these releases, grouped by theme. The full text of each entry is in this file's git history.
 
@@ -135,8 +167,22 @@ The contents of these releases, grouped by theme. The full text of each entry is
 - (0.1.8) **New: a CVE once added through EPSS stays even if its EPSS falls.** If a CVE whose EPSS stayed low after the window dropped out, it would vanish before kernel updates had spread, and a machine that has not been fixed would look "fine" (Dirty Frag would have disappeared in the update of the week of 2026-10-26). A CVE leaves only when you put it in the exclusion list, when NVD's scoring changes so that it no longer meets the conditions, or when it moves because it was listed in KEV. If NVD or a distribution's data merely could not be fetched, the previous entry stays. There is no expiry. A kept entry carries a note that it was kept, the date it first entered, and the highest EPSS so far (the on-screen note says this too, in 10 languages).
 - (0.1.8) **Changed: the weekly data update now lists, in the job summary, CVEs whose coverage shrank compared with last time.** Replaying the real data showed that SUSE's public data became unavailable for 2026 CVEs, which would silently shrink the SUSE and Leap coverage by 18 each for two KEV-based CVEs (a change on the source side that we cannot fix). The diff check was split out into a script with unit tests.
 - **Command output in Markdown headings and tables** (0.1.9): an overview table, a path table, a table of fix points, details per number, the collection scope and the premises of the analysis, in that order. `--what-if-*` and `--baseline` are bullet lists too. The premises of the analysis are in the result, not on the standard error. Add `--plain` to return to the old prose form (check scripts that parse the output as text). `--help` now lists every option (10 languages), `--version` (`-V`) was added, and the order and names of the settings tabs match AccessScope and PersonalSOC.
+- **Added: the values the LLM writes are checked against what it was given.** An IP address, domain, CVE ID or hash in the "Explain with LLM" text that is not in the summary it received is shown below the explanation under "Values not found in the collected material", as a possible invention. Only the strings are compared; the LLM is not asked. (0.2.0)
+- **Added: the bundled known-vulnerability data grows from 53 to 64 entries.** Until now an entry was chosen because it is in the CISA KEV (exploited in real attacks) or because its FIRST EPSS score is high (likely to be exploited). A third basis is added: a CVE for which the Metasploit Framework has a public local privilege escalation module (11 entries; 50 from KEV, 3 EPSS only, 11 public module). It covers Ubuntu kernel flaws (overlayfs CVE-2023-2640 and CVE-2023-32629, and others), snapd, needrestart, Enlightenment and macOS (MacDirtyCow CVE-2022-46689, CVE-2024-27822). Entries from KEV and EPSS do not change. The CVE IDs come from a hand-picked list (`packaging/cve/public-exploit-cves.json`). No module code is included. The entry conditions are the same as for KEV and EPSS: local attack, high confidentiality and integrity impact, no high privilege required, and a fixed version from the vendor. (0.2.0)
+- **Changed: entries added for a public module are not described as "exploited".** The reason text, the fix summary and the data note now separate three cases: exploited in real attacks, likely to be exploited, and a public exploit module exists. The third states that the module only exists and that exploitation is not confirmed (10 languages). (0.2.0)
+- **Changed: CVEs that need a condition now carry it.** User namespaces for CVE-2022-34918, CVE-2023-2640 and CVE-2023-32629, and the SUID `enlightenment_sys` for CVE-2022-37706. A path is not reported where the condition is not met. (0.2.0)
 
 ## PersonalSOC
+
+### 1.0.2
+
+- **Added: more is taken in from the RoamSwitch MCP.** Detection coverage, the SSH guard history, the Linux status tools, honeytokens, entropy detection (ransomware), and the supply-chain check. The investigation agent may use `search_exec_events` and `get_process_tree`, after the arguments are validated.
+- **Added: the results of AccessScope, PathScope and Sensor are taken in with fixed arguments.** From Sensor it takes in, read-only, the LAN-layer threats that a Sensor on the same LAN sees (rogue DHCP servers and IPv6 routers, ARP spoofing, abnormal IoT behavior, weak unmanaged devices). When part of the range could not be read, it does not say "nothing found".
+- **Added: an audit of AI agent settings** (Hooks, disabled permission prompts, Toxic Flow), **and more target clients for the MCP settings audit.**
+- **Changed: the built-in log parsers were widened.** sshd-session (OpenSSH 9.8 and later), the size criterion for web 200 responses, eTLD+1, and auditd `EXECVE` and `PROCTITLE`.
+- **Added: correlation rules** (they join detections from several sources), **history and a difference from the previous run** (`~/.local/state/personalsoc/history/snapshots.json`, 0600), `scan --format text|markdown|json|sarif`, `--fail-on`, and `--diff`.
+- The translations in the 10 languages were reviewed (the Italian double negative, the Korean words for "detection" and "risk", the Chinese word for honeytoken, and others).
+- Checks: the 316 workspace tests pass (on a Mac, without the window app). The Sensor intake was checked by connecting to a Sensor (a daemon of the new version) running on a real LAN; it read 16 devices and the threats.
 
 ### 1.0.1
 
@@ -156,11 +202,7 @@ The contents of these releases, grouped by theme. The full text of each entry is
 - **Fixed: on Linux you could not tell why a scheduled run showed no notification.** Without `notify-send` (package `libnotify-bin` on Debian and Ubuntu) no notification appears. The settings window and `schedule status` now say when it is missing, and when a notification cannot be shown it is written to standard error. A systemd user timer does not run while you are logged out; on a server, run `loginctl enable-linger` once. A missing linger is also reported in the settings window and `schedule status`. The README now says that a scheduled run uses ordinary user rights and mentions `sudo personalsoc scan` and `loginctl enable-linger`.
 - Verification: 194 workspace tests pass and 2 fail (1 ignored). Both failures predate this change: `timeout_kills_grandchildren` is a problem of the container environment, and the app test `ipc_settings_are_localized...` fails because the Linux "auditd" label contains no kana.
 
-### 0.2.2
-
-- **Fixed: `--llm` with a file now prints the detections first** (`personalsoc sshd <file> --llm name` and the like). Before, it printed only the LLM's draft, although its heading says to check the facts in the detections above. Now it prints the same detections as without `--llm`, then the draft and the list of values not in the collected material. The detections stay even if the LLM fails.
-
-### 0.1.0 - 0.2.1 (summarized)
+### 0.1.0 - 0.2.2 (summarized)
 
 The contents of these releases, grouped by theme. The full text of each entry is in this file's git history.
 
@@ -188,6 +230,7 @@ The contents of these releases, grouped by theme. The full text of each entry is
 - (0.1.14) **Changed: the order of the Settings tabs now matches AccessScope and PathScope.** "Automatic status check" comes first, then "LLM integration", "Display language" and "Updates" (before, "Updates" came before "Display language"). The Traditional Chinese label for "LLM integration" is now "LLM 串接".
 - (0.2.0) **Added: the values the LLM writes are checked against what it was given.** An IP address, domain, CVE ID or hash in the report or the hypotheses that appears nowhere in the log text, the analysis summary or the tool results is listed in the report under "Values not found in the collected material", as a possible invention. Only the strings are compared; the LLM is not asked.
 - (0.2.0) **Added: the report ends with an appendix of the investigation results exactly as they were given to the LLM** (secrets masked, hidden characters removed), so a reviewer can read what the LLM read.
+- **Fixed: `--llm` with a file now prints the detections first** (`personalsoc sshd <file> --llm name` and the like). Before, it printed only the LLM's draft, although its heading says to check the facts in the detections above. Now it prints the same detections as without `--llm`, then the draft and the list of values not in the collected material. The detections stay even if the LLM fails. (0.2.2)
 
 ## RoamSwitch Sensor
 
@@ -199,6 +242,22 @@ plus detection of new devices and spoofing on the LAN. Still under
 development — see
 <https://lafine.net/roamswitch-sensor-manual.html> for current status and
 setup instructions.
+
+### 1.0.2
+
+- **Added: passive capture reads VLAN tags (802.1Q / 802.1ad)** (the tag that Linux strips is received through `PACKET_AUXDATA`). The VLAN is recorded in the device inventory. IPv6 flows also enter behavior learning (in units of /24 for IPv4 and /56 for IPv6). The model is read from LLDP, mDNS TXT and WS-Discovery. The receive buffer can be set with `capture.rcvbuf_mb`, and truncation is counted only when it reaches the part that is read.
+- **Added: the audit of paired endpoints was widened.** Non-standard ports are audited from the ports and banners that the endpoint reports about itself. An endpoint behind a router gets a periodic audit only when a signed request, no ARP answer, and no change before and after the audit all hold. A released endpoint gets `unpaired_by_sensor`.
+- **Added: the light audit of devices without RoamSwitch was widened.** `noauth_check` now covers etcd, CouchDB, Kubelet, ZooKeeper and Ollama, and `product_check` covers QNAP, Hikvision, Dahua and SonicWall. FTP and SSH banners are also used to decide the version.
+- **Added: the collector gathers the audit results of devices without RoamSwitch and a summary of behavior learning, and notifies about an interruption, an abnormal audit log, and roaming between sites.**
+- **Added: `lan_overview` and `lan_threats` (IPC), and `roamswitch-sensor lan-overview` and `network-threats` (CLI).** They are read-only and can be called without root. PersonalSOC takes them in.
+- **Fixed (three false positives found by running it on a real LAN):**
+  - A public IP (arriving with the router's MAC) was recorded as a "new device", and the learned list kept growing. Only sources with a private, link-local or CGNAT address are counted.
+  - For every packet of the same connection, an IoT-behavior detection and a malicious-IP contact were recorded, and one connection filled the 200-slot retention. A (source, destination, port) triple is recorded once per hour.
+  - The outbound flood detection counted per packet, so a single `ssh` or `scp` raised "high". It counts only when the (destination, source port) pair is new.
+  - On the real LAN the same operation went from 97 detections before the fix to 1 after it.
+- **Changed: the description of `collector.send_unmanaged_audits` now matches what is actually sent.** Besides services that answered without authentication, services that asked for authentication are also sent, with their state (10 languages, README, docs).
+- The translations in the 10 languages were reviewed (for example, French `poste` and `terminal`, and Italian `dispositivo` and `endpoint`, were aligned so that they are not confused with a device).
+- Checks: the 779 workspace tests pass. The daemon of the new version was run, with passive capture only, on a real LAN (Ubuntu 24.04).
 
 ### 1.0.1
 
@@ -221,13 +280,7 @@ setup instructions.
 - **Scope of verification**: in the lab (Docker containers) I checked the `status` line, the `coverage_gap` notification and the log in a container with nmap hidden, the delivery failure shown for a dead webhook, and the restart hint when passive capture is disabled. I did not look at it on a real screen. The added texts are based on machine translation and have not been reviewed by native speakers (other than Japanese).
 - Verification: all workspace tests pass, and the lab checks (62 PASS and 22 PASS) pass.
 
-### 0.4.6
-
-- **Fix: webhook delivery no longer follows redirects and treats them as a failure**. The destination is a URL the operator typed in, so a 3xx response never sends events to another host. `ureq` returns a 3xx as a success once redirects are off, so it is now converted to a failure. Tests confirm that a redirect target listening on another port is never contacted and that a 204 counts as success.
-- **Change: the "please wait" wording is removed from the notice shown while a scan is running** (TUI text, 10 languages).
-- Follows the RoamSwitch for Linux core 1.14.0 (`Cargo.lock`). Sensor is built and tested on Linux only.
-
-### 0.2.1 - 0.4.5 (summarized)
+### 0.2.1 - 0.4.6 (summarized)
 
 The full text of each item is in this file's git history.
 
@@ -288,6 +341,9 @@ The full text of each item is in this file's git history.
 - (0.4.4) Limits: the part where the collector silently skips broken lines is unchanged this time because it would change the shape of its responses. The Sensor was built and tested only on Linux (it does not build on macOS). The screens were checked through tests only, not on a real display. The TUI texts (12) are in 10 languages (other than Japanese and English they are based on machine translation and have not been reviewed by native speakers).
 - (0.4.4) The RoamSwitch for Linux core it depends on is now 1.12.8 (`Cargo.lock`).
 - **The collector counts and shows what it could not read from its history files** (0.4.5): in the scan history (`scans.jsonl`) and the event history (`events.jsonl`), files that cannot be opened, broken lines, the position where a read error stopped the read, and failures of the retention pass are shown on the dashboard and in the startup log. `/api/overview` gained `storage_health` (an added key). No new network traffic is added.
+- **Fix: webhook delivery no longer follows redirects and treats them as a failure**. The destination is a URL the operator typed in, so a 3xx response never sends events to another host. `ureq` returns a 3xx as a success once redirects are off, so it is now converted to a failure. Tests confirm that a redirect target listening on another port is never contacted and that a 204 counts as success. (0.4.6)
+- **Change: the "please wait" wording is removed from the notice shown while a scan is running** (TUI text, 10 languages). (0.4.6)
+- Follows the RoamSwitch for Linux core 1.14.0 (`Cargo.lock`). Sensor is built and tested on Linux only. (0.4.6)
 
 
 ### 0.2.0
@@ -337,6 +393,22 @@ The full text of each item is in this file's git history.
 
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
+
+### 1.17.7
+
+**Changes in behavior come first.**
+
+- **Changed: the Web Access Guard also detects brute-force attempts on login pages** (Server Edition). It counts POSTs to login pages (`/login`, `/wp-login.php`, `/xmlrpc.php` and others). Tune it with `login=off|warn|block` (default `warn` = notify only), `login_limit` (default 20) and `login_spray_ips` (default 10). A run from one source is `login_burst`; when 10 or more sources have 3 or more attempts, it is `login_spray`. Redirects (3xx), server errors (5xx) and "no such page" responses (404, 405, 410) are not counted as attempts. A source whose login succeeded is excluded.
+- **Changed: a source that was blocked again and again is blocked for longer** (Server Edition, on by default). The block grows 4 times the previous one, up to `ban_max_secs` (default 7 days). The history is `/var/lib/roamswitch/web_guard_strikes.json`. `roamswitch unban` removes the pending hold, but the count stays.
+- **Changed: a source that appears in both the Web guard and the SSH guard is blocked sooner and for longer** (Server Edition). It is remembered for 24 hours. The SSH failure threshold drops to a third (at least 2), and the block becomes one step longer. For a source detected by SSH, the web block also becomes one step longer. Only the first time it appears in both is notified. Of the sources detected on the web, only those that can be blocked (not shared, private or excluded addresses) are recorded.
+- **Changed: `Wants=nftables.service` was removed from the Server unit.** Starting `nftables.service` runs `flush ruleset` from `/etc/nftables.conf` and deletes the `DOCKER` chain of the NAT table of a running Docker (the next `docker run -p` fails until Docker is restarted). The start of `roamswitch-server` was waking a stopped `nftables` through `Wants`. The daemon installs its own table with `nft -f -`, so `nftables.service` is not needed (the ordering `After` was kept). `scripts/install.sh` also no longer starts `nftables` immediately while Docker is running.
+- **Changed: the display of the table of suspended processes.** The PID shown on the rows of children, siblings and parents suspended together is the PID of the detected process, not of that row's parent. The display now says "suspended together with the detected process", and the field in the table is named `stopped_with`. The key in the table file is still written as `parent`, and `stopped_with` can be read too, so old tables and old versions both work.
+
+- **Added: six tools in MCP** (45 in total, 42 of them read-only). `get_honeytoken_status`, `get_ransomware_entropy_guard_status`, `get_lan_sensor_overview`, `get_lan_network_threats`, `get_privilege_escalation_paths` and `get_access_log_report`. PathScope and AccessScope run only root-owned executables at fixed absolute paths. Sensor is asked only through two read methods. Paths of other users are not shown to anyone but an administrator.
+- **Added: the record of entropy-based ransomware detections is saved** (client edition and Server Edition), to `/var/lib/roamswitch/entropy_incidents.json`. Server Edition also writes it to the incident timeline.
+- **Fixed: the executable of a short-lived process that ended before it was read is filled in from the kernel notification, so EXR-002 (execution from a temporary folder) is reliably detected** (Server Edition). In a loaded virtual machine, running a copy of `ls` placed in `/var/tmp` 300 times as `www-data` left about 18% ending before `/proc/<pid>/exe` was read, giving a record with an empty executable, and EXR-002 could not be judged. A notify-only `FAN_OPEN_EXEC` is set on the file systems that hold `/tmp`, `/var/tmp` and `/dev/shm`, and the path the event carries is remembered for 5 seconds per process. Only a record whose executable could not be read looks it up. It never overwrites with an event of a dynamic loader. Where `fanotify` is unavailable, nothing changes.
+- Bundled apps were updated: AccessScope 1.0.3, PersonalSOC 1.0.2, PathScope 1.0.2.
+- Checks: the 3939 workspace tests, except the eBPF XDP crate, pass (Docker). `cargo audit` shows 0 vulnerabilities. Checked on real systems: the correlation of the Web guard and the repeat-offender block (a disposable Ubuntu 24.04 virtual machine: a source detected on the web is blocked at the second failure, for 4 hours; the control is the sixth failure, 1 hour), `Wants` of `nftables` (in a virtual machine `docker run -p` fails with `Wants` and works without it), and the executable of short-lived processes (about 18% missing went to 0%). The six MCP tools are checked by unit tests only.
 
 ### 1.17.6
 
@@ -393,13 +465,7 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 - The bundled apps change (AccessScope 1.0.1; PersonalSOC 1.0.0 and PathScope 1.0.0 are unchanged). See the entry of AccessScope 1.0.1 for what changed there.
 - Checks: 2,607 tests of roamswitch-core, daemon, server-daemon, server-tui and cli pass. The web access guard has 35 unit tests, including the new detection (probing of a site that answers 200 to every path, an administrator's many paths, `probe_walk_limit`).
 
-### 1.17.4
-
-- **Changed: the heading of a Server Edition alert now also carries the IP address after the host name** (Telegram, LINE, webhook). The heading is `🚨 [RoamSwitch Server Alert · host name (IP address)] title`. When one chat receives the alerts of several servers, the address tells apart machines even if their names look alike. The address is the first one `hostname -I` returns. If it cannot be read, only the host name is written (no made-up value). If the host name cannot be read but the address can, only the address is written. If neither can be read, the heading is the old one.
-- Checks: the workspace tests (3,535; excluding the 1 diagnostic item-count test that is flaky only in a whole-workspace run in the container; it passes alone and in CI) pass. Building the heading and reading the `hostname -I` output are covered by unit tests.
-- The bundled apps are unchanged (AccessScope 1.0.0, PersonalSOC 1.0.0, PathScope 1.0.0).
-
-### 1.10.0 - 1.17.3 (summarized)
+### 1.10.0 - 1.17.4 (summarized)
 
 Everything in these releases, grouped by topic (Client and Server Edition unless marked). The full text of each entry is in the git history of this file.
 
@@ -574,6 +640,7 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 - **Files Python runs at every start** (1.17.2, Client): the autostart watch looks at `.pth` files in `site-packages`, `sitecustomize.py`, `usercustomize.py` and the module a `.pth` file imports (ATT&CK T1546.018). It notifies only about code that reads several kinds of credential stores, decodes data and runs it, downloads content and runs it, or has the shape of a reverse shell; ordinary `.pth` files are only logged.
 - **Fixes** (1.17.2): the in-kernel SMB server `ksmbd.service` joined the sharing services stopped on an untrusted network. Shells started by a Node.js service are covered by EXR-001 (`node` and `nodejs` joined the list of service processes). `exec_rule_service_users` added to the default service accounts instead of replacing them, as the settings text says. The setting that refuses unprivileged user namespaces no longer stops systemd units that use `PrivateUsers=` (`colord`, `power-profiles-daemon`). A Server Edition alert now says which host it comes from.
 - **A notification for connections to OAST servers, a daily summary of site-structure probing, NXDOMAIN burst detection in the DNS guard, MTA-STS in the domain check, cause links in the timeline** (1.17.3): link protection notifies connections to interact.sh, oast.*, burpcollaborator.net, oastify.com, dnslog.cn and ceye.io (client edition, notification only). `recon_notify` of the Web access guard turns the notifications about probing of the site structure into a daily summary by default (`summary_hour`, 9 by default; Server Edition; blocking, logs and incident records are unchanged). The DNS guard notifies when 40 or more different names under the same domain all return NXDOMAIN within 60 seconds (Server Edition, `dns_tunnel_detect_enabled`, notification only). `domain_check` also checks MTA-STS. Timeline lines gained `parent_event_id`, `root_event_id` and `evidence_refs`, and `roamswitch-incident-capture snapshot --trigger-event-id` links a detection line to its evidence bundle.
+- **Changed: the heading of a Server Edition alert now also carries the IP address after the host name** (Telegram, LINE, webhook). The heading is `🚨 [RoamSwitch Server Alert · host name (IP address)] title`. When one chat receives the alerts of several servers, the address tells apart machines even if their names look alike. The address is the first one `hostname -I` returns. If it cannot be read, only the host name is written (no made-up value). If the host name cannot be read but the address can, only the address is written. If neither can be read, the heading is the old one. (1.17.4)
 
 ### 1.9.39 - 1.9.94 (summarized)
 
@@ -625,6 +692,11 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 
 ## RoamSwitch for Mac
 
+## 1.17.7
+
+- The RoamSwitch app itself is unchanged from 1.17.6. The version was aligned with the Linux edition.
+- **Changed: the bundled apps were updated**: AccessScope 1.0.3, PersonalSOC 1.0.2, PathScope 1.0.2. See the entry of each app for the changes. PathScope.app and PersonalSOC.app are in the DMG. AccessScope can also be updated from "Update" in the settings of its window app.
+
 ## 1.17.6
 
 - **Fixed: the app could crash at launch** (the 1.17.5 crash report). During start-up it ran `which clamscan` and similar commands synchronously, and that wait ran the main thread's work so that a waiting task re-entered the state still being initialized. On the main thread it now waits by checking whether the process is still running (every synchronous wait in the app was replaced).
@@ -662,17 +734,7 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 - The features of RoamSwitch itself are unchanged from 1.17.4. The version matches the Linux edition.
 - Bundled apps: AccessScope 1.0.1, PersonalSOC 1.0.0, PathScope 1.0.0.
 
-## 1.17.4
-
-- **Changed: the self-monitoring watchdog is now named "RoamSwitch Self-Monitoring"** (10 languages). System Settings (Notifications, Login Items) showed it as "RoamSwitchWatchdog".
-- **Changed: the screens now say that self-monitoring starts working at your next login after you approve it** (Settings, Help, the knowledge base and the manual; 10 languages). On one virtual machine, the watchdog did not start right after approval; it started at the next login.
-- **Changed: the menu bar menu groups related items under headings.** The "Malware protection (XProtect & ClamAV)" submenu runs in this order: antivirus, web/mail/links, ransomware and credentials, suspicious behavior detection, logs/tamper detection/forwarding, manual audits, function checks. The "Ports and devices" submenu runs: network spoofing and sniffing, ports and intrusion detection, vulnerability scans and sensors, followed by USB and Bluetooth. Before, on/off items, submenus and manual checks were mixed. The headings are in 10 languages. In the main menu, self-monitoring now sits next to "Launch at login".
-- **Changed: "Launch at login" is marked like the other on/off items.** It shows ✅ when on and 🚀 when off, instead of the system check mark.
-- **Known: on a Mac updated from 1.17.2, the watchdog's icon may stay blank in System Settings > Notifications.** The 1.17.2 watchdog had no icon, and macOS keeps that blank state in its icon cache. A new version number does not clear it, and neither does `lsregister` or restarting Notification Center. When a notification actually appears, it carries the RoamSwitch icon. On a disposable macOS virtual machine, restarting the Mac fixed it; this was confirmed once. If it does not, run `sudo rm -rf /Library/Caches/com.apple.iconservices.store` and restart. A freshly installed Mac shows it correctly from the start. The name is updated without a new version number.
-- Checks: all app tests (2,374; the 1 skipped test is a pre-existing one) pass, including tests for the menu order and headings and the watchdog name in 10 languages.
-- The bundled apps are unchanged (AccessScope 1.0.0, PersonalSOC 1.0.0, PathScope 1.0.0).
-
-## 1.10.0 - 1.17.3 (summarized)
+## 1.10.0 - 1.17.4 (summarized)
 
 The contents of these releases, grouped by theme. The full text of each entry is in this file's git history.
 
@@ -864,6 +926,11 @@ The contents of these releases, grouped by theme. The full text of each entry is
 - **Link protection and the domain check** (1.17.2): link protection notifies about connections to the external servers of vulnerability-scanning tools (interact.sh, oast.pro, oast.live, oast.site, oast.online, oast.fun, oast.me, burpcollaborator.net, oastify.com, dnslog.cn, ceye.io and their subdomains), when the system extension is approved (notice only, once an hour per host). Settings gained a "Domain check" (SPF, DMARC, CAA, DNSSEC, MTA-STS and the registration expiry of your own domains, checked only when you press the button).
 - **Timeline and self-monitoring** (1.17.2): timeline records carry the record that caused them and references to the evidence bundle (`parentEventID`, `rootEventID`, `evidenceRefs`). Fixed self-monitoring (automatic restart after a crash) that could not be turned on. The watchdog is now a small app (`Contents/Library/LoginItems/RoamSwitchWatchdog.app`), and a registration left by the old script is replaced when you turn it on in the app.
 - **The self-monitoring watchdog app now has an icon** (1.17.3): since 1.17.2 the watchdog is a small separate app (`Contents/Library/LoginItems/RoamSwitchWatchdog.app`), and it showed a blank icon in System Settings under "Notifications" and "Login Items". It now carries the RoamSwitch icon.
+- **Changed: the self-monitoring watchdog is now named "RoamSwitch Self-Monitoring"** (10 languages). System Settings (Notifications, Login Items) showed it as "RoamSwitchWatchdog". (1.17.4)
+- **Changed: the screens now say that self-monitoring starts working at your next login after you approve it** (Settings, Help, the knowledge base and the manual; 10 languages). On one virtual machine, the watchdog did not start right after approval; it started at the next login. (1.17.4)
+- **Changed: the menu bar menu groups related items under headings.** The "Malware protection (XProtect & ClamAV)" submenu runs in this order: antivirus, web/mail/links, ransomware and credentials, suspicious behavior detection, logs/tamper detection/forwarding, manual audits, function checks. The "Ports and devices" submenu runs: network spoofing and sniffing, ports and intrusion detection, vulnerability scans and sensors, followed by USB and Bluetooth. Before, on/off items, submenus and manual checks were mixed. The headings are in 10 languages. In the main menu, self-monitoring now sits next to "Launch at login". (1.17.4)
+- **Changed: "Launch at login" is marked like the other on/off items.** It shows ✅ when on and 🚀 when off, instead of the system check mark. (1.17.4)
+- **Known: on a Mac updated from 1.17.2, the watchdog's icon may stay blank in System Settings > Notifications.** The 1.17.2 watchdog had no icon, and macOS keeps that blank state in its icon cache. A new version number does not clear it, and neither does `lsregister` or restarting Notification Center. When a notification actually appears, it carries the RoamSwitch icon. On a disposable macOS virtual machine, restarting the Mac fixed it; this was confirmed once. If it does not, run `sudo rm -rf /Library/Caches/com.apple.iconservices.store` and restart. A freshly installed Mac shows it correctly from the start. The name is updated without a new version number. (1.17.4)
 
 ## 1.9.6 - 1.9.54 (summarized)
 
