@@ -394,7 +394,7 @@ The full text of each item is in this file's git history.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
-### 1.17.7
+### 1.17.8
 
 **Changes in behavior come first.**
 
@@ -408,6 +408,7 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 - **Added: the record of entropy-based ransomware detections is saved** (client edition and Server Edition), to `/var/lib/roamswitch/entropy_incidents.json`. Server Edition also writes it to the incident timeline.
 - **Fixed: the executable of a short-lived process that ended before it was read is filled in from the kernel notification, so EXR-002 (execution from a temporary folder) is reliably detected** (Server Edition). In a loaded virtual machine, running a copy of `ls` placed in `/var/tmp` 300 times as `www-data` left about 18% ending before `/proc/<pid>/exe` was read, giving a record with an empty executable, and EXR-002 could not be judged. A notify-only `FAN_OPEN_EXEC` is set on the file systems that hold `/tmp`, `/var/tmp` and `/dev/shm`, and the path the event carries is remembered for 5 seconds per process. Only a record whose executable could not be read looks it up. It never overwrites with an event of a dynamic loader. Where `fanotify` is unavailable, nothing changes.
 - Bundled apps were updated: AccessScope 1.0.3, PersonalSOC 1.0.2, PathScope 1.0.2.
+- **Fixed: publishing the apt and rpm repositories failed at the rpm signature.** The CI runner for publishing became Ubuntu 26.04 (rpm 6), and the signing call did not work with rpm 6. Signing now works with both rpm 6 and the older rpm 4.x. The 1.17.7 tag was not published to apt and rpm because of this failure, so the same content was released as 1.17.8 (the GitHub release 1.17.7 still holds packages with the same content).
 - Checks: the 3939 workspace tests, except the eBPF XDP crate, pass (Docker). `cargo audit` shows 0 vulnerabilities. Checked on real systems: the correlation of the Web guard and the repeat-offender block (a disposable Ubuntu 24.04 virtual machine: a source detected on the web is blocked at the second failure, for 4 hours; the control is the sixth failure, 1 hour), `Wants` of `nftables` (in a virtual machine `docker run -p` fails with `Wants` and works without it), and the executable of short-lived processes (about 18% missing went to 0%). The six MCP tools are checked by unit tests only.
 
 ### 1.17.6
@@ -692,7 +693,7 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 
 ## RoamSwitch for Mac
 
-## 1.17.7
+## 1.17.8
 
 - The RoamSwitch app itself is unchanged from 1.17.6. The version was aligned with the Linux edition.
 - **Changed: the bundled apps were updated**: AccessScope 1.0.3, PersonalSOC 1.0.2, PathScope 1.0.2. See the entry of each app for the changes. PathScope.app and PersonalSOC.app are in the DMG. AccessScope can also be updated from "Update" in the settings of its window app.

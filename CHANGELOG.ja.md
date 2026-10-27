@@ -384,7 +384,7 @@ Client / Server Edition）とのペアリングコード方式(固定IP+短命�
 Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）。
 詳しくは <https://lafine.net/linux>。
 
-### 1.17.7
+### 1.17.8
 
 **動きが変わるものを、最初にまとめます。**
 
@@ -398,6 +398,7 @@ Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）
 - **追加: エントロピーによるランサムウェア検知の記録を保存します**(クライアント版と Server Edition)。`/var/lib/roamswitch/entropy_incidents.json` です。Server Edition は、インシデントのタイムラインにも記録します。
 - **修正: 読む前に終わった短命なプロセスの実行ファイルを、カーネルの通知から補い、EXR-002(一時フォルダーからの実行)を確実に検知します**(Server Edition)。負荷のある仮想マシンで、`/var/tmp` に置いた `ls` の複製を `www-data` 相当で 300 回動かすと、約 18% が `/proc/<pid>/exe` を読む前に終わり、実行ファイルが空の記録になって、EXR-002 を判定できませんでした。`/tmp`・`/var/tmp`・`/dev/shm` のあるファイルシステムに、通知だけの `FAN_OPEN_EXEC` を付け、イベントが運んでくるパスを、プロセスごとに 5 秒だけ覚えます。実行ファイルが読めなかった記録だけが、これを引きます。動的ローダーのイベントでは上書きしません。`fanotify` が使えない環境では、これまでどおりです。
 - 同梱のアプリを更新しました: AccessScope 1.0.3、PersonalSOC 1.0.2、PathScope 1.0.2。
+- **修正: apt と rpm のリポジトリの公開が、rpm の署名で失敗していました。** 公開用の CI の実行環境が Ubuntu 26.04(rpm 6)に変わり、署名の呼び出しが rpm 6 では通りませんでした。rpm 6 と従来の rpm 4.x の両方で署名できるようにしました。1.17.7 のタグはこの失敗で apt と rpm に公開されなかったため、同じ内容を 1.17.8 として出しました(GitHub のリリース 1.17.7 に、同じ内容のパッケージが残っています)。
 - 検証: eBPF の XDP クレートを除くワークスペースのテスト 3939 件が通ります(Docker)。`cargo audit` は脆弱性 0 件です。実機で確かめたもの: Web ガードの相関と再犯の遮断(使い捨ての Ubuntu 24.04 の仮想マシン。Web で検知した接続元は 2 回目の失敗で遮断され、遮断は 4 時間〔対照は 6 回目・1 時間〕)、`nftables` の `Wants`(仮想マシンで、`Wants` ありは `docker run -p` が失敗し、なしは通る)、短命プロセスの実行ファイル(約 18% の欠落が 0%)。MCP の 6 つのツールは、単体テストまでです。
 
 ### 1.17.6
@@ -677,7 +678,7 @@ Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）
 
 ## RoamSwitch for Mac
 
-## 1.17.7
+## 1.17.8
 
 - RoamSwitch 本体の機能は、1.17.6 から変わりません。Linux 版と版をそろえました。
 - **変更: 同梱のアプリを更新しました**: AccessScope 1.0.3、PersonalSOC 1.0.2、PathScope 1.0.2。変更点は、各アプリの項を見てください。PathScope.app と PersonalSOC.app は DMG に入っています。AccessScope は、画面アプリの設定の「アップデート」からも更新できます。
