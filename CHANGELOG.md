@@ -255,7 +255,7 @@ setup instructions.
 - **Changed: a redirect that a device returns is no longer followed when the target is a path with a query.** The specification (`docs/PROBE_RULES.md`) already said queries are not followed, so the code was brought in line with it.
 - **Fixed: when the scan task of a scheduled audit crashed, an empty "clean" result was recorded in the history.** It now writes `audit_failed` to the audit log, sends a notification (`audit_failed`, severity medium), and records no result.
 - **Changed: the bundled roamswitch-core now matches Linux 1.17.24.** An internal change for the components that `UpdateComponents` gained (`node_runtime_cve_map` and `epss_scores`); the Sensor fetches neither.
-- Checks: the workspace tests pass (870 tests; Docker).
+- Checks: the workspace tests pass (871 tests; Docker).
 
 ### 1.0.3
 
