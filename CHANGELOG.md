@@ -753,6 +753,7 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 ## 1.17.20
 
 - **Added: PHP that Homebrew does not own is now part of the vulnerability scan.** PHP installed with MAMP, XAMPP, a tarball or source build, phpbrew, asdf, phpenv, or mise is not in `brew list`, so PHP2Shell (CVE-2026-109618 / CVE-2026-109619) was not reported. It is added to the package CVE scan as `php <version>` and matched against the `php` rows of the same map as the Homebrew list. The version is read without running the binary (`php_version.h`, then the directory name such as `php-8.4.24` or MAMP's `php8.4.24`, then the `X-Powered-By: PHP/8.4.24` string inside the binary). What Homebrew and MacPorts own is left out. A running `php`, `php-fpm` or `php-cgi` is checked too. Measured: the version of a real arm64 Mach-O PHP (the Homebrew bottle, 8.5.12) was read.
+- **Fixed: three switches in the menu were marked with the system check mark (✓).** "Check npm dependencies automatically", "Notify when AI agent settings change" and "Reverse shell detection: include destinations on the local network" now use the same marking as the other switches, ✅ when on and an icon when off. The system check mark is kept for choosing one of several options, such as a language, a mode or a backend.
 - **Added: the app's built-in help (MCP `get_app_help`) now explains the PHP check** (10 languages).
 - Checks: all of the app's tests pass (2898 tests, 1 skipped).
 
