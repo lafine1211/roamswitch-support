@@ -402,6 +402,11 @@ The full text of each item is in this file's git history.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.17.29
+
+- **Added: a warning when AnyDesk, ScreenConnect/ConnectWise, TeamViewer or ngrok is downloaded from a source that isn't that vendor's own official site.** These tools have legitimate business uses, so a name match alone never triggers anything; it only sends a desktop notification (never quarantines or blocks), and stays silent when the download's source (the `user.xdg.origin.url` extended attribute) is unknown. Same rule as the Mac edition.
+- Checks: all 4313 crate tests pass (same flags as CI, in Docker; 16 ignored).
+
 ### 1.17.28
 
 - **Added: the Server Edition and aarch64 now install from the signed pacman repository for Arch Linux (`lafine.net/archlinux`) too.** The repository now carries four packages: `roamswitch-bin` (Client Edition) and `roamswitch-server-bin` (Server Edition), each for x86_64 and aarch64 (Arch Linux ARM), made in the release build from the same release tarballs and signed with the same key as apt and rpm. Install with `sudo pacman -Syu roamswitch-bin` or `sudo pacman -Syu roamswitch-server-bin` after the one-time `roamswitch-enable-arch-repo.sh`. The two editions conflict, so install one. If a tarball is missing, the build stops instead of publishing a repository with some packages absent.
@@ -762,6 +767,13 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 ---
 
 ## RoamSwitch for Mac
+
+## 1.17.23
+
+- **Added: 31 threat-actor reference briefs as MCP resources, `roamswitch://threat-briefs/{actor}`.** 20 nation-state groups (macOS realism, entry vector, and a mapping to existing features) and 11 commercial-spyware IOC references (domain and hash lists). Commercial-spyware domains are not loaded into any blocklist (reference only): the vendors' own infrastructure has often already been retired and the domains reassigned, so blocking them now risks blocking an unrelated current owner for no detection value. Mac-only for now; not yet ported to the Linux edition's MCP server.
+- **Added: a warning when AnyDesk, ScreenConnect/ConnectWise, TeamViewer or ngrok is downloaded from a source that isn't that vendor's own official site.** These tools have legitimate business uses, so a name match alone never triggers anything; it only notifies (never quarantines or blocks), and stays silent when the download's source is unknown (same rule as the Linux edition).
+- **Added: MCP tool calls are logged to a local file** (`~/Library/Application Support/RoamSwitch/mcp_tool_call_log.jsonl`). Only the tool name and the names of its argument keys are recorded, never argument values (such as file paths). Mac-only for now.
+- Checks: all 2927 XCTests pass (1 skipped).
 
 ## 1.17.22
 

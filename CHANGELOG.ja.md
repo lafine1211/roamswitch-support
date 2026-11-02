@@ -392,6 +392,11 @@ Client / Server Edition）とのペアリングコード方式(固定IP+短命�
 Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）。
 詳しくは <https://lafine.net/linux>。
 
+### 1.17.29
+
+- **追加: AnyDesk・ScreenConnect/ConnectWise・TeamViewer・ngrokが、公式サイト以外から配布されたダウンロードを検知したら警告します。** これらのツールは正当な業務利用があるため、名前が一致しただけでは判定せず、隔離・遮断はせず、デスクトップ通知のみ行います。ダウンロード元(`user.xdg.origin.url` 拡張属性)が分からない場合は何も言いません。Mac版と同じ規則です。
+- 検証: 全クレートのテスト 4313 件が通ります(Docker、CIと同じ指定。無視 16 件)。
+
 ### 1.17.28
 
 - **追加: Arch Linux の署名つき pacman リポジトリ(`lafine.net/archlinux`)から、Server 版と aarch64 も入れられます。** リポジトリは、4つのパッケージを持ちます。`roamswitch-bin`(クライアント版)と `roamswitch-server-bin`(Server 版)を、それぞれ x86_64 と aarch64(Arch Linux ARM)向けに、リリースのビルドで、同じリリース tarball から作り、apt・rpm と同じ鍵で署名します。最初に一度だけ `roamswitch-enable-arch-repo.sh` を実行したあと、`sudo pacman -Syu roamswitch-bin` または `sudo pacman -Syu roamswitch-server-bin` で入ります。2つの版は競合するので、どちらか1つを入れます。tarball が1つでも欠けているときは、一部のパッケージが無いリポジトリを公開せずに、ビルドを止めます。
@@ -747,6 +752,13 @@ Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）
 ---
 
 ## RoamSwitch for Mac
+
+## 1.17.23
+
+- **追加: 脅威アクターの参考資料を、MCPリソース `roamswitch://threat-briefs/{actor}` として31件追加しました。** 国家支援の攻撃グループ20件(macOSでの実在性・侵入経路・対応する既存機能の対応表)と、商用スパイウェアのIOC参考資料11件(ドメイン・ハッシュの一覧)です。商用スパイウェアのドメインは、業者側のインフラがすでに退役・再割当されている事例が多く、今ブロックすると無関係な現在の持ち主を誤って遮断する恐れがあるため、どのブロックリストにも読み込みません(参照のみ)。現時点ではMac版のみで、Linux版のMCPサーバーには未反映です。
+- **追加: AnyDesk・ScreenConnect/ConnectWise・TeamViewer・ngrokが、公式サイト以外から配布されたダウンロードを検知したら警告します。** これらのツールは正当な業務利用があるため、名前が一致しただけでは判定せず、隔離・遮断はせず通知のみ行います。ダウンロード元が分からない場合は何も言いません(Linux版と同じ仕様)。
+- **追加: MCP toolの呼び出しを、ローカルのログファイル(`~/Library/Application Support/RoamSwitch/mcp_tool_call_log.jsonl`)に記録します。** tool名と引数のキー名だけを記録し、値(ファイルパスなどの内容)は記録しません。現時点ではMac版のみです。
+- 検証: 全XCTest 2927件が通ります(スキップ1件)。
 
 ## 1.17.22
 
