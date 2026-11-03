@@ -402,6 +402,13 @@ The full text of each item is in this file's git history.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.17.30
+
+- **Added: 31 threat-actor reference briefs as MCP resources, `roamswitch://threat-briefs/{actor}`.** 20 nation-state groups (macOS realism, entry vector, and a mapping to existing features) and 11 commercial-spyware IOC references (domain and hash lists). Commercial-spyware domains are not loaded into any blocklist (reference only): the vendors' own infrastructure has often already been retired and the domains reassigned, so blocking them now risks blocking an unrelated current owner for no detection value. Same content as the Mac edition.
+- **Added: MCP tool calls are logged to a local file** (`~/.config/roamswitch/mcp_tool_call_log.jsonl`). Only the tool name and the names of its argument keys are recorded, never argument values (such as file paths). Same rule as the Mac edition.
+- **Fixed: a snap package's automatic update reloading its AppArmor profile was wrongly reported by the log auditor as a "new pattern."** AppArmor's audit line embeds the package name inside a quoted attribute (`name="snap.<package>.<app>"`), which didn't match the existing exclusion's assumption of a leading space before "snap" — so it went through unfiltered. Found live when Bitwarden's snap auto-update triggered this false positive; the exclusion now also covers the `apparmor_parser` + `profile_replace` context.
+- Checks: all 4320 crate tests pass (same flags as CI, in Docker; 16 ignored).
+
 ### 1.17.29
 
 - **Added: a warning when AnyDesk, ScreenConnect/ConnectWise, TeamViewer or ngrok is downloaded from a source that isn't that vendor's own official site.** These tools have legitimate business uses, so a name match alone never triggers anything; it only sends a desktop notification (never quarantines or blocks), and stays silent when the download's source (the `user.xdg.origin.url` extended attribute) is unknown. Same rule as the Mac edition.
