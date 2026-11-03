@@ -402,6 +402,13 @@ The full text of each item is in this file's git history.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.17.33
+
+- **Fixed: the isolation status kept saying "isolated" after the isolation rules were gone.** When the isolation nftables tables disappear without going through a release (a reboot, a reinstall of the service), `/var/lib/roamswitch/ebpf_status.json` stayed at "isolated", and `roamswitch server ebpf`, the TUI and MCP went on reporting an isolation that no longer existed (on a real machine, a state from September 26 was still there). Every 15 seconds the daemon now sets the status back to released, but only when all three hold: both tables (`roamswitch_isolate` and `roamswitch_emergency`) are confirmed absent (nothing is decided when nft does not answer), the status was written at least 60 seconds ago, and there is no isolation record. A SIGSTOP-only freeze and the frozen processes are left alone.
+- **Fixed: the secret scan printed "(safe)" when it found nothing.** Finding nothing means no key in a known format was present, which is not proof of safety (a bare AWS secret access key, which has no fixed format, cannot be detected). The word is removed from the CLI, the GUI and the MCP summary in all 10 languages, which now say only that nothing was detected.
+- **Fixed: a .deb that only points to a snap (`thunderbird 2:1snap1-0ubuntu5`, `firefox 1:1snap1-…`) was listed in the package vulnerability match with CVEs that had no fix.** The version of such a .deb is a placeholder, not the version of the snap that actually runs, so it always looked older than the fixed version (`2:140.x`). On a real Ubuntu 26.04 machine, Thunderbird showed CVE-2022-25236 as "no fix yet". Versions of this form are no longer judged. The version of the snap itself is not read, so the Thunderbird and Firefox snaps are outside this match.
+- Checks: all 4337 crate tests pass (same flags as CI, in Docker; 16 ignored).
+
 ### 1.17.32
 
 - **Fixed: the log audit notified "check whether you recognize this" for a harmless AppArmor denial of a snap app.** A denial counts as harmless only if the process name matches the profile's own program, but the kernel cuts a process name to 15 bytes and a snap profile is named `snap.<snap>.<app>`, so the same program was judged a mismatch. It showed up live when the Firmware Updater snap (`firmware-notifier`) merely read `/proc/sys/vm/max_map_count`. For a snap the program is now the last part of the profile name, for an ordinary program the last part of the path, and a 15-byte process name is accepted as the first 15 bytes of a longer program name. A denial for a different program (including one that only shares a prefix), a write, an execute, or a sensitive file (`/etc/shadow`, `~/.ssh` and so on) is still notified as before.
@@ -421,15 +428,11 @@ The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 - **Fixed: the result of the active verification is readable.** nmap's scripts that only read something out of a service (the page title, the server's clock, the headers, the state of a port) are no longer listed as findings, and the nmap output that the GUI text left out is shown. nmap's own report has its own evidence kind, `externalToolReport` (SARIF level `warning`, not confirmed); the CLI marks it with a yellow `ℹ` instead of a red `✗`. The heading for checks that did not finish now says `Items that could not be checked` instead of `unreachable or timed out` (10 languages), because a check that gets an answer but finds nothing to test is not a connection failure.
 - Checks: all 4320 crate tests pass (same flags as CI, in Docker; 16 ignored).
 
-### 1.17.29
-
-- **Added: a warning when AnyDesk, ScreenConnect/ConnectWise, TeamViewer or ngrok is downloaded from a source that isn't that vendor's own official site.** These tools have legitimate business uses, so a name match alone never triggers anything; it only sends a desktop notification (never quarantines or blocks), and stays silent when the download's source (the `user.xdg.origin.url` extended attribute) is unknown. Same rule as the Mac edition.
-- Checks: all 4313 crate tests pass (same flags as CI, in Docker; 16 ignored).
-
-### 1.10.0 - 1.17.28 (summarized)
+### 1.10.0 - 1.17.29 (summarized)
 
 Everything in these releases, grouped by topic (Client and Server Edition unless marked). The full text of each entry is in the git history of this file.
 
+- (1.17.29) **Added: a warning when AnyDesk, ScreenConnect/ConnectWise, TeamViewer or ngrok is downloaded from a source that isn't that vendor's own official site.** These tools have legitimate business uses, so a name match alone never triggers anything; it only sends a desktop notification (never quarantines or blocks), and stays silent when the download's source (the `user.xdg.origin.url` extended attribute) is unknown. Same rule as the Mac edition.
 - (1.17.28) **Added: the Server Edition and aarch64 now install from the signed pacman repository for Arch Linux (`lafine.net/archlinux`) too.** The repository now carries four packages: `roamswitch-bin` (Client Edition) and `roamswitch-server-bin` (Server Edition), each for x86_64 and aarch64 (Arch Linux ARM), made in the release build from the same release tarballs and signed with the same key as apt and rpm. Install with `sudo pacman -Syu roamswitch-bin` or `sudo pacman -Syu roamswitch-server-bin` after the one-time `roamswitch-enable-arch-repo.sh`. The two editions conflict, so install one. If a tarball is missing, the build stops instead of publishing a repository with some packages absent.
 - (1.17.28) **Added: a default post-detection hook that only writes to the audit log** (all packages). `/etc/roamswitch/hooks/post-detection` appends each detection as one line to `/var/log/roamswitch/web-detections.jsonl` and sends nothing outside. It is handled as a configuration file (deb conffiles, rpm config files, Arch `backup`), so an edited copy is not overwritten by an update, and a log rotation file is installed with it.
 - (1.17.28) **Changed: in the GUI, each setting in the low-level defense section shows a one-line summary** (10 languages) instead of several lines of explanation. The full explanation (how to write exclusions, the list of what is watched and so on) stays in the tooltip of the checkbox and the summary.
@@ -775,6 +778,11 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 
 ## RoamSwitch for Mac
 
+## 1.17.24
+
+- **Fixed: the secret scan printed "(safe)" when it found nothing.** Finding nothing means no key in a known format was present, which is not proof of safety (a bare AWS secret access key, which has no fixed format, cannot be detected). The word is removed from the texts in all 10 languages, which now say only that nothing was detected.
+- Checks: all 2927 XCTest tests pass.
+
 ## 1.17.23
 
 - **Added: 31 threat-actor reference briefs as MCP resources, `roamswitch://threat-briefs/{actor}`.** 20 nation-state groups (macOS realism, entry vector, and a mapping to existing features) and 11 commercial-spyware IOC references (domain and hash lists). Commercial-spyware domains are not loaded into any blocklist (reference only): the vendors' own infrastructure has often already been retired and the domains reassigned, so blocking them now risks blocking an unrelated current owner for no detection value. Mac-only for now; not yet ported to the Linux edition's MCP server.
@@ -794,17 +802,13 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 - **Fixed: the MCP configuration audit did not read OpenCode servers written in OpenCode's current form `mcp.servers.<name>`.** It counted one server named `servers` and audited none of the real ones, so none of the findings (unpinned launchers, shell wrappers, plain `http://`, traffic-interception variables and so on) appeared for a current `opencode.json`. Both forms are read now, `mcp.timeout` is not taken for a server, and an older entry that happens to be named `servers` or `timeout` is still a server.
 - Verification: all 2901 XCTest tests pass (1 skipped).
 
-## 1.17.20
-
-- **Added: PHP that Homebrew does not own is now part of the vulnerability scan.** PHP installed with MAMP, XAMPP, a tarball or source build, phpbrew, asdf, phpenv, or mise is not in `brew list`, so PHP2Shell (CVE-2026-109618 / CVE-2026-109619) was not reported. It is added to the package CVE scan as `php <version>` and matched against the `php` rows of the same map as the Homebrew list. The version is read without running the binary (`php_version.h`, then the directory name such as `php-8.4.24` or MAMP's `php8.4.24`, then the `X-Powered-By: PHP/8.4.24` string inside the binary). What Homebrew and MacPorts own is left out. A running `php`, `php-fpm` or `php-cgi` is checked too. Measured: the version of a real arm64 Mach-O PHP (the Homebrew bottle, 8.5.12) was read.
-- **Fixed: three switches in the menu were marked with the system check mark (✓).** "Check npm dependencies automatically", "Notify when AI agent settings change" and "Reverse shell detection: include destinations on the local network" now use the same marking as the other switches, ✅ when on and an icon when off. The system check mark is kept for choosing one of several options, such as a language, a mode or a backend.
-- **Added: the app's built-in help (MCP `get_app_help`) now explains the PHP check** (10 languages).
-- Checks: all of the app's tests pass (2898 tests, 1 skipped).
-
-## 1.10.0 - 1.17.19 (summarized)
+## 1.10.0 - 1.17.20 (summarized)
 
 The contents of these releases, grouped by theme. The full text of each entry is in this file's git history.
 
+- (1.17.20) **Added: PHP that Homebrew does not own is now part of the vulnerability scan.** PHP installed with MAMP, XAMPP, a tarball or source build, phpbrew, asdf, phpenv, or mise is not in `brew list`, so PHP2Shell (CVE-2026-109618 / CVE-2026-109619) was not reported. It is added to the package CVE scan as `php <version>` and matched against the `php` rows of the same map as the Homebrew list. The version is read without running the binary (`php_version.h`, then the directory name such as `php-8.4.24` or MAMP's `php8.4.24`, then the `X-Powered-By: PHP/8.4.24` string inside the binary). What Homebrew and MacPorts own is left out. A running `php`, `php-fpm` or `php-cgi` is checked too. Measured: the version of a real arm64 Mach-O PHP (the Homebrew bottle, 8.5.12) was read.
+- (1.17.20) **Fixed: three switches in the menu were marked with the system check mark (✓).** "Check npm dependencies automatically", "Notify when AI agent settings change" and "Reverse shell detection: include destinations on the local network" now use the same marking as the other switches, ✅ when on and an icon when off. The system check mark is kept for choosing one of several options, such as a language, a mode or a backend.
+- (1.17.20) **Added: the app's built-in help (MCP `get_app_help`) now explains the PHP check** (10 languages).
 - (1.17.19) **Added: Node.js that Homebrew does not own is now part of the vulnerability scan.** A Node.js installed with the official installer, nvm, fnm, Volta, asdf, mise or n, or from a tarball under `/opt` and the like, is not in `brew list`, so the scan did not see it (a 22.23.3 install was not reported for CVE-2026-111497, Brotli, "Node2Shell", which is in KEV and fixed in 22.23.4, 24.22.1 and 26.12.1). It shows up in the Package CVE Scan window, in MCP `run_package_cve_scan` and in the diagnosis item "Exploitable Vulnerabilities (Installed Software)". The version is read without running the binary (the `node_version.h` beside it, the directory name, then the source URL inside the binary). What is found is added to the Homebrew list as `node <version>` and judged by the `node` rows of the same map. Anything Homebrew or MacPorts owns is left out. On a Mac without Homebrew, what was found still counts as checked. A binary whose version cannot be read is not reported. The rules are the same as on Linux.
 - (1.17.19) **Changed: a port that was blocked automatically is released automatically once it listens on 127.0.0.1 (and ::1) only** (Pro). After exposing a service with `OLLAMA_HOST=0.0.0.0` and having it blocked, moving it back to 127.0.0.1 left the block in place. When every listener of the port, with a known address, has been local for two checks in a row (about 4 seconds), the block is lifted and one line goes to the notification history. The program that was blocked is removed from the "known" list, so exposing it again is blocked again. A port blocked by hand (including one touched in the port diagnosis window), and a port with no listener at all, are not released (10 languages).
 - (1.17.19) **Added: the in-app help (MCP `get_app_help`) now explains the Node.js check and the automatic release of the block** (10 languages).
