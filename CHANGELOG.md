@@ -402,6 +402,11 @@ The full text of each item is in this file's git history.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.17.32
+
+- **Fixed: the log audit notified "check whether you recognize this" for a harmless AppArmor denial of a snap app.** A denial counts as harmless only if the process name matches the profile's own program, but the kernel cuts a process name to 15 bytes and a snap profile is named `snap.<snap>.<app>`, so the same program was judged a mismatch. It showed up live when the Firmware Updater snap (`firmware-notifier`) merely read `/proc/sys/vm/max_map_count`. For a snap the program is now the last part of the profile name, for an ordinary program the last part of the path, and a 15-byte process name is accepted as the first 15 bytes of a longer program name. A denial for a different program (including one that only shares a prefix), a write, an execute, or a sensitive file (`/etc/shadow`, `~/.ssh` and so on) is still notified as before.
+- Checks: all 4333 crate tests pass (same flags as CI, in Docker; 16 ignored).
+
 ### 1.17.31
 
 - **Added: a GitLab server (the Omnibus package `gitlab-ce` / `gitlab-ee`, or a source install) is now part of the package vulnerability scan.** GitLab is in no distribution's security data, and the Ruby it bundles is not a package, so the scan never reported it. CVE-2026-97229 (CVSS 10, code execution without logging in) and CVE-2026-85706 (reading any file) were in CISA's KEV list and were missed even on a GitLab two releases behind. The scan reads the release from the `VERSION` file of the Rails application (`/opt/gitlab/embedded/service/gitlab-rails/VERSION`, or `/home/git/gitlab/VERSION`), runs nothing, and compares it with the `gitlab` rows (one range per release line, from NVD) of the map file that the Node.js and PHP checks already use. The "exploited vulnerabilities" item of the diagnosis uses the same comparison. Measured on an Ubuntu 24.04 VM: 19.2.7 is reported for CVE-2026-97229 (fixed in 19.2.8), 18.11.0 for CVE-2026-85706 (fixed in 18.11.12), and 19.2.8 is clean. A GitLab inside a container is not looked at. The rows reach a device with its next map refresh.
