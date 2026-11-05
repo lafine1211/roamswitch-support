@@ -838,6 +838,15 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 
 ## RoamSwitch for Mac
 
+## 1.17.27
+
+RoamSwitch itself is unchanged from 1.17.26. This release updates the bundled apps.
+
+- **AccessScope 1.0.5**: English output picks the singular or plural to match the number (German, Spanish, French, Italian and Portuguese too). Reports, blocklists and RoamSwitch config drafts are written readable by the owner only (0600) when the file is newly created. An IP-based suppression rule no longer makes a high-severity chain disappear without going through the decision.
+- **PersonalSOC 1.0.3**: an SSH attempt on a user that does not exist is no longer counted twice for its two log lines. The details of unresolved RoamSwitch detections are shown in the display language. Sentences in 10 languages are built from the sentence-kind code attached to the records. When run with sudo, the starting point of the PathScope paths is the user who ran sudo, and that starting point is shown in the output.
+- **PathScope 1.0.4**: when run with sudo without `--start`, the starting point is the user who ran sudo, and it is printed to standard error.
+- PersonalSOC and PathScope also arrive through the in-app update.
+
 ## 1.17.26
 
 - **Fixed: checks that could not be measured raised the security report's pass count and score.** The ARP spoofing monitor (gateway unknown, or no earlier reading to compare with) and the Wi-Fi encryption strength (no Location permission, so the reading is unreliable) were counted as "passed" although nothing had been measured. A check whose result could not be established is now left out of both the total and the pass count, like these two. What the screen shows (the neutral "could not be determined" display) and the `inconclusiveReason` in the MCP are unchanged. Where ARP has no baseline yet, the score may differ a little from before.
@@ -851,15 +860,12 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 - **Fixed: the Sensor audit result card and export no longer lists nmap scripts that only read something out of a service, and its headline no longer reads as "safe" when ports are open.** An audit of two web ports showed a page of lines (the page title, the server's clock, the headers) under "no problem found". Those scripts report no problem and are left out; the ones that check something (risky methods, a weak certificate, missing security headers) stay. When nothing was flagged but ports are open, the line now says "No known problem was found. The open ports are listed below (this is not proof that it is safe)" (9 languages).
 - Checks: all 2932 XCTests pass (1 skipped).
 
-## 1.17.24
-
-- **Fixed: the secret scan printed "(safe)" when it found nothing.** Finding nothing means no key in a known format was present, which is not proof of safety (a bare AWS secret access key, which has no fixed format, cannot be detected). The word is removed from the texts in all 10 languages, which now say only that nothing was detected.
-- Checks: all 2927 XCTest tests pass.
-
-## 1.10.0 - 1.17.23 (summarized)
+## 1.10.0 - 1.17.24 (summarized)
 
 The contents of these releases, grouped by theme. The full text of each entry is in this file's git history.
 
+- (1.17.24) **Fixed: the secret scan printed "(safe)" when it found nothing.** Finding nothing means no key in a known format was present, which is not proof of safety (a bare AWS secret access key, which has no fixed format, cannot be detected). The word is removed from the texts in all 10 languages, which now say only that nothing was detected.
+- (1.17.24) Checks: all 2927 XCTest tests pass.
 - (1.17.23) **Added: 31 threat-actor reference briefs as MCP resources, `roamswitch://threat-briefs/{actor}`.** 20 nation-state groups (macOS realism, entry vector, and a mapping to existing features) and 11 commercial-spyware IOC references (domain and hash lists). Commercial-spyware domains are not loaded into any blocklist (reference only): the vendors' own infrastructure has often already been retired and the domains reassigned, so blocking them now risks blocking an unrelated current owner for no detection value. Mac-only for now; not yet ported to the Linux edition's MCP server.
 - (1.17.23) **Added: a warning when AnyDesk, ScreenConnect/ConnectWise, TeamViewer or ngrok is downloaded from a source that isn't that vendor's own official site.** These tools have legitimate business uses, so a name match alone never triggers anything; it only notifies (never quarantines or blocks), and stays silent when the download's source is unknown (same rule as the Linux edition).
 - (1.17.23) **Added: MCP tool calls are logged to a local file** (`~/Library/Application Support/RoamSwitch/mcp_tool_call_log.jsonl`). Only the tool name and the names of its argument keys are recorded, never argument values (such as file paths). Mac-only for now.
