@@ -280,6 +280,18 @@ setup instructions.
 - **Changed (affects scripts):** `informational` is added to records, collector sends and control API results, `error_msg` to IPC replies, and `msg` and `args` to audit-log records. `network-threats --json --lang ja` fills `summary_text` (without `--lang`, the JSON is as before). The notification of newly opened ports reads "web-01: 1 newly open port: 6379", without the `[6379]` brackets. Some English validation errors now read like `must be between 1 and 720`.
 - Checks: the 720 tests of sensor-daemon and sensor-core pass (Docker).
 
+### 1.0.5
+
+- **Changed: a freshly installed Sensor no longer sends probes into the LAN.** Until now, the inventory refresh right after start and every hour sent an ARP sweep (`nmap -sn -PR`) across the whole directly connected subnet when nmap was present, and the DHCP probe and IPv6 router solicitation were on by default. nmap is installed as a recommended package, so `apt install` alone reached the whole LAN before the user had chosen anything. `inventory.active_sweep` is added and, with `dhcp.active_probe` and `ipv6.active_probe`, all three are off by default. By default the Sensor only reads the ARP, neighbor and routing tables and runs passive capture, and it no longer sends an ICMP echo to the gateway at start (the gateway is pinged only with `inventory.active_sweep` on). `status` (CLI and TUI) has a new "probes into the LAN: off/on" line.
+- **Changed: on upgrade, probes that were saved as on under the earlier default are turned off once.** With the earlier versions, using `config set` even once saved the default "on" of the probes to `config.json`. In a settings file without the marker, those of the three that are on are turned off, with a notification (`probes_off_by_upgrade`, medium) and an operation-log entry. `status` says "probes were turned off by the upgrade" with the command to turn them on. Probes the user turns on after the upgrade are left alone.
+- **Fixed: postinst said "started successfully" even when the service could not start.** It uses `deb-systemd-invoke` when present (following policy-rc.d) and reports only after checking whether the service actually started. It also says the probes are off by default.
+- **Fixed: auditing again after changing the language made `diff` count "1 new, 1 resolved".** Findings now store a language-independent rule id and the language, and are compared by those (older records are still compared by title). `report` and `history` say in one line when a record's language differs from the reader's. Scheduled audit texts are in the Sensor's language instead of always English.
+- **Fixed: `scan` said it also ran the nmap NSE checks when nmap was missing.** The English "run::" of `issue-code` and its `--addr`, which could be unreachable, are fixed too (other addresses and interfaces are listed). A Japanese lockdown refusal no longer carries the daemon's English details.
+- **Fixed: `roamswitch-sensor-collector enroll` did not check the shape of the public key.** It refuses anything but a base64 32-byte Ed25519 public key.
+- **Changed (affects scripts):** `unpair`, like `scan`, `history`, `diff`, `report` and `export --endpoint`, accepts a prefix of the public key. When nothing or more than one matches, the exit code is 1 (some commands returned 0). `--help` describes each command, and `--version` is added. An unknown command is reported on standard error with exit code 2. Piping the output to `head` no longer prints a panic message (the CLI and the collector's one-shot commands).
+- **Changed: the license is now stated as Proprietary to match the actual terms, and the deb and rpm ship the Sensor terms of use (EULA)** (`/usr/share/doc/roamswitch-sensor/copyright`).
+- Checks: with the bundled roamswitch-core moved to 1.17.37, all workspace tests pass (592 in sensor-core and others, 0 failed).
+
 ### 1.0.4
 
 - **Added: a check for gaps between a published specification and the actual responses, and for boundary values (`design_flaw`).** For paired devices only, it compares what a published API specification (OpenAPI / Swagger) declares with what the device actually answers, and reports a declared path that returns 404 or a response that the specification does not declare (it does not call this a "vulnerability"). It also sends each declared query parameter one safe value at a time from a closed set in the rule data, and reports only 5xx responses, a sharp change in response size, and stack-trace-like text as "anomalies". It sends read-only (GET) requests only, at most 20 per device. The few boundary-value requests go first to parameters whose names suggest identifiers or numeric bounds (`id`, `page`, `limit`), then to search and sort names, then to the rest, and every parameter gets its first value before any gets a second. The order depends only on the parameter names, is the same every time, and no AI chooses it. It is off by default, runs only when `design_flaw.enabled` is turned on, and keeps the same two-step consent as the active audit. It is never used on unmanaged devices.
@@ -291,15 +303,12 @@ setup instructions.
 - **Changed: the bundled roamswitch-core now matches Linux 1.17.24.** An internal change for the components that `UpdateComponents` gained (`node_runtime_cve_map` and `epss_scores`); the Sensor fetches neither.
 - Checks: the workspace tests pass (869 tests; Docker).
 
-### 1.0.3
-
-- **Changed: the bundled roamswitch-core now matches 1.17.12.** It is an internal change only, to follow `kev_catalog` being added to the Linux edition's list of update data (`UpdateComponents`); Sensor does not fetch the KEV list. Sensor's features and settings are unchanged from 1.0.2.
-- Checks: 779 workspace tests pass (Docker). `cargo audit` reports 0 vulnerabilities.
-
-### 0.2.1 - 1.0.2 (summarized)
+### 0.2.1 - 1.0.3 (summarized)
 
 The full text of each item is in this file's git history.
 
+- (1.0.3) **Changed: the bundled roamswitch-core now matches 1.17.12.** It is an internal change only, to follow `kev_catalog` being added to the Linux edition's list of update data (`UpdateComponents`); Sensor does not fetch the KEV list. Sensor's features and settings are unchanged from 1.0.2.
+- (1.0.3) Checks: 779 workspace tests pass (Docker). `cargo audit` reports 0 vulnerabilities.
 - (1.0.2) **Added: passive capture reads VLAN tags (802.1Q / 802.1ad)** (the tag that Linux strips is received through `PACKET_AUXDATA`). The VLAN is recorded in the device inventory. IPv6 flows also enter behavior learning (in units of /24 for IPv4 and /56 for IPv6). The model is read from LLDP, mDNS TXT and WS-Discovery. The receive buffer can be set with `capture.rcvbuf_mb`, and truncation is counted only when it reaches the part that is read.
 - (1.0.2) **Added: the audit of paired endpoints was widened.** Non-standard ports are audited from the ports and banners that the endpoint reports about itself. An endpoint behind a router gets a periodic audit only when a signed request, no ARP answer, and no change before and after the audit all hold. A released endpoint gets `unpaired_by_sensor`.
 - (1.0.2) **Added: the light audit of devices without RoamSwitch was widened.** `noauth_check` now covers etcd, CouchDB, Kubelet, ZooKeeper and Ollama, and `product_check` covers QNAP, Hikvision, Dahua and SonicWall. FTP and SSH banners are also used to decide the version.
