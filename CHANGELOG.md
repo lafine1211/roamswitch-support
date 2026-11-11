@@ -917,6 +917,12 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 
 ## RoamSwitch for Mac
 
+## 1.17.29
+
+The RoamSwitch app itself is unchanged from 1.17.28. The bundled apps are replaced with their newer versions.
+
+- **Fixed: 1.17.28 shipped older versions of PersonalSOC, PathScope and AccessScope.** 1.17.29 bundles PersonalSOC 1.0.4, PathScope 1.0.5 and AccessScope 1.0.6 (1.17.28 had 1.0.3, 1.0.4 and 1.0.5). The changes in those three are listed under each app. If you installed 1.17.28, the in-app update takes you to 1.17.29.
+
 ## 1.17.28
 
 Fixes for defects found by re-checking the lessons and in a disposable macOS VM.

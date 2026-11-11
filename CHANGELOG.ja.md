@@ -902,6 +902,12 @@ Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）
 
 ## RoamSwitch for Mac
 
+## 1.17.29
+
+RoamSwitch 本体は 1.17.28 から変わりません。同梱のアプリを、新しい版に入れ替えました。
+
+- **修正: 1.17.28 に、古い版の PersonalSOC・PathScope・AccessScope が入っていました。** 1.17.29 は、PersonalSOC 1.0.4、PathScope 1.0.5、AccessScope 1.0.6 を同梱します(1.17.28 には、1.0.3・1.0.4・1.0.5 が入っていました)。3 つの変更は、各アプリの節のとおりです。1.17.28 に入れた人は、アプリ内の更新で 1.17.29 に上がります。
+
 ## 1.17.28
 
 講座の再点検と、使い捨ての macOS の VM での確認で見つかった不具合を、直しました。
