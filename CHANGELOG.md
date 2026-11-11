@@ -12,6 +12,11 @@ independently. Older releases are summarized in ranges.
 
 A security diagnosis tool for access logs. It is a separate app (Apache-2.0): the Server Edition .deb / .rpm packages carry only the command (`accessscope`; from 1.11.2 they also carry the PersonalSOC and PathScope commands); the Linux client edition and the Mac app carry the command and a window app.
 
+### 1.0.7
+
+- **Fixed: reports in English and other languages contained the Japanese middle dot and wave dash.** "2 kinds of logs (Web・SSH)" now reads "(Web, SSH)", and the "〜" in the log period becomes "–" (in English and others), each in the way of its language. The period field in the app does the same. Japanese is unchanged.
+- Checks: the 661 workspace tests pass, including 451 in the core lib, 30 in the CLI and 43 in the app (Mac; 0 failed; the 3 ignored were already there).
+
 ### 1.0.6
 
 - **Fixed: `accessscope … | head` and `accessscope-eval … | head` printed a panic message.** They now exit with code 141 without it.
@@ -189,6 +194,14 @@ The contents of these releases, grouped by theme. The full text of each entry is
 
 ## PersonalSOC
 
+### 1.0.5
+
+- **Fixed: settings RoamSwitch could not confirm were listed as "[Medium/Confirmed] Configuration weakness".** These are the items the health check marked [unconfirmed], for example when it did not run as root (Known Kernel CVE Exposure, exploited or likely-exploited vulnerabilities and the like). They are no longer counted as weaknesses; the overview box "RoamSwitch settings that could not be confirmed" shows their count and names. The overall risk score drops by that much. When an item that was a weakness last time could not be confirmed this time, it is counted as "cannot be compared" instead of "no longer seen (resolved)".
+- **Fixed: RoamSwitch's "rebuilt the baseline for the log tampering comparison" record was ranked high as "[High/Likely] unresolved detection (T1685.006)".** It is a maintenance record, so it is no longer counted as an unresolved detection.
+- **Fixed: IP addresses were written two ways in the same report** ("203[.]0[.]113[.]50" and "203.0.113.50"). Detection titles and descriptions now use "203.0.113.50". The IOC list keeps the defanged form as before.
+- **Fixed: in PathScope detections, the sentence about the starting point ran into the one about fix points without a break** ("Paths start from user: admin 1 fix point"). They are now separated as "admin. 1 fix point" ("admin。遮断点は 1 か所" in Japanese). The note for zero paths also put a Japanese full stop into English; it is now one line per note.
+- Checks: the 361 workspace tests pass, including 333 in the core (Mac; 0 failed; the 2 ignored were already there).
+
 ### 1.0.4
 
 - **Fixed: `personalsoc … | head` printed a panic message.** It now exits with code 141 without it.
@@ -267,6 +280,14 @@ plus detection of new devices and spoofing on the LAN. Still under
 development — see
 <https://lafine.net/roamswitch-sensor-manual.html> for current status and
 setup instructions.
+
+### 1.0.7
+
+- **Fixed: on a newly installed Sensor, the control API's TLS dropped from required to optional at the restart after the first pairing.** The same happened after unpairing (an empty `trusted_endpoints.json` stays behind). Only a Sensor that paired devices with an old version is now moved to the old settings. A Sensor installed with the previous version and already paired cannot be told apart from an old one, so it stays optional. Run `sudo roamswitch-sensor config set control.tls required` and restart the daemon.
+- **Fixed: on a Sensor with nmap, the pairing answer waited for the nmap that looks up the device's MAC.** Without DNS it took 13 seconds, so `sensor pair` on the device failed at 10 seconds while the Sensor had registered the device as trusted. The answer is now sent first and the MAC looked up afterwards (the nmap that looks up one device's MAC gets `-n` and a 5-second timeout). For a few seconds after pairing, the device's record has no MAC.
+- **Fixed: fetching KEV and sending to the collector followed redirects.** Fetching KEV refuses a redirect to anything but https and follows up to 3. Sending to the collector follows no redirect and treats a 3xx as a failed send. The device list and the check results do not flow to the redirect target, and what could not be sent is not marked as sent.
+- **Fixed: the daemon's journal contained color codes (ESC[2m and the like).** No color is added when the output is not a terminal (`NO_COLOR` and `TERM=dumb` are honored too).
+- Checks: 941 workspace tests pass (Docker, 0 failures).
 
 ### 1.0.6
 
@@ -441,6 +462,60 @@ The full text of each item is in this file's git history.
 
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
+
+### 1.17.39
+
+Fixes for defects found when the learning-site lessons were run again on the previous version. If your scripts rely on exit codes, the shape of the output or where it goes, check the "Changed (affects scripts)" items.
+
+- **Fixed: decoy tampering was checked only at the next patrol.** The patrol ran every 20 seconds on the Server and every 3 seconds on the client, so detection took from a few seconds to more than ten, and other files were rewritten in the meantime. The decoy files are now watched with inotify, checked the moment they are written, and the writer is frozen (in a VM, in all 3 runs, detection took about 10 milliseconds and no file was rewritten before the freeze). When the same writer rewrites the next decoy within 10 seconds, it is folded into the same incident, with one notification and one isolation.
+- **Fixed: on a first install (including after purge) and on reinstalling after `uninstall`, starting the service timed out.** Before taking the baseline of critical file integrity monitoring (FIM), the daemon waited for the end of the apt run that was installing it, so the last line of postinst was "…is not running". The baseline is now taken separately once apt has finished, and the service starts at once (about 5 seconds in a VM). The client daemon also stopped taking CLI and GUI requests for up to 120 seconds during the same wait.
+- **Fixed: upgrading the package did not fetch the CVE data.** It was fetched only on a first install, so right after upgrading from an earlier version `scan-packages` said the local CVE data had not been fetched, and there was no KEV matching or notification until the timer's first run. An upgrade now fetches it once when the data is missing (on the Server when update fetching is on, on the client when the timer is enabled).
+- **Fixed: the port scan notification interval (once an hour per source) was checked before deciding whether the source is a paired Sensor and before banning.** After a Sensor audit was notified and the device then unpaired, scans from the same source within that hour were neither notified nor banned. When the treatment changes, and when the scan goes on after the ban ends, it is notified and banned for 10 minutes regardless of the interval.
+- **Fixed: when Docker was installed later, containers went unwatched for up to about 5 minutes.** Containers started with `--privileged` or with `docker.sock` mounted in that time were not notified. While waiting, `docker.sock` is now checked every 2 seconds, and watching starts as soon as it appears (no `server restart` needed).
+- **Fixed: the same listener was notified as "a new program started listening on the network" at every daemon restart** (Server Edition). The notified processes are kept in `port_guard.json`, and after a restart only the block is applied again. A process started again is notified again.
+- **Fixed: FIM notifications for files written during an update.** The same file was notified twice, at the end of the update and at the periodic check about 3 minutes later; it is now once. A file written while apt was downloading packages (before unpacking) was described as "(it already differed from the baseline before the update)"; it now says "(it was written while the update command ran, before the packages were unpacked)".
+- **Fixed: the web rules reported the same file again and again** (Server Edition). The write watch, the periodic check and File Scan Guard each reported it, and reported it again after a daemon restart. Reported files are remembered in `/var/lib/roamswitch/web_hits_seen.json` (0600) and are not reported while unchanged. A changed content or another matching rule is reported again.
+- **Fixed: the 5-minute hold of log wiping was lost at a daemon restart, and the "N more times" notification never came** (Server Edition). The hold is now recorded and notified after a restart too.
+- **Fixed: fail2ban ban notifications arrived 15 to 25 seconds after the ban, and not at all after an earlier unban.** fail2ban's log is now read the moment it is written, and the notification comes in about 1 second.
+- **Fixed: `sudo roamswitch emergency-restore` with nothing isolated removed rules such as port scan detection without asking.** With no isolation record and no isolation rule left, it now removes nothing and says so.
+- **Fixed: eBPF notifications showed a user slice as "container: user-1000.sl", cut short and as a container.** It is no longer called a container and is shown on the service unit line. When the direct parent is the user's own systemd (a systemd that is not pid 1), the automatic first-look triage adds one line with the reason and raises the false-positive likelihood by 2 points.
+- **Fixed: installing Falco with the install script made Falco listen on 0.0.0.0:8765 at its first start, raising "a new program started listening on the network".** RoamSwitch's Falco settings (drop-in) are now put in place before Falco is installed.
+- **Fixed: showing the notification history in the reader's language did not work for some notifications.** They were the execution-record rules (EXR), Sigma matches, decoy credential files (honeytokens), expired acceptances, log template anomalies, the reason a scanner was judged spoofed, investigation agent notifications and the notifications the client GUI shows. These too are now shown in the reader's language in `roamswitch notifications`, the GUI, MCP and the TUI, whatever language they were recorded in. Reading a weakened-setting notification in another language replaced the state with "Action Required"; the value text ("Enabled (Router mode)" and the like) is now translated. The Server's decoy notifications come in any of the 10 languages in server.conf (they were Japanese or English). Notifications recorded so far keep the language they were recorded in.
+- **Fixed: some `roamswitch timeline` lines were internal names or English.** The kind of a FIM line uses the name in notifications and `fim verify` ("内容の変更" in Japanese, not the internal "modified"), Resource Guard lines and Exec Recorder's "action taken: notify" are in the display language, and Incident Capture and expired-acceptance lines are in the reader's language. The line "rebuilt the baseline for the log tampering comparison" had severity Critical and action "logged and notified"; it is now informational and "logged only" (with no ATT&CK technique).
+- **Fixed: when `roamswitch install` could not create its sandbox on a host running the Server, it gave only AppArmor advice.** The cause is `kernel.unprivileged_userns_clone=0`, written by the Server's `harden_userns_enabled` (on by default). That cause and how to undo it (`sudo roamswitch server config set harden_userns_enabled false`, then `sudo sysctl kernel.unprivileged_userns_clone=1`) are now shown. A value that is already the same is not written, so the "could not set …apparmor_restrict_unprivileged_userns" warning at every start is gone.
+- **Fixed: when another apt run (unattended-upgrades and the like) was active during `uninstall`, it waited silently at "Removing the program...".** It now says "Another package manager run (name) is in progress. The removal waits for it to finish (up to 5 minutes)."
+- **Fixed: on the client, reading `/run/roamswitch/state.json` right after `sudo roamswitch airgap disable` could still show `"air_gap":true`.** Turning Air-Gap on and off now writes state.json before answering.
+- **Fixed: on the client, the notification for a USB stick held under Lockdown read "🛑 Unauthorized USB Storage Blocked" and "… was blocked".** It now reads "⏸ Unauthorized USB Storage Held" and "'…' was held due to Away Protection (Lockdown). Allow it in the approval dialog to use it."
+- **Fixed: when the first `server config set` ran with no `server.conf`, `allowlist test` then printed "Note: server.conf changed after roamswitch-server started" after every save.** The warning now appears only when the list of protected processes (`protected_processes`) differs from the one the daemon uses.
+- **Fixed: in the Server TUI's settings screen, discarding all staged changes with U left the bottom line at "Change staged (1 pending)…".** It now says "Discarded 1 pending change. The files are unchanged." Entering the value already saved says "That is the value already saved, so nothing was staged".
+- **Fixed: the AI agent setup audit said nothing when it hit its limits (2,000 files in all, 200 files per skill) and showed only the number it read.** The number of files it did not read (at least so many) is now shown in the CLI, the GUI, the Server TUI, JSON and SARIF. Skill folders one level deeper (`<root>/<group>/<skill>`, names starting with `.` included) are read too.
+- **Fixed: `roamswitch-updater` also followed a redirect from https to http.** A redirect to anything but https is now refused. Errors show only the host name, not the URL.
+- **Added: a "Tailscale (tailnet) exposure" item in the health check** (`overlay_exposure`; `server_overlay_exposure` on the Server). The client fails when ShieldsUp (inbound block) is off, the firewall does not drop inbound traffic either, and a risky port listens where the tailnet can reach it. The Server fails when the node has no tags. Both fail when ngrok or cloudflared runs next to Tailscale. Exit node and subnet routes are shown only. It only reads `tailscale debug prefs` (keeping only ShieldsUp, AdvertiseRoutes and RunSSH and throwing the private keys away), `tailscale status --json` and `/proc`; it changes no setting and sends nothing. When Tailscale is not running the item does not apply; when its settings cannot be read it says it could not be checked.
+- **Added: an outbound limit toward the tailnet (`tailnet_egress_guard`, off by default, Server Edition).** When on, new connections out of `tailscale0` are dropped except to the destinations in `tailnet_egress_allow`. Replies and connections opened by the other side (an SSH login over the tailnet and the like) are not stopped. Applying it needs `sudo roamswitch server restart`. A port scan notification for a scan coming over the tailnet says that a tailnet device is scanning (on the client too).
+- **Added: importing IP blocklists the operator chooses (`egress_ip_feed_urls`, empty by default, Server Edition).** With up to 8 `https://` URLs set, `roamswitch-updater` fetches each directly from that URL once a day and adds it to the outbound block. RoamSwitch does not distribute the lists, and the operator checks each source's terms of use. Entries that overlap loopback, private, CGNAT and similar ranges, IPv4 ranges wider than /8, or `whitelist_ips`, `ssh_allow_only_sources`, `ssh_guard_allow` and the resolv.conf nameservers are not taken in. A failed or empty response keeps the previous list. It runs only while `egress_ip_blocklist_enabled` and the updater's update fetching are on. The setting takes effect from the next daily fetch, without a restart (to fetch now, `sudo systemctl start roamswitch-update.service`). Article 5 of the terms of use (EULA) now describes this import.
+- **Changed: the 3 attack-server IP addresses published by JPCERT/CC are removed from the bundled outbound blocklist and from link checks.** Fixed addresses go stale, and blocking a destination reassigned to someone else is a false positive. The bundled list is empty. Addresses come from the `egress_ip_feed_urls` import and from lines you write yourself in `/var/lib/roamswitch/threatfeed/malicious_ips.txt`.
+
+**Changed (affects scripts)**
+
+- Exit codes: `forward status` without sudo exits with 1 when it cannot read the settings (it exited with 0).
+- Where output goes: `quarantine list` without sudo prints the reason it cannot read to standard output instead of standard error, right after the Vault location line (the exit code stays 1). The reason no longer disappears with `2>/dev/null`.
+- `emergency-restore`: with nothing isolated, it removes nothing. To remove the rules that can stop traffic anyway (port scan and web guard blocks included), add `--force`.
+- Output: `text` in `roamswitch notifications --json` now comes with the notifications listed above too. English `quarantine list` reads "Quarantined: 1 file", `web-guard-check` uses the form that matches the number ("1 browser kind" and the like), and the reason in `bans` is "it has an authenticated SSH session open", the same as `bans --json`. The pinpoint isolation line of `emergency-restore` reads "Pinpoint isolation (blocked: …)" ("ピンポイント隔離中(止めている範囲: …)" in Japanese). `ports -a` no longer marks a port listening on 127.0.0.1 only with "[Isolated]" ("[Isolator遮断中]" in Japanese). The count of `fim update` leaves out the range marks, as `fim verify` does. The baseline-rebuild line of `timeline` has severity info, action logged only (`Logged`) and no technique. `skipped_file_count` and `truncated` are added to the JSON of the AI agent setup audit, and they appear in SARIF too.
+- Color codes: the logs of the daemons (roamswitch, roamswitch-server), roamswitch-updater and roamswitch-xdp-gate get no color when the output is not a terminal either (`NO_COLOR` and `TERM=dumb` are honored too). ESC[2m and the like no longer end up in the journal.
+- Language: `roamswitch-incident-capture verify` and `--help`, and `roamswitch-prn-recorder status`, `export` and `purge`, are in the language of the person running them in the terminal (the setting, otherwise LANG) instead of the language in server.conf. `snapshot` and `run`, which the services run, stay in the host's language.
+- Diagnosis: one item is added, making 32 on the client and 43 on the Server (it does not apply on a host where Tailscale is not running).
+- Settings: `server config set forward_syslog_format ""` puts the default (rfc5424) back (it was an error; the same goes for `forward_syslog_framing` and `forward_min_severity`). `egress_ip_feed_urls` rejects a URL that is not `https://` and 9 or more URLs when set. `tailnet_egress_allow` refuses a wrong value when saved.
+- Network: only when `egress_ip_feed_urls` is set, `roamswitch-updater` sends one HTTPS GET a day to each of those URLs. The source sees this host's IP address and a fixed User-Agent. It is empty by default, and nothing is fetched.
+
+**Other fixes**
+
+- Command-line masking hid ssh settings that are not passwords, such as `-o NumberOfPasswordPrompts=1`. The password of an `sshpass -p` behind `ip netns exec`, `setsid` or `chroot` was left unmasked. Both are fixed.
+- In the execution record, a user just created could show as "user: ?", and the name (`comm`) of a program that ended at once could be empty. An unknown uid is now looked up again, and the name is filled in from the executed file (`comm` in `events search --json` is filled too).
+- "The oldest record is about N minutes ago" in `roamswitch-prn-recorder status` showed a time older than the real first record. It now counts from the time of the first record.
+- Japanese `forward test` with no destination printed "失敗 config: no destination configured" in English. It now prints "送信先が設定されていません(…)" (the exit code stays 1).
+- The description of the "domain check" in the health check now matches what it does (Server Edition). The result is remembered for 6 hours by the running daemon and the MCP server; commands such as `roamswitch status --server` check again at every run.
+- Chinese and Korean text that contained the Japanese middle dot, wave dash, full stop or kana now uses the way of writing of each language. In the knowledge base's execution-record entry, paragraphs that had been swapped with another language's are fixed too.
+- Checks: 5105 workspace tests pass (Docker, 0 failures, 17 ignored as before). The shell tests for adding the repository and for taking in updates also pass in an Arch Linux container.
 
 ### 1.17.38
 
@@ -916,6 +991,25 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 ---
 
 ## RoamSwitch for Mac
+
+## 1.17.30
+
+Fixes for defects found by re-checking the lessons. The bundled PersonalSOC and AccessScope are replaced with their newer versions (the changes are listed under each app; PathScope is unchanged).
+
+- **Fixed: with the Tailscale or WireGuard kill switch on, the dev-server port block and the port scan ban did not apply to traffic coming through the tunnel.** In the pf rules, the rule letting the tunnel through came first (in a disposable macOS VM, both the blocked port and the banned address got through). The blocks now come first, and both were confirmed to be refused.
+- **Fixed: the port scan notification interval (once an hour per source) was checked before deciding whether the source is a paired Sensor and before banning.** After a Sensor audit was notified and the pairing then removed, scans from the same source within that hour were neither notified nor banned. When the treatment changes, and when the scan goes on after the ban ends, it is notified and banned regardless of the interval.
+- **Fixed: the daily folder check of the web rules reported a file left in place again every day.** Reported files are remembered and not reported while unchanged. A changed content or another matching rule is reported again.
+- **Fixed: masking in the execution record hid ssh settings that are not passwords, such as `NumberOfPasswordPrompts`.** The command behind `chroot` now gets that command's own rules too.
+- **Fixed: when a RoamSwitch with the same signature in another location read a decoy credential file, it was notified as a reader.** Readers are now told apart by their signature (both the identifier and the Team ID) as well as the app's location.
+- **Fixed: the AI agent setup audit said nothing when it hit its limits (2,000 files in all, 200 files per skill).** The number of files it did not read (at least so many) is now shown in the window, MCP and SARIF. Skill folders one level deeper (`<root>/<group>/<skill>`) are read too.
+- **Fixed: text in English and other languages contained Japanese separators ("、" and "・"), the "・" bullet and full-width spaces for indentation.** The reasons for risky containers and suspicious autostart entries, infected files on USB, the vulnerability acceptance summary, the bullets of the score-drop and weakened-setting notifications, the first-run guide and the like now use the way of writing of each language (in English "; ", "• ", " · " and ASCII spaces). The notification history redraws bullets with the marks of the reading language. Ranges in Chinese and Korean are "1~2". Japanese is unchanged.
+- **Added: a "Tailscale exposure" item in the health check (`overlay_exposure`).** It fails when ShieldsUp (inbound block) is off and a risky port listens where the tailnet can reach it, and when ngrok or cloudflared runs next to Tailscale. Exit node and subnet routes and Tailscale SSH are shown only. The macOS firewall does not count as a reason to pass. It only reads `tailscale status --json` and `tailscale debug prefs` (keeping only ShieldsUp, AdvertiseRoutes and RunSSH and throwing the private keys away), the list of listeners and process names; it changes no setting and sends nothing. When Tailscale is missing or not running, the item does not apply.
+- **Changed: the pf block of the 3 attack-server IP addresses published by JPCERT/CC, and the link check warning for them, are gone.** Fixed addresses go stale, and blocking a destination reassigned to someone else is a false positive.
+
+**Changed (affects scripts)**
+
+- MCP: the health check of `get_security_report` has 24 items. `skippedFileCount` and `truncated` are added to the result of `audit_agent_setup`. `actionTakenLabel` in `get_incident_timeline` no longer shows the values `notified`, `evidence_captured`, `cascade_decoy_deployed` and `air_gap_failed` as they are, but as text in the display language.
+- Checks: all 3208 XCTest tests pass (0 failures, 0 skipped).
 
 ## 1.17.29
 
