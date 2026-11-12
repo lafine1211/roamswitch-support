@@ -514,6 +514,9 @@ Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）
 - **変更: 状態ファイルの書き込みを、1 つの手順にそろえました。** 一時ファイルに書いて fsync し、置き換えます。シンボリックリンクと通常でないファイルには書きません。複数のプロセスが書くファイル(通知の履歴、送信待ちの通知、許可リスト、Sensor のペアリング、CVE のリスク受容、MCP のツール呼び出しの記録)には、`<名前>.lock` のロックを足しました。WireGuard の設定は、最初から 0600 で書きます。
 - **変更: root のデーモンは、メモリのダンプを許さず、ハードリンクの設定ファイルを読みません。** 2 つのデーモンの systemd のユニットから、再起動の回数の上限をなくしました(クラッシュが続いても止まったままにしないためです)。
 
+- **修正: `emergency-restore` が、操作の記録(ジャーナル)の取り消しを呼んでいませんでした。** 最初の手順で、記録にある Air-Gap・ポートスキャン・Web の遮断のうち、いま効いているものを新しい順に取り消し、取り消したあと状態を読み直して、結果を `undone` か `undo_failed` で書きます。SSH の遮断は残します(`roamswitch server unban` で外します)。
+- **追加: Linux 版の MCP に、`get_system_timeline` と、Mac 版にだけあった 4 つのツールを足しました。** `get_browser_credential_watch_status`・`get_forensic_evidence_bundles`・`get_ransomware_recovery_snapshots`・`run_dependency_source_scan` です。ツールは Linux 版 50 個、Mac 版 41 個になります。
+
 **変更(スクリプトに影響します)**
 
 - 転送: 転送先に届く通知(`source: notification`)と timeline のイベントの `summary` は、server.conf の language によらず英語です。前の版までの FIM の行も、内部名でなく文で届きます。
@@ -527,7 +530,7 @@ Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）
 **そのほかの修正**
 
 - MCP の `audit_secrets` のエラーが、引用符を含むパスで、正しくない JSON になっていました。
-- 検証: ワークスペースのテスト 5303 件が通ります(Docker。失敗 0 件、無視 17 件は前から)。Arch Linux のコンテナで、リポジトリ追加と更新の取り込みのシェルのテストと、root で動かすテストも通ります。
+- 検証: ワークスペースのテスト 5352 件が通ります(Docker。失敗 0 件、無視 17 件は前から)。Arch Linux のコンテナで、リポジトリ追加と更新の取り込みのシェルのテストと、root で動かすテストも通ります。
 
 ### 1.17.39
 
@@ -1080,6 +1083,11 @@ Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）
 - **変更: 保存した記録の読み込みで、同じキーが 2 回出る JSON を、壊れた扱いにしました。** これまでは、どちらかの値を黙って使っていました。直す前に、これまでどおり `<名前>.corrupt-<時刻>` として残します。
 - **変更: 状態ファイルの書き込みを、1 つの手順にそろえました。** シンボリックリンクと通常でないファイルには書きません。0600 で書くファイル(SSH の記録、Web のアカウントのロック、DNS の元の設定、WireGuard の設定など)が、0644 で見える瞬間はなくなりました。インシデントの記録、MCP のツール呼び出しの記録、ウォッチドッグの状態には、ロックを足しました。
 
+- **修正: 実行ログを、直近 72 時間は残します。** 容量の上限の 4 倍までで、ディスクの空きが 5% と 1 GB を超える間は消しません。メニューの見出しは「最大サイズ」です。
+- **修正: `http://127.0.0.1` からの `curl | sh` を、IP 直書きの URL として悪化要因に数えていました。** 127.0.0.0/8 を外しました。base64・eval など、ほかの悪化要因があれば、これまでどおり通知します。
+- **変更: 同じ実行が 10 分以内に続くとき、実行ログは先頭の 1 件と「repeat」の 1 行にまとめます。** ヘルパーの検索、プロセスツリー、一覧、書き出し、MCP の `search_exec_events` と `get_process_tree`、Sigma、実行の文脈は、各回に戻して読みます。古い形式のログも読めます。
+- **追加: 更新の manifest の待機の鍵(K2)を、組み込みの鍵に足しました。** 署名は、これまでの鍵のままです。
+
 **変更(スクリプトに影響します)**
 
 - 転送: 転送先(syslog・ファイル・Webhook)に届く timeline の行と通知の行の `summary` は、表示の言語によらず英語です(Linux 版とそろえました)。キーと項目、通知の「題: 本文の 1 行目」の形は変わりません。符号のない古い記録の行と、読み戻せない通知は、記録したときの文のままです。SIEM で日本語の `summary` に合わせた規則を書いている場合は、英語に直してください。画面の表示は変わりません。
@@ -1087,7 +1095,7 @@ Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）
 - MCP: 新しいツール `get_system_timeline` が加わります。`get_incident_timeline` に `chain`・`chainBreak`・`blindNear`・`evidenceChecks`・`evidenceChecksNote` が加わり、`actionTakenLabel` の `port_scan_block` は文で出ます。`audit_mcp_configs` と `run_package_cve_scan`・`run_package_cve_scan_languages` は `format: "sarif"` で SARIF 2.1.0 を返し、パッケージの CVE の各結果に `tier` が加わります。MCP が LLM に返す注意書き(caveats)と `audit_mcp_configs` の説明は、表示の言語によらず英語です。
 - 通知: 値だけが違う同じ形の通知は、10 分に 1 回だけ出します(履歴には毎回残ります)。
 - 更新: 入っている版より古いデータと、作成日が 60 日より古い manifest は、受け入れません。
-- 検証: 全 XCTest 3392 件が通ります(失敗 0 件、スキップ 0 件)。
+- 検証: 全 XCTest 3443 件が通ります(失敗 0 件、スキップ 0 件)。
 
 ## 1.17.30
 

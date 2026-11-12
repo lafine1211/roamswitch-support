@@ -524,6 +524,9 @@ Fixes for defects found when the learning-site lessons were run again on the pre
 - **Changed: state files are all written the same way.** They are written to a temporary file, synced and swapped in. Nothing is written to a symbolic link or a file that is not a regular file. Files written by several processes (the notification history, pending notifications, allowlists, Sensor pairing, CVE risk acceptance, the MCP tool call record) get a `<name>.lock` lock. The WireGuard configuration is written 0600 from the start.
 - **Changed: the root daemons allow no memory dumps and do not read configuration files that are hard links.** The systemd units of the 2 daemons no longer limit the number of restarts (so that crashes in a row do not leave them stopped).
 
+- **Fixed: `emergency-restore` did not call the undo of the action journal.** Its first step now undoes, newest first, the Air-Gap, port-scan and web blocks in the journal that are still in effect, reads the state again after each undo, and writes `undone` or `undo_failed`. SSH blocks are left in place (lift them with `roamswitch server unban`).
+- **Added: the Linux MCP server gets `get_system_timeline` and four tools that only the Mac version had.** They are `get_browser_credential_watch_status`, `get_forensic_evidence_bundles`, `get_ransomware_recovery_snapshots` and `run_dependency_source_scan`. The Linux version now has 50 tools and the Mac version 41.
+
 **Changed (affects scripts)**
 
 - Forwarding: the `summary` of forwarded notifications (`source: notification`) and timeline events is in English whatever the language in server.conf. FIM lines from earlier versions are forwarded as sentences, not internal names.
@@ -537,7 +540,7 @@ Fixes for defects found when the learning-site lessons were run again on the pre
 **Other fixes**
 
 - The error of MCP `audit_secrets` became invalid JSON for a path containing a quote.
-- Checks: 5303 workspace tests pass (Docker, 0 failures, 17 ignored as before). The shell tests for adding the repository and for taking in updates, and the tests that run as root, also pass in an Arch Linux container.
+- Checks: 5352 workspace tests pass (Docker, 0 failures, 17 ignored as before). The shell tests for adding the repository and for taking in updates, and the tests that run as root, also pass in an Arch Linux container.
 
 ### 1.17.39
 
@@ -1095,6 +1098,11 @@ Fixes for defects found by re-checking the lessons. Limits on automatic response
 - **Changed: when saved records are read, JSON with the same key written twice is treated as damaged.** One of the values used to be taken silently. Before it is rebuilt, the file is kept as `<name>.corrupt-<time>`, as before.
 - **Changed: state files are all written the same way.** Nothing is written to a symbolic link or a file that is not a regular file. Files written 0600 (the SSH records, web account locks, the original DNS settings, the WireGuard configuration and others) are no longer visible as 0644 for a moment. The incident records, the MCP tool call record and the watchdog state get a lock.
 
+- **Fixed: the exec log now keeps the last 72 hours.** It can grow to four times the size limit, and nothing is deleted while the free disk space is above 5% and 1 GB. The menu heading is "Maximum size".
+- **Fixed: `curl | sh` from `http://127.0.0.1` was counted as a raw-IP URL.** The 127.0.0.0/8 range is now left out. If another aggravating factor such as base64 or eval is present, it is reported as before.
+- **Changed: when the same execution repeats within 10 minutes, the exec log keeps the first entry and one "repeat" line.** The helper search, the process tree, the list, the export, the MCP `search_exec_events` and `get_process_tree`, Sigma and the exec context read it back as separate runs. Logs in the old format are still read.
+- **Added: the standby key (K2) for the update manifest is built into the app's keys.** Signing still uses the same key as before.
+
 **Changed (affects scripts)**
 
 - Forwarding: the `summary` of timeline lines and notification lines sent to the forwarding destinations (syslog, file, Webhook) is in English whatever the display language (the same as on Linux). The keys and fields, and the "title: first line of the body" form of notifications, do not change. Old lines recorded without a code, and notifications that cannot be read back, keep the text they were recorded with. If your SIEM rules match a Japanese `summary`, change them to English. What the windows show does not change.
@@ -1102,7 +1110,7 @@ Fixes for defects found by re-checking the lessons. Limits on automatic response
 - MCP: the new tool `get_system_timeline` is added. `chain`, `chainBreak`, `blindNear`, `evidenceChecks` and `evidenceChecksNote` are added to `get_incident_timeline`, and `port_scan_block` in `actionTakenLabel` is shown as text. `audit_mcp_configs`, `run_package_cve_scan` and `run_package_cve_scan_languages` return SARIF 2.1.0 with `format: "sarif"`, and `tier` is added to each package CVE result. The notes (caveats) MCP returns to the LLM and the descriptions in `audit_mcp_configs` are in English whatever the display language.
 - Notifications: notifications of the same form that differ only in values are shown once per 10 minutes (each is kept in the history).
 - Updates: data older than the installed version, and manifests created more than 60 days ago, are not accepted.
-- Checks: all 3392 XCTest tests pass (0 failures, 0 skipped).
+- Checks: all 3443 XCTest tests pass (0 failures, 0 skipped).
 
 ## 1.17.30
 
