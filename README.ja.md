@@ -90,6 +90,9 @@ Linux の Server Edition は、既定では、OS のパッケージ更新と、�
 1.11.0 から既定で有効。このホストの情報は送りません。`roamswitch server config set cve_kernel_map_updates_enabled false`
 で無効化できます）以外の外部通信をしません。npm の署名確認や通知の Webhook などの
 ほかの外部通信は、運用者が設定したときだけ有効になります。
+Mac・Linux とも、Webhook と syslog の送り先が内部のアドレス（ループバック、プライベート、
+クラウドのメタデータ）を指すときは、許可の一覧に載せたアドレスを除いて送りません
+（Linux の一覧は `webhook_allow_addresses` / `forward_webhook_allow_addresses`）。
 
 ## MCP サーバー連携（Claude Desktop / Claude Code）
 
@@ -103,7 +106,7 @@ MCP 対応クライアントから Mac のセキュリティ状況を問い合�
 claude mcp add roamswitch /Applications/RoamSwitch.app/Contents/MacOS/RoamSwitchMCPServer
 ```
 
-提供ツール（全 35 種）: `get_security_report` / `verify_security_findings` /
+提供ツール（全 36 種）: `get_security_report` / `verify_security_findings` /
 `get_exposed_ports` / `get_guard_status` / `audit_url_safety` / `audit_secrets` /
 `audit_security_logs` / `get_app_help` / `run_active_vuln_scan` / `run_package_cve_scan` /
 `run_package_cve_scan_languages` / `run_package_lifecycle_script_scan` / `run_typosquat_scan` /
@@ -115,8 +118,9 @@ claude mcp add roamswitch /Applications/RoamSwitch.app/Contents/MacOS/RoamSwitch
 `search_exec_events` / `get_process_tree` / `get_network_history` /
 `get_sensor_audit_results` / `get_notification_history` / `audit_mcp_configs` /
 `audit_agent_setup` / `get_detection_coverage` / `get_ssh_guard_incidents` /
-`run_dependency_source_scan`。加えて `roamswitch://docs/*`
-リソースを 4 種類提供します。インシデント状態系のツールはローカル状態のみを読むため、
+`run_dependency_source_scan` / `get_system_timeline`。加えて `roamswitch://docs/*`
+リソースを 4 種類提供します。`get_system_timeline` は、アプリが1日1回残す待ち受けのポート、
+Homebrew のパッケージ、主な設定ファイルのハッシュの記録を比べます（ファイルの中身は残しません）。インシデント状態系のツールはローカル状態のみを読むため、
 Air‑Gap 隔離中でも応答します。Claude Desktop / Claude Code / Codex CLI / OpenCode /
 Antigravity の設定手順は <https://roamswitch.com/mcp-setup.html>。
 
@@ -148,7 +152,7 @@ MCP サーバーと、その検知ロジックは **オープンソース**（MI
 ゲートウェイ MAC による `nftables` プロファイルの自律切替、ランサムウェアの挙動検知と
 緊急 Air‑Gap 隔離、不正 USB / BadUSB ガード、VPN トンネル＋nftables キルスイッチ
 （WireGuard / Tailscale）、受動リンクガード、ローカル CVE 照合、30 項目のセキュリティ診断、
-CLI（`roamswitch` / `man roamswitch`）、39 ツールの MCP サーバー（設定を変えるツールはありません）を同梱します。
+CLI（`roamswitch` / `man roamswitch`）、45 ツールの MCP サーバー（設定を変えるツールはありません）を同梱します。
 
 パッケージは排他の 2 種類です。**Client Edition**（`roamswitch`。トレイアプリ＋Web UI、
 30 項目診断）と、**Server Edition**（`roamswitch-server`。クラウド VPS・データセンター向けの

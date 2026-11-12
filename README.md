@@ -95,6 +95,9 @@ checked daily and the data fetched about once a week; on by default since 1.11.0
 `roamswitch server config set cve_kernel_map_updates_enabled false`). Other external
 communications, such as the npm signature check and notification webhooks, are on only when
 an operator sets them up.
+On both Mac and Linux, nothing is sent to a webhook or syslog destination that points at an
+internal address (loopback, private, cloud metadata) unless that address is on the allow list
+(`webhook_allow_addresses` / `forward_webhook_allow_addresses` on Linux).
 
 ## MCP server (for Claude Desktop / Claude Code)
 
@@ -107,7 +110,7 @@ read, and the only writes are three tools updating their own record files (`run_
 claude mcp add roamswitch /Applications/RoamSwitch.app/Contents/MacOS/RoamSwitchMCPServer
 ```
 
-35 tools: `get_security_report`, `verify_security_findings`, `get_exposed_ports`,
+36 tools: `get_security_report`, `verify_security_findings`, `get_exposed_ports`,
 `get_guard_status`, `audit_url_safety`, `audit_secrets`, `audit_security_logs`, `get_app_help`,
 `run_active_vuln_scan`, `run_package_cve_scan`, `run_package_cve_scan_languages`,
 `run_package_lifecycle_script_scan`, `run_typosquat_scan`, `run_npm_audit_signatures`,
@@ -117,7 +120,9 @@ claude mcp add roamswitch /Applications/RoamSwitch.app/Contents/MacOS/RoamSwitch
 `get_port_anomaly_incidents`, `get_runtime_threat_status`, `get_incident_timeline`,
 `search_exec_events`, `get_process_tree`, `get_network_history`, `get_sensor_audit_results`,
 `get_notification_history`, `audit_mcp_configs`, `audit_agent_setup`, `get_detection_coverage`,
-`get_ssh_guard_incidents`, `run_dependency_source_scan` — plus four `roamswitch://docs/*` resources. The incident‑state
+`get_ssh_guard_incidents`, `run_dependency_source_scan`, `get_system_timeline`, plus four `roamswitch://docs/*` resources.
+`get_system_timeline` compares the daily records the app keeps of listening ports, Homebrew packages and
+the hashes of key configuration files (the file contents are not stored). The incident‑state
 tools read only local state, so they still answer while RoamSwitch has air‑gapped the network.
 `verify_security_findings` re‑evaluates items of `get_security_report` (by `checkId`) against the
 current state and returns, per item, `stillPresent`, `resolved` or `inconclusive` with a
@@ -151,7 +156,7 @@ model — autonomous `nftables` profile switching by gateway MAC, ransomware beh
 detection with emergency Air‑Gap isolation, unauthorized‑USB / BadUSB guard, a VPN tunnel
 with an nftables kill switch (WireGuard / Tailscale), a passive link guard, local CVE
 matching, a 30‑item security audit, a full CLI (`roamswitch`, `man roamswitch`) and an
-MCP server with 39 tools, none of which changes settings.
+MCP server with 45 tools, none of which changes settings.
 
 There are two mutually exclusive packages: **Client Edition** (`roamswitch`, tray app +
 web UI, 30‑item audit) and **Server Edition** (`roamswitch-server`, fully headless for

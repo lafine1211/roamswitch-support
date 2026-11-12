@@ -44,6 +44,17 @@ attacker on the same segment can make the warning appear. This is a denial-of-se
 - Linux: the ARP re-check sends a direct ARP request when the gateway has no neighbour entry
   (`arp_recheck_active_probe`, on by default, from 1.9.91) to reduce isolations that stay stuck.
 
+## Hourly cap on automatic actions (added 2026-11-12)
+
+A flood of forged sources can still ask for many automatic actions. Mac and Linux now count the automatic
+actions of the last hour in the action journal, so the count carries over a restart. The defaults are 60
+blocks (SSH bans and port-scan source blocks together), 20 process freezes and 6 Air-Gaps per hour. An action
+over the cap is not carried out: it is recorded as `refused` and sent as a recommendation, with one notice
+per action per hour. Actions you start by hand are not counted. The keys are `max_auto_tier`,
+`ban_per_hour`, `freeze_per_hour` and `airgap_per_hour` (Linux settings; on Mac
+`/Library/Application Support/RoamSwitch/auto_action_limits.json`, changed with an administrator's approval).
+Emergency restore first undoes the journaled network blocks that are still in effect, newest first.
+
 ## Lab results
 
 The cases above for Linux (forged gateway ARP, forged-source SYN scans, release of an ARP isolation) were run on a real kernel and a real LAN on 2026-09-26; see [REAL_HOST_TESTS_2026-09-26.md](REAL_HOST_TESTS_2026-09-26.md). That run found and fixed a harmless machine answering for two IPs cutting a lockdown machine off completely, and an isolation record lost on every service restart.
