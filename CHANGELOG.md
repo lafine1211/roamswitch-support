@@ -12,6 +12,17 @@ independently. Older releases are summarized in ranges.
 
 A security diagnosis tool for access logs. It is a separate app (Apache-2.0): the Server Edition .deb / .rpm packages carry only the command (`accessscope`; from 1.11.2 they also carry the PersonalSOC and PathScope commands); the Linux client edition and the Mac app carry the command and a window app.
 
+### 1.0.9
+
+Adds a decoy page aimed at AI agents and a ledger of detections that could not be evaluated for the log format.
+
+- **Added: detections that could not be evaluated because of the log format go into a ledger (`not_evaluable`).** False positives on formats without a Referer (common-format logs) are fixed. `--fail-on-partial` (exit code 4) does not count `not_evaluable`.
+- **Added: sub-second rhythm, measured from the fractional seconds in the log, as a supporting signal for "machine".** It is not added up with the other signals.
+- **Added (low confidence): a chain of API discovery and ID scanning after several account sign-ups (`web_signup_chain`), and a run of 404s on random-looking one-segment paths after a favicon fetch (`web_favicon_chain`), reported as low-confidence hypotheses.**
+- **Added (experimental, off by default): a decoy page aimed at AI agents, as the fourth signal of the AI-client verdict.**
+- **Added: the CLI output can be filtered with closed fields, no regular expressions** (`--filter`, `--filter-or`, `--min-severity`, `--limit`).
+- Verification: 665 workspace tests pass (without the GUI crate; Docker; 0 failures). Whether a real AI agent follows the decoy page has not been checked.
+
 ### 1.0.8
 
 - **Added: sources that came from AI crawlers or from LLM SDKs and agent tools are shown with three separate kinds of evidence (AI client attribution).** The evidence is (1) a user agent that names an AI company (OpenAI, Anthropic, Perplexity, Google's Vertex AI crawler) together with that company's published IP ranges, (2) the rhythm of request intervals (20 or more intervals from the same source, a median of 2 seconds or more, and a coefficient of variation of 0.35 or less or a most common interval (±1 second) of 60% or more), and (3) LLM SDK names (`OpenAI/Python` and so on) and the headers SDKs add (`x-stainless-*` and so on). The three are listed side by side, not added up, and the confidence is the number of kinds of evidence (one is tentative, two likely, three strong). The result appears in the summary line, the tables (default output, `--plain`, `--report`), the app's dashboard and `web.ai_attribution` in the JSON. It is not part of the findings or the risk score. No network and no LLM are used.
@@ -210,6 +221,15 @@ The contents of these releases, grouped by theme. The full text of each entry is
 
 ## PersonalSOC
 
+### 1.0.8
+
+Keeps the investigation agent's hypotheses in a ledger.
+
+- **Added: the investigation agent's hypotheses go into a ledger.** It keeps the outcome, the references to the evidence and the reason, and a withdrawn hypothesis does not disappear. Whether a cited reference exists is checked by code. The way an investigation ends is stated in a fixed sentence.
+- **Added: `scan` output can be filtered with closed fields, no regular expressions** (`--filter`, `--filter-or`).
+- **Added (off by default): a follow-up question, without tools, on a frozen investigation result** (`scan --llm X --followup "question"`).
+- Verification: 387 workspace tests pass (without the GUI crate; Docker; 0 failures).
+
 ### 1.0.7
 
 - **Fixed: Resource Guard kinds were shown as internal names and English values in other languages.** They now read as sentences in all 10 languages (for example "Crash loop: 3 restarts in 300s").
@@ -307,6 +327,17 @@ plus detection of new devices and spoofing on the LAN. Still under
 development — see
 <https://lafine.net/roamswitch-sensor-manual.html> for current status and
 setup instructions.
+
+### 1.0.10
+
+Reads NBNS roles and SNMP default communities passively.
+
+- **Added: reads, passively, NBNS roles (an unexpected domain controller) and SNMP default communities.**
+- **Added: `audit-unmanaged --plan`.** The all-port scan uses adaptive concurrency, tries the ports that were open last time first, and spaces its probes out.
+- **Added: `favicon_md5` as a product-identification marker.** One `GET /favicon.ico` is sent, only to a port that answered.
+- **Added: `network-threats` output can be filtered with closed fields, no regular expressions** (`--filter`, `--filter-or`).
+- The default is unchanged: `schedule.full_sweep_every_hours` stays 0 (every run scans the whole range).
+- Verification: 979 workspace tests pass (Docker; 0 failures).
 
 ### 1.0.9
 
@@ -500,6 +531,32 @@ The full text of each item is in this file's git history.
 
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
+
+### 1.17.44
+
+Aligns the name of the strictest network protection level with the Mac edition and adds defenses inspired by ARTEX and gogo.
+
+- **Changed: the strictest network protection level is now named "Maximum lockdown", the same as on the Mac.** Notifications, the tray, the help, the knowledge base and the README showed it as "Away", "Lockdown Defense" and other names; it is now one name in all 10 languages. The name of the setting that applies to unregistered networks, "away protection level", is unchanged.
+- **Added: `roamswitch agent-check`.** Called from an AI coding agent's pre-tool hook (PreToolUse), it asks for confirmation when the destination is on the list of malicious IPs and refuses cloud metadata destinations. It prints nothing when it has no verdict. `--print-hook-config` prints an example setup.
+- **Added: `roamswitch audit-browser-extensions`.** Checks the permissions of Chromium-family browser extensions (notification only; `--accept` saves your own baseline).
+- **Added (off by default, notification only): detection of scans from this machine to internal networks.** Raw frames such as masscan's are also seen through the egress hook.
+- **Added (off by default, notification only): a notification when an AI agent repeats the same operation (EXR-018).**
+- **Added: identification of the offensive AI platform ARTEX, and an information-level notification when it is exposed to the network.**
+- **Added: the delivery state of notifications (sent, queued, dropped) in the notification history (Server TUI and GTK GUI).** An item being sent in the notification queue is not lost if the process dies. Text sent to chat and webhooks is made harmless first.
+- **Added: SNMP exposure to the diagnostics (33 items on Client, 44 on Server).** Ports of debug and proxy services (JDWP, Node inspector, PHP-FPM/Xdebug, SOCKS) reachable from the network are shown with the process name.
+- **Changed: incoming port-scan detection counts a connection to a closed sentinel port (135, 445, 1433, 3389, 5985, 5986) as four closed ports.**
+- **Fixed: the detection coverage table has rows for T1046 (incoming port scan) and T1595 (Active Scanning) matching the implementation.**
+- **Fixed: `roamswitch daily-report test` printed "Sent" and succeeded even when it reached no channel.** It now fails with the reason. `roamswitch server config` showed `webhook_block_private`; it now shows the real key, `webhook_block_private_addresses`.
+- **Fixed: `roamswitch help` prints its list even when roamswitch-mcp is missing.**
+- **Removed: `assets/locales.json`, which nothing read.**
+- Nine items were added to the knowledge base in 10 languages.
+- **Server only:**
+  - **Added: approval of outbound limits by name and IP** (`roamswitch agent-egress pin add|list|renew|remove|accept-held NAME:PORT`, `observed`, `approve IP:PORT`). Adds a name a person approved to the outbound traffic of an AI agent's dedicated account. The daemon resolves the name through the system resolver every 10 minutes and follows the IP set (opt-in). An answer with even one internal address is refused; up to 32 entries per name and 8 new public addresses per hour. The limit stays in place when an approval expires.
+  - **Added: `roamswitch audit-env-secrets`.** From the environment variables of AI agent accounts and web worker processes, reports only secret-looking names, with names and counts (values are not kept; information level).
+  - **Added: `roamswitch config-ledger show|verify`.** Writes weakening of settings (`server.conf`, `web_guard.conf`, `web_rules.conf`, `guard.yaml`, Fleet policy) to a hash-chained ledger and sends one notification for what got weaker.
+  - **Changed: the web guard.** On common-format logs (no Referer) it stops the detections that need a Referer and says they are unavailable. The notification for a block on common-format logs says the shared address is not protected. Each block pins the access-log lines it is based on as evidence. A decoy page aimed at AI agents (experimental, off by default, notification only) was added.
+  - **Changed: the investigation agent's instructions were tightened, and a fixed line is added to the notification when the input contained text aimed at an AI.** `doctor` warns when the investigation agent's account is not in `agent_users`, and `setup` offers to add it.
+- Verification: 5,778 workspace tests pass. Not yet checked: whether a real AI agent follows the decoy page, the default count of EXR-018 on real hardware, and the outbound scan detection against a real server.
 
 ### 1.17.43
 
@@ -1143,6 +1200,19 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 ---
 
 ## RoamSwitch for Mac
+
+## 1.17.35
+
+Adds defenses inspired by ARTEX and gogo; the network protection level keeps the same name as on Linux, "Maximum lockdown".
+
+- **Added: when the URL safety check could not follow a redirect, it says so and does not call the URL safe.** Following classifies every address and pins the connection target (a redirect cannot lead to an internal address).
+- **Added: `RoamSwitchMCPServer agent-check`.** Checks the destination from an AI agent's pre-tool hook.
+- **Added: a check of the permissions of Chromium-family browser extensions** (notification only).
+- **Added (off by default, notification only): detection of scans from this Mac to internal networks** (Pro; the menu "Internal network scan detection" and its exclusions; on in the "Maximum security" preset).
+- **Added (off by default, notification only): an AI agent repeating the same operation** (`exec.agent_repeat`).
+- **Added: SNMP exposure in the diagnostics (25 items).** Ports of debug and proxy services (JDWP, Node inspector, PHP-FPM/Xdebug, SOCKS) reachable from the network are shown with the process name. A connection to a closed sentinel port counts as four closed ports.
+- **Fixed: the detection coverage table notes that T1046 only sees TCP SYN, and has a row for T1595.**
+- Verification: 3,684 XCTest cases pass. Detection of scans from this Mac to internal networks has not been checked on a real machine.
 
 ## 1.17.34
 
