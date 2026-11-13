@@ -199,6 +199,11 @@ The contents of these releases, grouped by theme. The full text of each entry is
 
 ## PersonalSOC
 
+### 1.0.7
+
+- **Fixed: Resource Guard kinds were shown as internal names and English values in other languages.** They now read as sentences in all 10 languages (for example "Crash loop: 3 restarts in 300s").
+- Verified: The 365 tests pass (0 failures, 2 ignored as before).
+
 ### 1.0.6
 
 - **Fixed: `personalsoc --version` printed the usage instead of the version and exited with code 2.** It now prints "personalsoc <version>" and exits with code 0.
@@ -291,6 +296,11 @@ plus detection of new devices and spoofing on the LAN. Still under
 development — see
 <https://lafine.net/roamswitch-sensor-manual.html> for current status and
 setup instructions.
+
+### 1.0.9
+
+- **Fixed: the notification cooldown (`cooldown_minutes`) did not hold across a daemon restart.** The same audit that was already notified before the restart was notified again afterwards. The cooldown record now carries over a restart.
+- Verified: The 944 workspace tests pass (Docker; 0 failures).
 
 ### 1.0.8
 
@@ -480,6 +490,30 @@ The full text of each item is in this file's git history.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.17.41
+
+Fixes for defects found by re-running the lessons on the previous version (1.17.40).
+
+- **Fixed: deleting a folder that held decoys made the decoys be re-placed and the host isolated over and over, using up the automatic-response limit.** Removing `/var/www` produced 60-odd detections and isolations in about 35 seconds, and a real decoy tamper afterwards did not isolate the host. Decoys in a folder that is gone are no longer watched, and detection and isolation stop after one. Re-applying while already isolated does not count against the limit (`airgap_per_hour`).
+- **Fixed: freezing was slow, and a second decoy whose writer could not be identified became a separate incident.** The freeze now happens right after detection (before re-placing decoys, notifying and collecting evidence), about 0.09 s instead of 0.32 s. A decoy rewrite within 10 seconds of the previous incident joins the same incident even when the writer is unknown (one notification set, one isolation, one evidence bundle).
+- **Fixed: when the automatic-response limit prevented isolation, the notification said isolation had failed.** It now says the host was not isolated because of the automatic-response limit (`max_auto_tier` or `airgap_per_hour`), and the advance notice reads "the host will not be isolated".
+- **Fixed: a change announced on the spot during a package update got a second notification afterwards, with the wrong reason.** The closing note now says "it was written while the update command ran, before the packages were unpacked" (it used to say "it already differed from the baseline before the update"), and the second notification for the same file is gone, even if the daemon restarts during the update.
+- **Fixed: right after the clock was moved forward, "Protection you turned on is not working (Exec Recorder: the state file is stale)" could appear.** The single check right after a clock change is skipped; an execution recorder that really stopped is still reported at the next check (5 minutes later). Retention of the notification history (7 days) is unchanged.
+- **Fixed: the account that logged in was sometimes missing from a writer filled in from the execution log.** The account known from the SSH login line is now added in that case too.
+- **Fixed: after a daemon restart, the port-scan guard notified and blocked again for the same audit.** Notification, blocking and the once-per-10-minutes limit for same-shaped notifications now carry over a restart.
+- **Fixed: a source that fail2ban banned and unbanned right away was never notified.** The Ban line in the fail2ban log is also read, and the notification says the ban was already lifted.
+- **Fixed: with `sudo roamswitch vuln-accept`, the files under `~/.config/roamswitch/` became owned by root, and `--list` and `--revoke` without sudo failed.** The owner stays the user who ran sudo.
+- **Fixed: after an evidence bundle was taken, `roamswitch uninstall --purge` could not remove `/var/lib/roamswitch` and left the package half removed.** The append-only flag on the evidence chain record is cleared before removal. The "automatic blocks in the action journal" line, printed twice by `uninstall`, now appears once.
+- **Fixed: putting an internal address in `webhook_url` did not tell you at save time that it would be refused.** The saving line and `doctor` now say so and show the command to allow it. Right after installing, `doctor` also says when the web rules have not been reported yet.
+- **Fixed: RoamSwitch's own activity matched EXR-017 (a series of recon commands).** Activity of roamswitch programs under the system folders (`/usr`) and their children is not counted.
+- **Fixed: a single `nohup` run could produce two EXR-002 notifications.** Hits by the same process on the same program within 10 seconds are merged into one.
+- **Fixed: adding an AI agent setting (such as `.mcp.json`) and reverting it right away produced no notification.** A change that differed from the baseline since the last check and was then reverted is now notified as "an AI agent setting changed once and was restored", together with the process that wrote it (Server and Client).
+- **Fixed: in English `roamswitch timeline`, Resource Guard lines showed internal names.** They read as sentences, e.g. "Crash loop: 3 restarts in 300s" and "Sustained high CPU usage: …".
+- **Fixed: `roamswitch forward status` and the notification history mixed languages in the note about internal destinations, and printed the address twice.** The note is in the display language and the address appears once. The hint for allowing an address now says it replaces the list.
+- **Fixed: profile-switch notifications stayed in the language they were recorded in.** They are shown in the reader's language (notifications recorded before this version stay in their recorded language).
+- **Fixed: for a USB drive whose identity differed from the allowed one with the guard off, the journal line said "treating it as unapproved" although it was not held.** The wording now matches what happens. A rare race that left "its identity differs" out of the notification is fixed too.
+- **Fixed: the description of `roamswitch audit-mcp-configs` did not list Codex and OpenCode.** The item count in `roamswitch server --help` status also matches the actual count.
+- Verified: The 5,416 workspace tests pass (Docker; 0 failures, 17 ignored as before). The shell tests, the Arch tests and the no-network audit pass too.
 ### 1.17.40
 
 Fixes for defects found when the learning-site lessons were run again on the previous version. Limits on automatic responses, an action journal, maintenance windows, rotation of the update signing keys and more are added too. If your scripts rely on exit codes, the shape of the output, what is forwarded or the default settings, check the "Changed (affects scripts)" items.
@@ -1070,6 +1104,15 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 ---
 
 ## RoamSwitch for Mac
+
+## 1.17.32
+
+Fixes for defects found by re-running the lessons that also apply to the Mac. The bundled PersonalSOC is replaced with its newer version (see the PersonalSOC section; PathScope and AccessScope are unchanged).
+
+- **Fixed: when the automatic-response limit prevented isolation, the emergency dialog said "full block failed".** It now says the action was skipped because of the limit. Re-applying while already isolated does not count against the automatic-response limit, and decoys in a folder that is gone are no longer watched.
+- **Fixed: adding an AI agent setting and reverting it right away produced no notification.** A change that differed from the baseline since the last check and was then reverted is now notified as "an AI agent setting changed once and was restored", together with the process that wrote it.
+- **Fixed: the target list on the MCP configuration check screen did not include Codex and OpenCode.**
+- Verified: The 3,453 XCTest tests pass (0 failures).
 
 ## 1.17.31
 
