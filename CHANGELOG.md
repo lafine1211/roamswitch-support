@@ -12,6 +12,17 @@ independently. Older releases are summarized in ranges.
 
 A security diagnosis tool for access logs. It is a separate app (Apache-2.0): the Server Edition .deb / .rpm packages carry only the command (`accessscope`; from 1.11.2 they also carry the PersonalSOC and PathScope commands); the Linux client edition and the Mac app carry the command and a window app.
 
+### 1.0.8
+
+- **Added: sources that came from AI crawlers or from LLM SDKs and agent tools are shown with three separate kinds of evidence (AI client attribution).** The evidence is (1) a user agent that names an AI company (OpenAI, Anthropic, Perplexity, Google's Vertex AI crawler) together with that company's published IP ranges, (2) the rhythm of request intervals (20 or more intervals from the same source, a median of 2 seconds or more, and a coefficient of variation of 0.35 or less or a most common interval (±1 second) of 60% or more), and (3) LLM SDK names (`OpenAI/Python` and so on) and the headers SDKs add (`x-stainless-*` and so on). The three are listed side by side, not added up, and the confidence is the number of kinds of evidence (one is tentative, two likely, three strong). The result appears in the summary line, the tables (default output, `--plain`, `--report`), the app's dashboard and `web.ai_attribution` in the JSON. It is not part of the findings or the risk score. No network and no LLM are used.
+  - A source with only a regular rhythm is not listed (monitoring and feed readers are regular too).
+  - A source that names an AI company from outside its published ranges is shown as a possible fake crawler (`web_fake_crawler`) and is not counted as evidence. An IP taken from `X-Forwarded-For` is not matched against the ranges.
+  - SDK headers are read only from logs that record headers by name (Caddy's JSON, Traefik set to log headers). Headers that an nginx `escape=json` log records in fields such as `$http_x_stainless_lang` are not read; the report then says that SDK headers were not checked.
+- **Fixed: in nginx JSON logs, the `$request_*` fields were treated as named headers.**
+- **Fixed: the evidence of an attack chain showed the same line twice.**
+- Measured: of the web cases in the evaluation corpus, the 1,338 that contain no AI company or SDK marker and no address in an AI company's published ranges produced 0 wrong entries (our own test data). Listing AI crawlers and SDKs correctly is checked with synthetic logs (GPTBot, SDK user agents, `x-stainless-*` headers, impersonation, `X-Forwarded-For`). It has not been measured on real server logs.
+- Checks: the 679 workspace tests pass, including 466 in the core lib, 31 in the CLI and 44 in the app (Mac; 0 failed; the 3 ignored were already there).
+
 ### 1.0.7
 
 - **Fixed: reports in English and other languages contained the Japanese middle dot and wave dash.** "2 kinds of logs (Web・SSH)" now reads "(Web, SSH)", and the "〜" in the log period becomes "–" (in English and others), each in the way of its language. The period field in the app does the same. Japanese is unchanged.
@@ -489,6 +500,22 @@ The full text of each item is in this file's git history.
 
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
+
+### 1.17.42
+
+Linux Client gets settings presets and Server gets a once-a-day report. The reasons in the protection status now always say which feature they are about, where to look and what to do. AccessScope 1.0.8 is bundled.
+
+- **Added: settings presets (Client Edition, desktop).** Choose one of four: Light, Balanced, Standard security and Maximum security. Light stops the always-running work that costs resources (ClamAV, the process-exec recorder and so on) and lengthens scan intervals. Balanced balances resources and security. Standard security is the standard setting without regard to resources (items that cause many false positives or stop operations are left out and explained one by one). Maximum security includes those items too and shows a strong warning for each one before it is applied. Use it from the card at the top of the Diagnostics tab, the first-run wizard, or `roamswitch preset [status | list | show <name> | set <name> [--dry-run] [--yes]]`. Changing even one setting by hand shows "Custom". It is not in Server Edition (`roamswitch preset` answers "Client Edition only").
+- **Added: two setting keys so that Light is really light.** `download_guard_poll_ms` (default 800, 200 to 60000) and `sentinel_interval_secs` (default 3, 1 to 60). The defaults are the same as before. No restart is needed.
+- **Changed: a fresh install starts on Balanced.** Only when there is no `config.json` yet. An existing configuration is not touched. The default of RoamSwitch OS is Standard security.
+- **Added: the Server daily report (off by default).** Once a day it makes the PersonalSOC report (and the AccessScope report when PersonalSOC cannot cover everything) and sends one message to the notification channels you set (Telegram, LINE, the notification webhook). With no important problem it sends a short summary only; with one it states the problems briefly. The full report is kept for 14 days in `/var/lib/roamswitch/reports/` on the Server, and the notification gives the path. Nothing is masked before sending. Turn it on with `sudo roamswitch server config set daily_report_enabled true`. With no channel set, no report is made even when it is on. Commands: `roamswitch daily-report run | status | test`. What counts as an important problem is `daily_report_important_min_severity` (default high), and AccessScope can be automatic, always or never.
+- **Changed: every reason in the protection status (`doctor`, `status`, the app, notifications, the TUI and MCP) now says which feature it is about, where to look, what is happening, what is not being seen and what to do.** The order is: feature (what it does) / place (setting key, screen, command to look) / situation (since when) / effect / steps (`systemctl restart …`, `journalctl …`, `sudo roamswitch server config set …` and so on). Every guard has a one-sentence role in 10 languages and a place.
+- **Fixed: because repeated runs are folded, the `events tree <pid>` that a notification pointed to said "no record".** The run that a notification is about is written at once. `events tree` exits with 1 when there is no record (2 when no pid is given).
+- **Fixed: a change written before a package update started could be notified as "written while the update command ran, before unpacking".** `/etc/group` and `/etc/gshadow` written by `useradd` got a different reason from `/etc/passwd` written by the same `useradd`. Anything written before the update started is "it already differed from the baseline before the update".
+- **Fixed: the periodic check wrote an already notified, unchanged violation to the journal at ERROR level.** Only a new violation is ERROR; a notified one is INFO.
+- **Fixed: only the first freeze right after a restart had more files written before it.** The information it needs is read at start-up.
+- Bundled: AccessScope 1.0.8 (attribution of sources from AI crawlers and LLM SDKs; see the AccessScope section).
+- Verified: the 5,531 workspace tests pass (Docker; 0 failed, 17 ignored as before).
 
 ### 1.17.41
 
@@ -1104,6 +1131,19 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 ---
 
 ## RoamSwitch for Mac
+
+## 1.17.33
+
+Mac gets protection presets. Every reason in the protection status window now says which feature it is about, where it is, what is happening and what to do. The bundled AccessScope is replaced with 1.0.8.
+
+- **Added: protection presets (Pro only).** Choose Light, Balanced, Standard security or Maximum security at the top of the menu bar menu (a check on the current one, "Custom" after a manual change, "Show contents…"). Light stops the always-running work that costs resources and lengthens scan intervals; Standard security is the standard setting without regard to resources. Maximum security includes the items that cause many false positives or stop operations and shows a strong warning for each one before it is applied. On Free the item reads "Protection presets (Pro)…" and opens the licence screen. Applying a preset can be undone. `get_guard_status` of MCP has a `preset` field (read only).
+- **Added: 8 setting keys so that Light is really light** (on/off and intervals of always-running work). The defaults are the same as before.
+- **Changed: a Mac that newly activates Pro starts on Balanced.** Right after activation, a confirmation asks once: "Apply Standard security" or "Stay on Balanced". A Mac that already uses Pro is not rewritten by the update.
+- **Changed: the protection status window, the tooltips in the menu and the notifications now give every reason the feature name and role, its place in the menu, what is happening, what is not being seen, numbered steps and buttons.** All 30 reason codes. For example, "Development web folder scan" has no switch, runs by itself once a day, and its manual scan and settings are inside "Web shell detection rules…". Buttons include "Open this feature", "Open Full Disk Access", "Restart this guard" and "Scan web folders now".
+- **Changed: the names and reasons of files that could not be read are recorded.** For the web folder scan, lockfile watch, persistence watch, entropy detection, canary and the download static scan, up to 5 items the last scan could not examine are shown in the window with one of: no permission, protected by macOS, type unreadable, too large. A file that disappeared during the scan is not counted. They also appear as `skippedSamples` in the readers of `get_guard_status`.
+- **Fixed: after Pro expired and was activated again, a guard sometimes did not resume.**
+- **Changed: the confirmation text of the process-exec recorder states the helper's memory use.**
+- Verified: the 3,537 XCTest tests pass (0 failed, 0 skipped).
 
 ## 1.17.32
 
