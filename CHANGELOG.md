@@ -501,6 +501,18 @@ The full text of each item is in this file's git history.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 1.17.43
+
+Fixes gaps in the reasons shown in the protection status and tells settings presets and network protection levels apart.
+
+- **Changed: "settings preset" and "network protection level" are always shown with their category.** For example "Settings preset: Standard security" and "Network protection level: Standard protection", in the app, the CLI (`roamswitch preset`, the protection level display), notifications, `doctor`, `status`, MCP, the README and the man page. The English level name is now "Standard protection" (to tell it apart from the preset "Standard security").
+- **Changed: the Server daily report marks a critical that was not in the previous day's report as new.** The notification gets a line "New critical: N (not in the previous day's report)" and a `[critical, new]` tag on the item (with no previous report, every critical is new). What counts as an important problem is still `daily_report_important_min_severity` (default high), and a critical is always included. The saved JSON gains `problems` and `new_critical_count`.
+- **Fixed: reasons in the protection status contained raw English strings.** The details of the web access guard, the web-root scan, entropy watch, the error log, `agent_users`, canary placement, Tailscale and WireGuard are kept as a key and arguments and worded in the display language.
+- **Fixed: some steps were not concrete.** The web access guard now shows how to find the log location with `nginx -T` or `grep CustomLog` and how to set it. The canary shows, for each folder it could not use, `ls -ld` and a `systemctl edit` with `ReadWritePaths=-<path>`. Unreadable inputs carry a command to check them.
+- **Fixed: the `doctor` line of the web access guard had a different shape from the other guards and the same content appeared twice.** It is now one line in the form feature, role, place, situation, effect, steps.
+- **Changed: in Japanese, the time in a reason is followed by the Japan time** (for example `2026-11-14 07:13 UTC (Japan time 2026-11-14 16:13)`).
+- Verified: the 5,543 workspace tests pass (Docker; 0 failed, 17 ignored as before).
+
 ### 1.17.42
 
 Linux Client gets settings presets and Server gets a once-a-day report. The reasons in the protection status now always say which feature they are about, where to look and what to do. AccessScope 1.0.8 is bundled.
@@ -1131,6 +1143,13 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 ---
 
 ## RoamSwitch for Mac
+
+## 1.17.34
+
+Tells "settings preset" and "network protection level" apart by showing each with its category.
+
+- **Changed: "settings preset" and "network protection level" are always shown with their category.** For example "Settings preset: Standard security" and "Network protection level: Standard protection", in the menu (the preset submenu, the status line and the choice submenu of the protection level, registered networks), the confirmation before and the notification after applying, the profile-switch notification, the notification of lowering the level by the state of the Mac, the description of `get_guard_status` of MCP, the knowledge base and the README. The wording of the protection status window is aligned too.
+- Verified: the 3,543 XCTest tests pass (0 failed, 0 skipped).
 
 ## 1.17.33
 
