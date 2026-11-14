@@ -1217,6 +1217,13 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 
 ## RoamSwitch for Mac
 
+## 2.0.1
+
+Fixes the menu bar icon taking about nine seconds to open.
+
+- **Fixed: clicking the menu bar icon could take about nine seconds before the menu opened.** The full diagnosis, which runs many system commands one after another, was rebuilt on the main thread every time the menu was built and every time the diagnosis window drew a row. It is now built once on a worker thread and only read by the menu and the window. Until the first diagnosis is done, the menu says that it is running.
+- Verification: 4,156 XCTest tests pass.
+
 ## 2.0.0
 
 The Mac and Linux editions are both 2.0.0. The app now has an Endpoint Security system extension: who wrote a file or read a decoy is identified by signature, not guessed. The diagnostic score is counted against the strictest settings preset.
