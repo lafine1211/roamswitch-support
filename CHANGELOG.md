@@ -1201,6 +1201,16 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 
 ## RoamSwitch for Mac
 
+## 1.17.36
+
+Fixes the honeytoken (credential decoy) notices that kept coming after the app started and put the app under heavy load.
+
+- **Fixed: for some minutes after a launch, notices about "access" to the decoy files kept coming and the app could run at about 100% CPU.** The change notice that the app's own reset of a decoy's access time raises could not always be told from a real one (the check used timing only). A decoy that is still in the state it was in right after the reset is now treated as untouched, and a decoy that is already reset is not written again. A change of attributes only is handled once a minute per decoy. A read is still detected by the periodic check of the access time.
+- **Fixed: the `lsof` that looks for the process that read a decoy no longer runs on the main thread.** It could freeze the app's windows while detections went on.
+- **Fixed: `get_access_log_report` includes detections that could not be evaluated (`coverage.limited` / `not_evaluable`) in the caution that "nothing found" does not mean "safe".**
+- **Added: the knowledge base has entries for `agent-check` and for the check of browser extension permissions (10 languages).**
+- Verification: 3,690 XCTest tests pass. The start-up trigger was observed on a real Mac and examined with a small program that copies the same check, but it is not pinned down; the weak point of the check is changed to a check by state.
+
 ## 1.17.35
 
 Adds defenses inspired by ARTEX and gogo; the network protection level keeps the same name as on Linux, "Maximum lockdown".
