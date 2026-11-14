@@ -1217,6 +1217,13 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 
 ## RoamSwitch for Mac
 
+## 2.0.2
+
+Fewer repeated notifications when a program reads the decoy credential files again and again.
+
+- **Changed: when the same program reads the decoy credential files (honeytokens) again within a minute of its notification, only the first read is notified at once, and the reads in that minute are counted and told in one more notification.** A tool that is started many times, such as `aws` in a script, is a new process each time, so every run used to raise a notification of its own. The reads of one program are grouped by its executable path, not by the process. Every read is still recorded one by one in the incident timeline and the activity log, and a different program is never held back.
+- Verification: 4,162 XCTest tests pass.
+
 ## 2.0.1
 
 Fixes the menu bar icon taking about nine seconds to open.
