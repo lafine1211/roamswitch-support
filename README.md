@@ -24,7 +24,7 @@ between them.
 
 - Signed & notarized `.dmg`, distributed outside the Mac App Store
 - Requires **macOS 13 Ventura or later**, Apple silicon only (M1 / M2 / M3 / M4 and later)
-- Latest version: **2.0.0**
+- Latest version: **2.0.2**
 
 ## What it does
 
