@@ -532,6 +532,15 @@ The full text of each item is in this file's git history.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 2.0.1
+
+Fixes the alerts and the pause in DNS tunnel detection that came with an update, and groups repeated decoy-file notifications.
+
+- **Fixed (Server): DNS tunnel detection stopped for about two minutes after every update.** The new daemon could not bind its NFQUEUE (queue 93: `Operation not permitted`) until a child process of the old daemon ended, because that child (the investigation that follows a FIM notification) had inherited the old daemon's queue socket. The socket is now close-on-exec (also in the same kind of places), the nftables table is loaded after the queue is bound (so DNS no longer stalls while another process holds the queue), the retry for `EPERM` and `EBUSY` is at most 5 seconds, and the status says who holds the queue. The unit also removes the table when the service stops (`ExecStopPost`).
+- **Fixed: FIM reported a normal update of a package (dpkg) as tampering while the update was running.** This came with 1.17.42 and affected every package, not only RoamSwitch (`apt-get install --reinstall sudo` showed it). Files that dpkg unpacks carry the time the package was built, so every file in the update looked as if it had been written before the update and was not held back. A file is now judged by the later of its modification and change times, and when the writer is known to descend from the package manager, the time is not consulted. Detection is not weakened for anything else.
+- **Changed: when the same program reads the decoy credential files (honeytokens) again within a minute of its notification, only the first read is notified at once, and the reads in that minute are counted and told in one more notification.** A tool that is started many times, such as `aws` in a script, is a new process each time, so every run used to raise a notification of its own. The reads of one program are grouped by its executable, not by the process id. Every read is still recorded one by one in the incident timeline, and a different program is never held back.
+- Verification: 5,316 tests of the core, CLI, evidence capture, MCP, the decoy watcher and the NFQUEUE crate pass in Docker with 0 failures, and the daemons' tests pass. On Ubuntu (a disposable VM), an update of the Server package starts the new daemon with queue 93 bound at once, the DNS tunnel input readable and no `EPERM`, and an update done with the package manager's FIM hooks raises no FIM notification. The first update from 2.0.0 itself still raises the old FIM notification, because it is 2.0.0's daemon that watches that update.
+
 ### 2.0.0
 
 The Linux and Mac editions are both 2.0.0. The diagnostic score now shows the distance to the strictest settings preset, outgoing-scan detection no longer writes to the kernel log, and the Client detects more things at the moment they happen instead of on a timer.
