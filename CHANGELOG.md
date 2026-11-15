@@ -532,6 +532,18 @@ The full text of each item is in this file's git history.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 2.5.0
+
+A WAN client that sends a URL only an attack uses is blocked for 90 days from the first request. Notices now say at a glance which site, container and port is concerned.
+
+- **Added: a client that sends a URL only an attack uses is judged by one request and blocked from ports 80/443 for 90 days (Web access guard, `attack=block` by default).** It covers file reads and code execution against Vite's development server (`/@fs/`, `__vite-browser-external`, `import.meta.glob`), a run of `../`, reads of `/proc/self` and `/etc/passwd` and the like, Log4Shell's `${jndi:` and PHPUnit's `eval-stdin.php`. It works whatever `mode` says, and shared addresses, private addresses and the allow list are never blocked. The length is `attack_ban_secs` (90 days by default). Before, about 85 requests got through while 12 different paths were being counted, the block ran out after an hour and the same client came back, and a code-execution attack of 6 requests was never blocked.
+- **Changed: the connections a blocked client already had open are cut too.** The block drops new connections only, and 12 to 15 requests went through right after it.
+- **Changed: the 見守り (watch) preset of the quick setup keeps this one block.** 見守り does no automatic isolation or Air-Gap and does not block SSH brute force or port scans. To stop it, use `attack=warn` (a Fleet policy ceiling is still honoured).
+- **Changed: eBPF notices carry a "Where" line (site → container → host port) and say what the environment-read rule means.** The container's name, image and published ports come from `docker inspect`, the site from the Apache and nginx configuration. For a container behind a public site, the first-pass triage does not take earlier counts as a sign of a false positive, gives the verdict "low", and makes the access log the next step.
+- **Changed: the detections of a `docker build` step (the parents are `dockerd ← runc`) get no notice each and no agent run; 90 seconds after the build ends, one notice gives the count and the breakdown.** Each one stays in `ebpf_incidents.json`.
+- **Changed: a third of the investigation agent's limit (two of six) is kept back from notices the first-pass triage finds very likely harmless.** This answers a run of false alarms using up the limit so that a real attack was not investigated.
+- Verification: 4,347 core, 230 daemon, 123 CLI and 86 TUI tests pass. The production nftables was confirmed to accept a 90-day block. **Not run: an end-to-end test of the block with a real Apache log.**
+
 ### 2.4.0
 
 Running the investigation agent as a dedicated ordinary account is now the default.
