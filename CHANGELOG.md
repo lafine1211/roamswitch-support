@@ -1285,6 +1285,13 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 
 ## RoamSwitch for Mac
 
+## 2.1.1
+
+Fixed the AI-agent setup audit using a CPU core for long stretches.
+
+- **Fixed: the AI-agent setup audit (agent skills, memory and instruction files) re-read everything whenever one file changed and could keep one core near 100%.** It showed most where an agent keeps rewriting its memory. A file with the same content, path, permissions, role and display language now keeps its earlier result, and the search for negation words ("never", "do not" and the Japanese forms) uses a faster method. The verdicts do not change. On this Mac, the first pass over about 870 files took about 4.8 seconds and the next ones about 0.3 seconds (debug build).
+- Verification: 4,175 XCTest tests pass. That the release build uses less CPU will be checked on a real Mac after the update.
+
 ## 2.1.0
 
 Web shell detection covers more forms and is never held back, and the startup-file and reverse-shell detections notice programs that hide by behaviour.
