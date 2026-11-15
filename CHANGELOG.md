@@ -532,6 +532,13 @@ The full text of each item is in this file's git history.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 2.3.1
+
+A small follow-up: a web shell found by the File Scan Guard is handed to the investigation agent too.
+
+- **Changed (Server): a web shell that the File Scan Guard finds (a folder that it scans, not a document root) is handed to the investigation agent as well,** once per notice, like the detections of the write watch. Before, only the write watch's detections were handed over. Nothing changes when no investigation agent is set up.
+- Verification: the Server daemon tests pass in Docker with 0 failures. **Not run: an investigation agent started on a real host.**
+
 ### 2.3.0
 
 Web shell detection covers more forms and is never held back, and the Server (and Client) now notice remote-access tools that hide by behaviour.
