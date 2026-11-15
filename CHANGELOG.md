@@ -532,6 +532,17 @@ The full text of each item is in this file's git history.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 2.1.1
+
+The packages now depend on `tshark` and `sudo`, `setup` no longer replaces the account the investigation agent runs as, and a few messages are easier to read.
+
+- **Changed: `tshark` is a required dependency (Debian and Ubuntu: `tshark`; Fedora, RHEL and Arch: `wireshark-cli`; openSUSE: `wireshark`), and so is `sudo` on the Server Edition.** The evidence bundle (the capture after a detection, on by default) and the opt-in pre-roll need `tshark` (the pre-roll runs `dumpcap`, which it carries), but no package named it, so on a host without it the packets were silently missing. The investigation agent and `agent_users` start commands with `sudo -u`. The package check in CI now fails when they are only recommended. **On Debian and Ubuntu, installing `tshark` by hand asks "Should non-superusers be able to capture packets?": answer No** (RoamSwitch runs the capture as root; a non-interactive install answers No by itself).
+- **Fixed (Server): `roamswitch server setup` replaced the account the investigation agent runs as with the account you were logged in as, without asking.** A dedicated unprivileged account became your own, which can have `sudo`. It now asks which account to use (the one in `guard.yaml` is the default), keeps the saved command for that account, and, for an account in `sudo`, `wheel`, `admin`, `docker` or `lxd` (the power of root), explains the risk and asks again with "no" as the default. `doctor` warns about such an account too.
+- **Fixed (Server): adding the investigation account to the log-reading groups made the file-integrity watch report `/etc/group` and `/etc/gshadow` as tampered.** `usermod` rewrites them. Those two files are taken into the baseline right after, only when each was unchanged before; anything else that differs stays a finding.
+- **Changed (Server): the evidence pre-roll no longer logs every retry.** With `dumpcap` missing it tells you at once, then looks for it once a minute without a log line and starts by itself after you install it. Other failures are logged when the reason is new and then every tenth time. The notice also says how to turn the pre-roll off.
+- **Changed: `roamswitch server setup`.** The list of protections that work by themselves (step 11) is gone, since it had nothing to set. The text about outbound network use (step 8) and the AI agent account step are rewritten in plainer words (Japanese: "基準線" is now "確認済みの状態の記録"), and the "Enable?" prompt shows (Y/n) when the default is yes.
+- Verification: the tests of the core, CLI and the Server daemon pass in Docker with 0 failures. **The package dependencies could not be checked on built packages before release**: the CI package check is the first check.
+
 ### 2.1.0
 
 The daily report can now include a written investigation of each important problem (opt-in).
