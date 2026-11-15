@@ -532,6 +532,17 @@ The full text of each item is in this file's git history.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 2.0.2
+
+Warnings and reports that say what happened, why, and what to do.
+
+- **Changed: the note "part of the host was not covered" in the daily report now says which logs AccessScope could not read, why, and what to do.** It lists the logs (the first few) and, per reason, how many (no permission, reading failed, file not found, format not recognized, too large, outside the period, cut off, lines too long). For each reason that needs an action it says what to do (for example, run `sudo accessscope scan --auto --list-sources` to see which logs could not be read and why), and for the reasons that need none (a log too large is read from its end; logs outside the period and lines that are too long are skipped) it says that nothing is needed.
+- **Changed: the eBPF warning now shows the file that was read, and says in one sentence what the rule means and what to check** for "Read sensitive file untrusted" (a program that is not trusted read a password or credential file) and "Drop and execute new binary in container" (a file that had just been written was run in a container).
+- **Fixed: the bundled analysis tools the daily report runs as root (`pathscope`, `personalsoc`, `accessscope`) raised "Read sensitive file untrusted" at every report.** They are added to RoamSwitch's own binaries in the Falco exceptions (the exception covers only the sensitive-file-read rule).
+- **Changed: the investigation agent.** When `last` is missing it now tries `lastlog` and `wtmpdb last`, and for recent logins `journalctl` or the auth log file. Under "Not checked:" it writes what it could not look at, why (the exact error), whether and how that weakens its verdict, and what the operator can do to make it checkable, instead of only the name of a command.
+- **Added: `doctor` tells when the investigation agent's account cannot read the system journal and the authentication log** (it is not in the groups `systemd-journal` or `adm`), shows the command that adds it (`sudo usermod -aG ...`) and says what the account can read afterwards. `roamswitch server setup` asks (the default is no) and adds the account only after a yes.
+- Verification: 5,318 tests of the core, CLI, evidence capture, MCP, the decoy watcher, the NFQUEUE crate and the daemons pass in Docker with 0 failures. The new `setup` question and the Falco exception were not run on a real host.
+
 ### 2.0.1
 
 Fixes the alerts and the pause in DNS tunnel detection that came with an update, and groups repeated decoy-file notifications.
