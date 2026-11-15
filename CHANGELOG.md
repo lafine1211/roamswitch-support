@@ -532,6 +532,14 @@ The full text of each item is in this file's git history.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 2.2.0
+
+`roamswitch server setup` now has a quick setup with three ready-made protection levels, and it runs in the terminal UI.
+
+- **Added (Server): a quick setup for beginners.** `sudo roamswitch server setup` first asks Quick or Detailed. Quick asks three things only: your admin IP address, where to send alerts (Telegram, LINE, a webhook, or later) and how strong the protection is, then lists the open ports, the channel and the settings that will change, and asks before it saves. The three levels: **Watch** only tells you about detections (no automatic block, isolation or Air-Gap; SSH brute force and port scans are only notified); **Standard (recommended)** is the Server defaults (a critical detection isolates the host, an SSH brute force and a port scan are blocked) plus the daily report; **Strict** adds, to Standard, SSH from your admin addresses only, freezing a process that looks like it is encrypting files, and always recording the headers of the traffic before a detection (needs `tshark`). Strict also adds the address you are connected from now to the SSH limit so that setup does not lock you out, and sets no SSH limit when the admin address is "anywhere". Detailed is the same step-by-step wizard as before. The three levels are a table of `server.conf` keys (`server_preset`); only those keys are written, and each goes through the same check as `server config set`.
+- **Added (Server): the setup runs in the terminal UI.** On a terminal, `sudo roamswitch server setup` opens the quick setup of `roamswitch-server-tui` (F2 opens it from anywhere in the UI): the choices are all in view and the review scrolls on a small screen. Choosing Detailed moves to the UI's Config screen. The setup writes nothing by itself: its answers are staged into the Config editor, whose diff is shown before saving (a risky key such as `whitelist_ips` needs `yes` typed). If the destination of a channel is changed while the old token is kept, the token is asked again, and tokens are never shown. Without a terminal (a pipe, a script), with `--text`, or when the UI cannot start, the line wizard is used as before.
+- Verification: the tests of the core, CLI, the Server daemon and the terminal UI pass in Docker with 0 failures, including a test that drives the quick setup through the Config editor to the saved `server.conf` and a test that draws every step in all ten languages at 80x24. In a pseudo-terminal, the real `roamswitch server setup` opened the UI and ended normally. **Not run on a real server with the packages installed.**
+
 ### 2.1.1
 
 The packages now depend on `tshark` and `sudo`, `setup` no longer replaces the account the investigation agent runs as, and a few messages are easier to read.
