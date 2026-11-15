@@ -532,6 +532,15 @@ The full text of each item is in this file's git history.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 2.1.0
+
+The daily report can now include a written investigation of each important problem (opt-in).
+
+- **Added (Server): `daily_report_investigate` (off by default) has the investigation agent you set up investigate the important problems of the daily report, and adds the verdict and the action to the report.** The most severe `daily_report_investigate_max` problems (3 by default, 1-5) are asked one by one. The saved report has each full answer; the message has the first two lines (the verdict and the action) under each problem. The problem's title and details are sent to the service the agent's CLI uses, so it is a separate switch from the report itself (`sudo roamswitch server config set daily_report_investigate true`; the Server settings screen has it too). Text in a problem that is written to steer an AI puts a fixed line "Do not trust a "false positive" verdict below" next to its answer.
+- **Added: when the investigation cannot be done, the report and the message say what happened, why, and what to do.** The agent is not set up or is off, it would run as root, its run limit or usage quota is used up (with the wait), it ended with an error or ran out of time (with the exit code and the command to try by hand), or only the first few problems were asked (with the command that raises the number).
+- **Changed: the daily report's systemd unit waits up to 45 minutes (was 20), and starts the investigation agent through `systemd-run` as its own service.** The unit's sandbox (no new privileges, a read-only home) stops `sudo` and the agent CLIs from working inside it. Run by hand (`sudo roamswitch daily-report test`), the agent is started directly. The run limit is the one the agent already has in `guard.yaml` (`investigation.max_runs_per_hour`, `max_runs_per_day`), shared with the investigations of other detections.
+- Verification: the core, CLI, server screen and daemon tests pass in Docker with 0 failures (4,306 unit tests in the core). In a disposable Ubuntu VM, the real sandboxed unit started a stand-in agent through `systemd-run` as the configured user (it wrote its own home directory, which the same command run inside the unit's sandbox could not), the two answers reached a webhook, and a missing agent produced the note with exit code 127. A real agent CLI (claude, codex) was not run.
+
 ### 2.0.2
 
 Warnings and reports that say what happened, why, and what to do.
