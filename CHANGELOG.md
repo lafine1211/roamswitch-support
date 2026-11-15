@@ -532,6 +532,16 @@ The full text of each item is in this file's git history.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 2.5.1
+
+Fixes three defects in the attack-URL block, and a notice wording.
+
+- **Fixed: with the default settings (`mode=warn`) the attack-URL block failed.** The ban table of nftables was made only for `mode=block`. It is now also made for `attack=block` (the default).
+- **Fixed: a client already banned for a scan (`probe_walk` and the like) that then sent an attack URL was treated as "already banned" and did not get the 90-day block.** The shorter ban is now replaced by the 90-day one (the replacement happens inside the action, so when the automatic action budget refuses it the old ban stays).
+- **Fixed: when a ban element disappeared from nftables (a restart of the daemon, another tool flushing the rules), the block stopped working although the earlier-bans file still held its end.** Bans that the file says are running but the set does not hold are put back every 60 seconds, with the time they have left. A ban lifted with `roamswitch unban` is not put back.
+- **Fixed: the attack-URL notice said "set attack=block to block" even when the client was not blocked because it is a private address, a shared address or on the allow list.** It now names that reason.
+- Verification: 77 web guard tests of the core and 230 daemon tests pass. Two real attack notices were checked on a production host (one gave the 90-day block and cut the connections it had open). **Not run: an end-to-end test with a real attack on a host with the default settings (`mode=warn`).**
+
 ### 2.5.0
 
 A WAN client that sends a URL only an attack uses is blocked for 90 days from the first request. Notices now say at a glance which site, container and port is concerned.
