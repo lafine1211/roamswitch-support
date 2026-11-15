@@ -1278,6 +1278,16 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 
 ## RoamSwitch for Mac
 
+## 2.1.0
+
+Web shell detection covers more forms and is never held back, and the startup-file and reverse-shell detections notice programs that hide by behaviour.
+
+- **Added: web shell rules for forms that were missed (27 built-in rules).** The starting of a process from C# in ASPX/ASHX; classic ASP without parentheses (`eval request("c")`, `Execute Request("c")`); JSP through a variable and with an array argument; PHP through a variable, from a `$_SERVER` header and in backticks. The forms that pass a request value straight to a function that runs it are critical; the forms where the value goes through a variable are high. A static `.jsp` or `.aspx` is not notified. The same rules also reach the app through the signed daily rules feed within a day, without an update of the app; this version has them built in. The rules were measured on about 143,000 harmless files and matched nothing that the old rules did not, and on about 150,000 files the Swift engine and the Linux engine reported exactly the same findings.
+- **Changed: a web shell (critical or high) is a protected detection.** The 10-minute interval for notices of the same kind and the maintenance window no longer hold it back.
+- **Added: the startup-file watch takes `exec -a` as a sign.** A startup line that starts a program under another process name (to pass as a system service) is notified.
+- **Added: the reverse-shell detection also finds a relay in a hidden place.** A program that is neither an interpreter nor a relay tool, runs from `/tmp`, `/var/folders` or a hidden folder of the home, has an outbound connection and a shell on a pseudo-terminal that it carries on its own connection. The folders of AI coding agents (`~/.claude`, `~/.gemini`, `~/.codex`, `~/.antigravity`, `~/.opencode`) are left out, because their terminal tools have the same shape.
+- Verification: 4,160 XCTest tests pass. The new reverse-shell form was run on a real macOS with a harmless relay (found when started from a hidden folder of `/tmp`, not found from an ordinary folder). **Not run: a real remote-access tool, and the notification of a web shell to a real channel.**
+
 ## 2.0.2
 
 Fewer repeated notifications when a program reads the decoy credential files again and again.
