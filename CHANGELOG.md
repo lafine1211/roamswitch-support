@@ -532,6 +532,18 @@ The full text of each item is in this file's git history.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 2.4.0
+
+Running the investigation agent as a dedicated ordinary account is now the default.
+
+- **Changed: step 8 of `sudo roamswitch server setup` creates and uses a dedicated ordinary account, `rs-investigator`, by default.** It is in no group. The investigation agent reads text from logs, and an attacker can write some of it, so it is safer not to run it as your own account that is in `sudo` or `docker` (the account you were logged in as used to be the default). You can still name an existing account, as before.
+- **Added: when the tool is in another person's home and the dedicated account cannot run it, a tool that is a single file (agy, for example) is copied, owned by root, to `/opt/roamswitch-agent/`.** A tool installed with Node.js cannot be copied, so setup says to install it where everyone can run it and changes nothing. After you update the tool, run `server setup` again to replace the copy.
+- **Added: after the settings are saved, the investigation agent is run once the way the daemon runs it, and if it is not logged in, setup guides the login on the spot.** Each account needs its own login, and your own account's credentials are not copied.
+- **Added: `sudo roamswitch server investigation login` (starts the tool's login as that account, then tries once) and `sudo roamswitch server investigation test` (tries once and says whether an answer came back, a login is missing, it failed, or it timed out).**
+- **Changed: the Server screen's (TUI) initial run-as user is now the dedicated account (only when it exists), not the operator.**
+- Documentation: FAQ Q28, §10.1 of the Server manual and the MCP setup page now cover the account, the tool, the login and what an ordinary user cannot see (10 languages).
+- Verification: in a root container with a stand-in agent, the whole wizard run, the account creation, the copy, the detection of a missing login, the login, the re-check and the exit codes of `login` and `test` were checked. The 9 new unit tests and the 10-language table checks pass. **Not run: the copy and the login with the real agy, Claude Code, Codex CLI and OpenCode, and the actions on the Server screen.**
+
 ### 2.3.1
 
 A small follow-up: a web shell found by the File Scan Guard is handed to the investigation agent too.
