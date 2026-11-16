@@ -1347,6 +1347,15 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 
 ## RoamSwitch for Mac
 
+## 2.1.2
+
+Switching a protection off, or to a weaker setting, from the menu now asks first.
+
+- **Fixed: "Credential file read monitoring" and "Log and history erasure detection" were switched on or off by one click on the menu line, with no confirmation.** They now ask, with the same dialog as the other protection options (10 languages): what the option does when switching on, and what stops working when switching off. Cancel leaves everything as it was.
+- **Added: a confirmation for a choice that takes a protection away.** Link protection set to "Off", a network (the current one, or one in the list of registered networks) set to "Trusted (open)", and the away protection level set to "Trusted (open)". Going to a stronger setting, or choosing the setting already in place, does not ask. The temporary override of the level, the DNS provider and the VPN method do not ask: they do not take a protection away.
+- **Added: a test that every menu switch of a guard asks before it switches,** so that a guard wired to the menu without a dialog fails the tests.
+- Verification: 4,168 XCTest tests pass (the build without AUTH, which is the release build). **Not checked: the dialogs shown on a real Mac** (the texts, the cancel path and the wiring are tested; the window itself is not).
+
 ## 2.1.1
 
 Fixed the AI-agent setup audit using a CPU core for long stretches.
