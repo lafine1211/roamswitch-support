@@ -1347,6 +1347,15 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 
 ## RoamSwitch for Mac
 
+## 2.1.4
+
+A guard that has just started is no longer shown as "stopped" while the extension is taking up its watch.
+
+- **Fixed: for a short time after the app starts (after an update too), the menu showed "stopped: the Endpoint Security extension is not running" for "Credential file read monitoring" and "Log and history erasure detection", although the extension was running.** These two guards see nothing without the extension. Until the extension takes up the guard's watch, the status had no reason and was read as "not running". For 180 seconds after the guard starts it now reads as starting. A real reason (waiting for approval, Full Disk Access and the like) is shown at once, and after 180 seconds it is "stopped" as before. It was found after the update to 2.1.3, when the message appeared and the extension switch in System Settings was turned off and on by hand; **that switch was not needed.** **How long the extension takes to take up the watch is not measured:** 180 seconds is a generous bound, not a measurement.
+- **Added: the history of the extension's state also records each change of a guard's route** (through the extension or on the fallback, the reason, and how long the guard had been started), so that the time can be read after the next launch.
+- The extension itself is unchanged (its build number stays 3), so an installed extension is not replaced by this update.
+- Verification: 4,171 XCTest tests pass (the build without AUTH, which is the release build). **Not checked: on a real Mac, that the false message no longer appears just after the app starts.**
+
 ## 2.1.3
 
 Fixes a false "the extension is not running" message after an update, and keeps a history of the state of the Endpoint Security extension.
@@ -1365,27 +1374,19 @@ Switching a protection off, or to a weaker setting, from the menu now asks first
 - **Added: a test that every menu switch of a guard asks before it switches,** so that a guard wired to the menu without a dialog fails the tests.
 - Verification: 4,168 XCTest tests pass (the build without AUTH, which is the release build). **Not checked: the dialogs shown on a real Mac** (the texts, the cancel path and the wiring are tested; the window itself is not).
 
-## 2.1.1
-
-Fixed the AI-agent setup audit using a CPU core for long stretches.
-
-- **Fixed: the AI-agent setup audit (agent skills, memory and instruction files) re-read everything whenever one file changed and could keep one core near 100%.** It showed most where an agent keeps rewriting its memory. A file with the same content, path, permissions, role and display language now keeps its earlier result, and the search for negation words ("never", "do not" and the Japanese forms) uses a faster method. The verdicts do not change. On this Mac, the first pass over about 870 files took about 4.8 seconds and the next ones about 0.3 seconds (debug build).
-- Verification: 4,175 XCTest tests pass. That the release build uses less CPU will be checked on a real Mac after the update.
-
-## 2.1.0
-
-Web shell detection covers more forms and is never held back, and the startup-file and reverse-shell detections notice programs that hide by behaviour.
-
-- **Added: web shell rules for forms that were missed (27 built-in rules).** The starting of a process from C# in ASPX/ASHX; classic ASP without parentheses (`eval request("c")`, `Execute Request("c")`); JSP through a variable and with an array argument; PHP through a variable, from a `$_SERVER` header and in backticks. The forms that pass a request value straight to a function that runs it are critical; the forms where the value goes through a variable are high. A static `.jsp` or `.aspx` is not notified. The same rules also reach the app through the signed daily rules feed within a day, without an update of the app; this version has them built in. The rules were measured on about 143,000 harmless files and matched nothing that the old rules did not, and on about 150,000 files the Swift engine and the Linux engine reported exactly the same findings.
-- **Changed: a web shell (critical or high) is a protected detection.** The 10-minute interval for notices of the same kind and the maintenance window no longer hold it back.
-- **Added: the startup-file watch takes `exec -a` as a sign.** A startup line that starts a program under another process name (to pass as a system service) is notified.
-- **Added: the reverse-shell detection also finds a relay in a hidden place.** A program that is neither an interpreter nor a relay tool, runs from `/tmp`, `/var/folders` or a hidden folder of the home, has an outbound connection and a shell on a pseudo-terminal that it carries on its own connection. The folders of AI coding agents (`~/.claude`, `~/.gemini`, `~/.codex`, `~/.antigravity`, `~/.opencode`) are left out, because their terminal tools have the same shape.
-- Verification: 4,160 XCTest tests pass. The new reverse-shell form was run on a real macOS with a harmless relay (found when started from a hidden folder of `/tmp`, not found from an ordinary folder). **Not run: a real remote-access tool, and the notification of a web shell to a real channel.**
-
-## 1.10.0 - 2.0.2 (summarized)
+## 1.10.0 - 2.1.1 (summarized)
 
 The contents of these releases, grouped by theme. The full text of each entry is in this file's git history.
 
+- (2.1.1) Fixed the AI-agent setup audit using a CPU core for long stretches.
+- (2.1.1) **Fixed: the AI-agent setup audit (agent skills, memory and instruction files) re-read everything whenever one file changed and could keep one core near 100%.** It showed most where an agent keeps rewriting its memory. A file with the same content, path, permissions, role and display language now keeps its earlier result, and the search for negation words ("never", "do not" and the Japanese forms) uses a faster method. The verdicts do not change. On this Mac, the first pass over about 870 files took about 4.8 seconds and the next ones about 0.3 seconds (debug build).
+- (2.1.1) Verification: 4,175 XCTest tests pass. That the release build uses less CPU will be checked on a real Mac after the update.
+- (2.1.0) Web shell detection covers more forms and is never held back, and the startup-file and reverse-shell detections notice programs that hide by behaviour.
+- (2.1.0) **Added: web shell rules for forms that were missed (27 built-in rules).** The starting of a process from C# in ASPX/ASHX; classic ASP without parentheses (`eval request("c")`, `Execute Request("c")`); JSP through a variable and with an array argument; PHP through a variable, from a `$_SERVER` header and in backticks. The forms that pass a request value straight to a function that runs it are critical; the forms where the value goes through a variable are high. A static `.jsp` or `.aspx` is not notified. The same rules also reach the app through the signed daily rules feed within a day, without an update of the app; this version has them built in. The rules were measured on about 143,000 harmless files and matched nothing that the old rules did not, and on about 150,000 files the Swift engine and the Linux engine reported exactly the same findings.
+- (2.1.0) **Changed: a web shell (critical or high) is a protected detection.** The 10-minute interval for notices of the same kind and the maintenance window no longer hold it back.
+- (2.1.0) **Added: the startup-file watch takes `exec -a` as a sign.** A startup line that starts a program under another process name (to pass as a system service) is notified.
+- (2.1.0) **Added: the reverse-shell detection also finds a relay in a hidden place.** A program that is neither an interpreter nor a relay tool, runs from `/tmp`, `/var/folders` or a hidden folder of the home, has an outbound connection and a shell on a pseudo-terminal that it carries on its own connection. The folders of AI coding agents (`~/.claude`, `~/.gemini`, `~/.codex`, `~/.antigravity`, `~/.opencode`) are left out, because their terminal tools have the same shape.
+- (2.1.0) Verification: 4,160 XCTest tests pass. The new reverse-shell form was run on a real macOS with a harmless relay (found when started from a hidden folder of `/tmp`, not found from an ordinary folder). **Not run: a real remote-access tool, and the notification of a web shell to a real channel.**
 - (2.0.2) Fewer repeated notifications when a program reads the decoy credential files again and again.
 - (2.0.2) **Changed: when the same program reads the decoy credential files (honeytokens) again within a minute of its notification, only the first read is notified at once, and the reads in that minute are counted and told in one more notification.** A tool that is started many times, such as `aws` in a script, is a new process each time, so every run used to raise a notification of its own. The reads of one program are grouped by its executable path, not by the process. Every read is still recorded one by one in the incident timeline and the activity log, and a different program is never held back.
 - (2.0.2) Verification: 4,162 XCTest tests pass.
