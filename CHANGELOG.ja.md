@@ -522,6 +522,14 @@ NBNS の役割と SNMP の既定 community を、受動で読むようにしま�
 Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）。
 詳しくは <https://lafine.net/linux>。
 
+### 2.5.4
+
+`doctor` と eBPF の通知の文面の、小さな修正 2 つです。
+
+- **修正: コンテナの外のプロセスの eBPF の通知に、「コンテナ host(イメージ 、公開しているポートはありません)」と出ていました。** センサーは、そのようなプロセスを `host` と呼び、`docker inspect host` は同名の Docker のネットワークを返すため、イメージのないコンテナとして読んでいました。コンテナだけを引き(`docker inspect --type container`)、`host` と `none` は引きません。そのようなプロセスには、「どこで」の行を出しません。
+- **変更: 有効な jail のすべてが nftables で遮断しているときは、`doctor` が、fail2ban について「ファイアウォールの規則を書き換えます。RoamSwitch の規則と重なることがあります」と注意しなくなりました。** その場合、fail2ban は自分の表だけに遮断を入れ、ほかのツールの表には触れません。jail が iptables 系の動作を使うとき、`action` を自分で決めているとき、有効な jail がないとき、設定が読めないときは、これまでどおり注意を出します。
+- 確認: core 4,359 件、daemon 233 件のテストと、ネットワーク監査が通りました。**動かしていないもの: fail2ban が nftables を使うホストで、更新のあとに `doctor` を動かすこと(本番の設定は手で読みました: `banaction = nftables`)。**
+
 ### 2.5.3
 
 日次レポートの実行ロックの競合を直しました。

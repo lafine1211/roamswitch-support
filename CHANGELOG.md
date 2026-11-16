@@ -532,6 +532,14 @@ The full text of each item is in this file's git history.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 2.5.4
+
+Two small fixes to what `doctor` and the eBPF notices say.
+
+- **Fixed: eBPF notices about a process outside any container said "container host (image , no published ports)".** The sensor names such a process `host`, and `docker inspect host` answers with the Docker network of that name, so it was read as a container with no image. Only containers are looked up now (`docker inspect --type container`), and `host` and `none` are not looked up at all. The "where" line is left out for such a process.
+- **Changed: `doctor` no longer warns that fail2ban "changes firewall rules and can overlap with RoamSwitch's" when every enabled jail bans through nftables.** fail2ban then keeps its bans in a table of its own and never touches another tool's tables. The warning stays when a jail uses an iptables action, sets `action` itself, when no jail is enabled, or when the files cannot be read.
+- Verification: 4,359 core tests and 233 daemon tests pass, and the network audit passes. **Not run: `doctor` on a host whose fail2ban uses nftables, after the update (the configuration on the production host was read by hand: `banaction = nftables`).**
+
 ### 2.5.3
 
 Fixes a race in the daily report's run lock.
