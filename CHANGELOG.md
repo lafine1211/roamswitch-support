@@ -1347,6 +1347,15 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 
 ## RoamSwitch for Mac
 
+## 2.1.3
+
+Fixes a false "the extension is not running" message after an update, and keeps a history of the state of the Endpoint Security extension.
+
+- **Fixed: after an update the menu could say "stopped: the Endpoint Security extension is not running" while the extension kept running.** After an update the app starts anew, and the guards ask the system for the extension only when they start. Until then the app read "not asked yet" as "not running". A fresh report from the extension itself now counts as "running". With no fresh report the message stays, and the reasons "waiting for approval", "needs Full Disk Access" and "failed" are unchanged. This was found when the message appeared after the update to 2.1.2 and the extension switch in System Settings was turned off and on by hand; **that this is the whole cause is not proven** (the state before the switch was turned off was not recorded).
+- **Added: the app keeps a history of the state of the extension.** Each time the state for a client changes it keeps one line: the time, the state before and after, the app's own request, the age and the process id of the extension's report and the client's result. The last 100 lines are kept (`defaults read com.tetsuharu.RoamSwitch RoamSwitch.ESEnforcementHistory`), and the same line goes to the log (category `es-sysext`). If the message appears again, the state before it can be read.
+- The extension itself is unchanged (its build number stays 3), so an installed extension is not replaced by this update.
+- Verification: 4,169 XCTest tests pass (the build without AUTH, which is the release build). **Not checked: on a real Mac, that the false message no longer appears after an update.**
+
 ## 2.1.2
 
 Switching a protection off, or to a weaker setting, from the menu now asks first.
