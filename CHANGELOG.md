@@ -532,6 +532,18 @@ The full text of each item is in this file's git history.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 2.5.2
+
+Notices now say where an attack came from and where it was aimed, and harmless attack-URL notices go into the daily summary.
+
+- **Added: the web guard notices and the daily summary name the target.** They show the site (the Apache or nginx virtual host, taken from the log path), the request and the answer. The daily summary lists the sites aimed at and a few requests per client.
+- **Added: eBPF notices about network activity say where it went, and notices about a container say what it is.** They show the container name, the host port it is published on and the site that forwards to it. The same line is added to the notice about a malicious file found in a container.
+- **Added: SSH notices say what was aimed at and with which names.** The ban and detection notices show this host's SSH ports and a few of the user names tried (printable ASCII only). The flood notice lists the sources whose notices were held back.
+- **Added: port-scan notices show the number of ports and a few of them,** for blocked and not-blocked sources alike.
+- **Added: DNS tunnel and subdomain-guessing notices show the DNS server and the process that sent the queries** (found from the local port while the socket is still open; when it is already closed, the notice says so). The Egress block notice shows the source address, the destination port and, for a Docker container, the container.
+- **Changed: an attack URL that the site refused (404, 403 and the like) and whose sender is banned is no longer told at once.** It is counted in the daily summary of site probing. When the application answered it (2xx or 5xx), when the answer cannot be read, or when the sender could not be banned, the notice is sent at once as before. When `recon_notify` is not `summary`, every attack-URL notice is still sent at once.
+- Verification: 4,354 core tests and 231 daemon tests pass. One run of the core tests failed once in an unrelated daily-report test (`Busy`) and passed in three later runs. **Not run: the DNS process lookup and the Egress container lookup on a real host with Docker.**
+
 ### 2.5.1
 
 Fixes three defects in the attack-URL block, and a notice wording.
