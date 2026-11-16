@@ -532,6 +532,13 @@ The full text of each item is in this file's git history.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 2.5.3
+
+Fixes a race in the daily report's run lock.
+
+- **Fixed: the daily report could be refused as "already running" right after the previous run ended.** The run lock (`flock`) stays held while a program that another thread is starting holds a copy of the lock's file descriptor, until that program's `exec`. The lock is now tried again every 20 ms for up to 0.2 s before the run is refused. A run that really holds the lock lasts far longer, so a second run is still refused. It showed up as one failure in the full test suite (`Busy` where a report was expected).
+- Verification: a test that holds a copy of the descriptor for 60 ms fails without the retry and passes with it. The 4,357 core tests passed twice in a row. Also added: tests that find the process holding a local port in the real `/proc` (for the DNS notices) and that read the real output of `docker inspect` (for the Egress container lookup); the lookup was also run against a real Docker's output. **Not run: the DNS and Egress notices on a production host with live traffic.**
+
 ### 2.5.2
 
 Notices now say where an attack came from and where it was aimed, and harmless attack-URL notices go into the daily summary.
