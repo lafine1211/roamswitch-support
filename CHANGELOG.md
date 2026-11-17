@@ -532,6 +532,14 @@ The full text of each item is in this file's git history.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 2.5.5
+
+Closes two ways for a scanner to avoid the attack-URL ban, and adds the scanners of a Next.js flaw.
+
+- **Fixed: a scanner that changes its User-Agent on every request was taken for a "shared address" and not banned, although it had sent an attack URL.** With fewer than 10 requests seen, the guard presumed a crowd whenever 3 or more browsers showed. A scanner reached `/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php` as its 9th request (2026-11-17, a hosting address, about 460 requests in 8 seconds with 6 User-Agents) and was left alone. For an attack URL, an address is now called shared only on positive evidence of a crowd: 20 or more requests seen, half or more of them served, from 3 or more browsers. A CDN edge or a carrier's NAT satisfies that. The rules for site-structure scans (`path_walk` and the others) are unchanged.
+- **Added: the scanners for the React Server Components flaw of Next.js (CVE-2025-55182) are attack URLs** (kind `nextjs_rsc_probe`). A POST to one of 9 exact paths: `/_react/flight`, `/_next/turbopack/flight`, `/_next/static/chunks/react-flight`, `/_next/server-components`, `/_next/rsc`, `/_next/refresh`, `/_next/redirect`, `/_next/on-demand-entries-ping`, `/_next/data`. The list comes from the access log of a production host, where two addresses asked for the same paths in the same order (2026-11-17). A GET to these paths, a longer path, and a real site's `/_next/data/<build id>/<page>.json` are not matched. Like the other attack URLs, one request is enough and the source is banned for 90 days (`attack=block`).
+- Verification: 4,364 core tests and 233 daemon tests pass, and the network audit passes. New tests replay the scanner of 2026-11-17 (4 browsers, the attack URL as the 9th request: not shared) and a real crowd (30 requests, 4 browsers, nearly all served: still shared). **Not run: a real attack on a production host after the update.** The signatures were made from the paths of two scanners seen in one log; a scanner that uses other paths is not covered.
+
 ### 2.5.4
 
 Two small fixes to what `doctor` and the eBPF notices say.

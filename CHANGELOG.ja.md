@@ -522,6 +522,14 @@ NBNS の役割と SNMP の既定 community を、受動で読むようにしま�
 Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）。
 詳しくは <https://lafine.net/linux>。
 
+### 2.5.5
+
+攻撃の URL の遮断を避けられる 2 つの抜け道をふさぎ、Next.js の脆弱性を狙う走査を、攻撃の URL に足しました。
+
+- **修正: User-Agent を要求ごとに変える走査が、攻撃の URL を送ったのに、「共有アドレス」と見なされて、遮断されませんでした。** 見えた要求が 10 件未満のとき、ブラウザーが 3 種類以上見えると、ガードは、群れだと見なしていました。ある走査が、9 件目の要求で `/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php` に届き、見逃されました(2026-11-17、ホスティングの接続元。8 秒ほどで約 460 件、User-Agent は 6 種類)。攻撃の URL では、群れである証拠があるときだけ、共有アドレスとします。20 件以上の要求が見え、その半数以上に応答し、3 種類以上のブラウザーが見えるときです。CDN や携帯の NAT は、これを満たします。サイトの構造を調べる動き(`path_walk` など)の規則は、変えていません。
+- **追加: Next.js の React Server Components の脆弱性(CVE-2025-55182)を狙う走査を、攻撃の URL にしました**(種類 `nextjs_rsc_probe`)。次の 9 つの完全一致のパスへの POST です: `/_react/flight`、`/_next/turbopack/flight`、`/_next/static/chunks/react-flight`、`/_next/server-components`、`/_next/rsc`、`/_next/refresh`、`/_next/redirect`、`/_next/on-demand-entries-ping`、`/_next/data`。一覧は、本番のアクセスログで、2 つの接続元が、同じ並びで同じパスに要求していたものから作りました(2026-11-17)。これらのパスへの GET、長いパス、本物のサイトの `/_next/data/<ビルド ID>/<ページ>.json` は、対象外です。ほかの攻撃の URL と同じく、1 件で判定し、接続元を 90 日遮断します(`attack=block`)。
+- 確認: core 4,364 件、daemon 233 件のテストと、ネットワーク監査が通りました。新しい試験が、2026-11-17 の走査(ブラウザー 4 種類、攻撃の URL が 9 件目: 共有ではない)と、本物の群れ(30 件、ブラウザー 4 種類、ほぼすべて応答: 共有のまま)を再現します。**動かしていないもの: 更新のあとに、本番で本物の攻撃を受けること。** 署名は、1 つのログで見た 2 つの走査のパスから作りました。別のパスを使う走査は、対象外です。
+
 ### 2.5.4
 
 `doctor` と eBPF の通知の文面の、小さな修正 2 つです。
