@@ -532,6 +532,34 @@ The full text of each item is in this file's git history.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 2.5.7
+
+The fixes of reported problems that 2.5.6 did not include, plus fixes in diagnostics, DNS and packages.
+
+- **Fixed: on Linux Mint the package CVE check said "Unsupported Ubuntu release".** Linux Mint is checked against the data of the Ubuntu release it is built on (Mint 20 to 22 on Ubuntu 20.04 to 24.04). Packages that Mint rebuilt itself cannot be compared with Ubuntu's fixed-version numbers, so they are left out.
+- **Changed: for the standard Ubuntu kernel (generic), the diagnostic item "known kernel CVEs" is also judged from the package CVE check.** Only rows that an update can fix and rows with confirmed exploitation count, which removes "cannot be checked" and the hundreds of failures that came from upstream version ranges. HWE and other flavours are not covered in this version (as before). The score and the meaning of the item change.
+- **Fixed: decoy files and the download watch did not work with localized user folder names (ドキュメント, ダウンロード, デスクトップ, 画像).** Decoys are also placed in the folders that `xdg-user-dirs` named, and the download watch includes them by default.
+- **Fixed: the rule that stops the process group of a frozen app stopped the whole desktop session (panel applets and others).** The process group of the whole desktop session is no longer stopped together.
+- **Fixed: a run of dangerous-file confirmations showed one modal dialog after another, and the main window and the Air-Gap dialog could not be used.** At most 3 confirmations wait. From the 4th on, no confirmation and no notification is shown, and the file is not quarantined. The notification history gets one entry, with the count, at most every 10 minutes. When more are waiting, the dialog says "N more waiting" and its default button is "Later".
+- **Fixed: secure DNS (Quad9 and others) could stop name resolution on a network that cannot reach the provider.** After the provider is set, it checks through the system's name resolution that a name can really be resolved, and if not, it goes back to the DNS the network hands out at once (RoamSwitch itself opens no socket). On an old systemd (such as 239 in RHEL 8) that cannot do this check, the provider is not set. The status screen shows the cause and what to do. On a network that cannot be reached, name resolution may stop for a few seconds between setting and going back.
+- **Fixed: `roamswitch-update.service` did not run where ClamAV is not installed** (`status=226/NAMESPACE`).
+- **Fixed: the Default-Deny forward rule of the Server was a syntax error in nft 1.0.4 (RHEL 8) and 1.0.6 (Debian 12).** The `m:7d` of the random-bytes tmpfiles rule also failed on RHEL 8 (systemd 239). `m:` is now installed only where systemd reads it.
+- **Fixed: a USB keyboard that could not be stopped (no other keyboard available) was announced as "blocked and isolated" at a critical level.** The old notice is shown only when it was stopped. When it was not, a normal-level notice says so and how to register the keyboard.
+- **Changed: the title, details and recommendation (command) in the diagnostic screen can be selected and copied.** Some wording of `doctor` and notices was corrected.
+- Verification: the whole workspace test suite has 0 failures and the network audit passes. The approval limit was checked with the real daemon on detections in 8 separate folders (3 stop, the history has 1 entry). The package CVE check was seen working on a real Mint 22.3 image. **Not checked: getting the original DNS on a real RHEL 8 (with NetworkManager), and the standard kernel of Mint (Mint 22.3 ships HWE, which this version does not cover).**
+
+### 2.5.6
+
+Fixes of reported problems, and additions to Air-Gap and Standard protection.
+
+- **Fixed: `Cache`, `Cache_Data`, `Code Cache` and `GPUCache` folders (the cache of an Electron app) were taken for ransomware encryption bursts and the process of a communication app was frozen.** These folder names are now left out, whatever their case.
+- **Fixed: the Fileless-Dropper rule matched a plain `exec 3<>/dev/tcp/…`** (`client.sh` of wireguard-tools). It now matches `sh <&3 >&3 2>&3`.
+- **Fixed: a 664 on memory and instruction files was treated as writable by others even when the group was the owner's own (Linux Mint uses umask 002).** It is no longer treated so when the group is the owner's own.
+- **Fixed: during Air-Gap, traffic that this machine forwards (Docker containers, virtual machines, a Tailscale subnet router or exit node, connection sharing) kept flowing.** Both Air-Gap rule sets (full and degraded) now drop forwarding. On a real machine, the host and a container stopped during a full Air-Gap and came back after the release.
+- **Added: an option to let incoming connections over Tailscale through in Standard protection** (`tailscale_inbound_allowed`, off by default). The ports screen has a checkbox with an explanation, and a confirmation appears only when you turn it on. With it on, Standard protection also leaves SSH and other sharing services running. Maximum Lockdown and Air-Gap stay closed. If `tailscaled --tun` gives the interface another name than `tailscale0`, this setting does not let those connections through. Presets do not write this option.
+- **Added: "False positive: exclude and release" in the ransomware warning dialog.** After a confirmation, it adds the folders of the detected files (up to 5) to `scan_exclusions`, resumes the frozen program and lifts the Air-Gap. The root, the home folder itself and the personal folders directly under it (Documents and so on) are not offered. The exclusion also applies to ransomware detection.
+- Verification: the whole workspace test suite has 0 failures and the network audit passes. In disposable VMs with the real daemon, the dialog exclusion (saving the exclusion, resuming the frozen program, lifting the Air-Gap), the Tailscale option (Standard protection, Maximum Lockdown, switching Air-Gap) and the forward drop of the degraded Air-Gap were checked. A real `tailscaled` was checked on another machine (it found that the sharing services were stopped, which was fixed).
+
 ### 2.5.5
 
 Closes two ways for a scanner to avoid the attack-URL ban, and adds the scanners of a Next.js flaw.
