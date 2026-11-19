@@ -532,6 +532,13 @@ The full text of each item is in this file's git history.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 2.6.4
+
+This version works around a crash of Cinnamon on Linux Mint when RoamSwitch opens one of its confirmation windows.
+
+- **Fixed (Client): Cinnamon (the muffin window manager) on Linux Mint could crash when the "Exclude and release" confirmation window was opened from the emergency Air-Gap window.** When the main window is hidden to the tray, muffin keeps the hidden (no longer managed) window as the parent of the children that were open on it. Opening another window with such a child as its parent hits the assert in `meta_group_new` in muffin's `x11/group.c` and Cinnamon crashes. RoamSwitch has a chain in which the emergency Air-Gap window, a child of the main window, opens the "Exclude and release" confirmation. When the main window is hidden, the windows that have it as their parent now have that relation (`transient_for`) removed. The problem in muffin itself is reported at https://github.com/linuxmint/muffin/issues/895.
+- Verification: on a Linux Mint 22.3 VM (muffin 6.6.3, cinnamon 6.6.9), a script that builds the same parent and child chain crashed Cinnamon 4 times out of 4 when the parent was hidden, and 3 times out of 3 did not when the children's parent relation was removed as the main window is hidden. The app tests that need a display (including one new test) and the whole workspace test suite passed. **It has not been reproduced with the fixed RoamSwitch itself.** There is also no evidence that the customer's crash came from this window (the stack matches, but the record does not show which window it was).
+
 ### 2.6.3
 
 This version publishes the content of 2.6.2 again with a fixed publishing procedure, because the publication of 2.6.2 stopped half way. **The product code is the same as 2.6.2** (it includes the fix of the log tamper watch's false alarm on auditd rotation).
