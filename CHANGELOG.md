@@ -532,6 +532,13 @@ The full text of each item is in this file's git history.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 2.6.2
+
+This version fixes a false alarm of the log tamper watch (added in 2.6.0).
+
+- **Fixed: on a machine that uses auditd, "Suspected log erasure (4 items)" was raised every time `audit.log` rotated** (Client and Server; every 6 minutes on the machine where it was seen). At each rotation auditd renames every copy one step: `audit.log.3` over `.4`, `.2` to `.3`, `.1` to `.2`, and the live log to `.1`. Every copy then holds an inode that another name held, so each looked like "replaced by another file (different inode) and smaller". A numbered copy is now explained as this rotation only when both are true: the inode the live log had at the last look is now under a numbered name, and the inode the copy now holds belonged to another name of the same log at the last look. A copy that is rewritten, removed, or overwritten by another copy without the live log being rotated is still reported, as before.
+- Verification: the whole workspace test suite passed with 0 failures (Debian in Docker, arm64). A test that reproduces auditd's rotation was added (it fails without the fix). It has not yet been checked on the machine where the false alarm was seen.
+
 ### 2.6.1
 
 This version fixes a defect in the 2.6.0 Server (the kernel module watch) and defects reported by customers on Linux Mint and Kali.
