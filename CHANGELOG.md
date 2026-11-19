@@ -532,6 +532,13 @@ The full text of each item is in this file's git history.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 2.6.3
+
+This version publishes the content of 2.6.2 again with a fixed publishing procedure, because the publication of 2.6.2 stopped half way. **The product code is the same as 2.6.2** (it includes the fix of the log tamper watch's false alarm on auditd rotation).
+
+- **State of the 2.6.2 publication**: the GitHub Release and the APT repository were published. The RPM repository (Fedora, openSUSE) and the Arch packages were not. Uploads to R2 failed on 3 reruns with `InvalidPart` (R2 refusing to complete a multipart upload) for a different file each time, and the stale metadata that the reruns left behind made the safeguard against large deletions stop the job. APT machines on 2.6.2 update to 2.6.3 as usual.
+- **Fixed: the publishing procedure no longer stops at the upload to R2.** Each file is uploaded with a single PUT (no multipart). A publication that replaces a whole repository (APT, RPM) passes the safeguard against large deletions only when the directory holds 20 files or more (a small, wrong directory still stops it).
+
 ### 2.6.2
 
 This version fixes a false alarm of the log tamper watch (added in 2.6.0).
