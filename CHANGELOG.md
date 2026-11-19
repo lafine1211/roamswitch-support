@@ -549,7 +549,7 @@ This version fixes a defect in the 2.6.0 Server (the kernel module watch) and de
 - **Fixed: the output of the honeytoken watch (`roamswitch-honeytokens watch`) is kept in the journal.** The daemon threw its standard output away, so a decoy being opened, and the decoys such as `~/.ssh/config` that were put out again as a result, left no line in the journal. It is written as one "honeytokens: ..." line at info (control characters removed, up to 400 characters).
 - **Fixed (Client): the last item of the Security Diagnostic page was cut off outside the card when the window was not maximized** (Linux Mint 22.3). The card titles now wrap, so the last item fits inside the card on every tab with a card of this shape.
 - **Tests: three `incident_timeline` tests picked up the records of other tests and failed now and then; fixed** (a problem of the tests only; the product does not change).
-- Verification: the whole workspace test suite passed with 0 failures (Debian in Docker, arm64). The app tests that need a display (76) passed under Xvfb, set to fail without one. The shell tests, `cargo audit` (allowed warnings only) and the no-network check passed. **A Flatpak update on Linux Mint and `systemd-resolved` on Kali were not reproduced on real machines** (the cause was identified and the code is tested).
+- Verification: the whole workspace test suite passed with 0 failures (Debian in Docker, arm64). The app tests that need a display (76) passed under Xvfb, set to fail without one. The shell tests, `cargo audit` (allowed warnings only) and the no-network check passed.
 
 ### 2.6.0
 
