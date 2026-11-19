@@ -539,6 +539,7 @@ Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）
 - **修正: ハニートークンの監視(`roamswitch-honeytokens watch`)の出力を、journal に残します。** 標準出力を捨てていたため、デコイが開かれたことと、その結果、`~/.ssh/config` などのデコイを新しく置いたことが、journal に 1 行も残りませんでした。「honeytokens: …」の 1 行として info で出します(制御文字を除き、400 文字まで)。
 - **修正(Client): 総合セキュリティ診断のページの、最後の項目が、ウィンドウを最大化しない大きさで、カードの枠の外に出て切れました**(Linux Mint 22.3)。カードの題を折り返すラベルにして、すべてのタブの同じ形のカードで、枠の中に収まるようにしました。
 - **試験: `incident_timeline` の 3 つの試験が、ほかの試験の記録を拾って、たまに落ちるのを直しました**(試験だけの問題で、製品の動きは変わりません)。
+- **修正: 自動の Air-Gap が、Wi-Fi の電波を止めるときに、`Scan_results error (-22)` が出ていました**(Linux Mint、Broadcom の `wl` ドライバー)。`rfkill` だけで電波を止めていたため、NetworkManager が走査している最中に電波が止まっていました。電波を止める前に、`nmcli radio wifi off` で走査を止め、印のファイル(`/var/lib/roamswitch/nm_wifi_off_by_rfkill`)を残します。解除では、印があるときだけ `nmcli radio wifi on` で戻します。利用者が NetworkManager で切っていた Wi-Fi は、入れ直しません。`nmcli` がない、または失敗したときは、これまでどおり `rfkill` だけです。nftables の規則を、電波を止める前に入れる順にしたので、NetworkManager の応答待ちで遮断が遅れることはありません。
 - 検証: ワークスペース全体の試験が、失敗 0 件で通りました(Docker の Debian、arm64)。画面が必要な app の試験(76 件)は、Xvfb で、画面なしでは失敗する設定で通りました。シェルの試験、`cargo audit`(許可済みの警告のみ)、ネットワークを使わない検査も通りました。
 
 ### 2.6.0
