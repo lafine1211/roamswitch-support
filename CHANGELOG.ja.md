@@ -524,10 +524,11 @@ Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）
 
 ### 2.6.4
 
-Linux Mint の Cinnamon が、RoamSwitch の確認画面を開いたときに落ちる不具合の回避を入れた版です。
+Linux Mint の Cinnamon が確認画面で落ちる不具合の回避と、Kali での ClamAV の導入途中の警告の修正を入れた版です。
 
 - **修正(Client): Linux Mint の Cinnamon(ウィンドウマネージャー muffin)が、Air-Gap の緊急画面から「除外して解除」の確認画面を開く連鎖で、落ちることがありました。** 本体ウィンドウがトレイに隠れると、muffin は、隠れた(管理をやめた)ウィンドウを、開いていた子ウィンドウの親として持ち続けます。その子を親にして、別のウィンドウを開くと、muffin の `x11/group.c` の `meta_group_new` の assert に当たって、Cinnamon が落ちます。RoamSwitch には、本体を親にした Air-Gap の緊急画面の上に、「除外して解除」の確認画面を開く連鎖があります。本体ウィンドウが隠れるとき、それを親にしているウィンドウの親子関係(`transient_for`)を外すようにしました。muffin 側の問題は、https://github.com/linuxmint/muffin/issues/895 に報告してあります。
-- 検証: Linux Mint 22.3 の VM(muffin 6.6.3、cinnamon 6.6.9)で、同じ親子の連鎖を作るスクリプトで、親を隠すと 4 回中 4 回 Cinnamon が落ち、本体が隠れるときに子の親子関係を外すと、3 回中 3 回落ちないことを確かめました。画面が必要な app の試験(新しい 1 件を含む)と、ワークスペース全体の試験が通りました。**修正を入れた RoamSwitch 本体での再現は、まだしていません。** お客様の落ち方が、この確認画面だったという証拠も、ありません(スタックは一致しますが、どのウィンドウかは記録に出ません)。
+- **修正: 導入の途中で、ClamAV の設定ファイル(`clamd.conf`)がまだ無いときに、ダウンロードの検査が警告と通知を出していました**(Kali)。RoamSwitch は、`clamav-daemon` を設定する apt の処理の途中で起動することがあり、そのとき `clamdscan` は「Can't parse clamd configuration file /etc/clamav/clamd.conf」と言います。ダウンロードしたファイルが 1 件ずつ「UNSCANNED、600 秒後に再試行」の警告になり、デスクトップの通知も出ていました。`clamdscan` はあるのに `clamd.conf` がどこにも無い状態を、最初の検査から 30 分だけ「設定の途中」とみなし、その間は、警告も通知も出さず、60 秒後に、もう一度検査します。30 分を過ぎても設定が無ければ、これまでどおり、失敗として警告します(設定が普通でない場所にある `clamd` のためです)。
+- 検証: Linux Mint 22.3 の VM(muffin 6.6.3、cinnamon 6.6.9)で、同じ親子の連鎖を作るスクリプトで、親を隠すと 4 回中 4 回 Cinnamon が落ち、本体が隠れるときに子の親子関係を外すと、3 回中 3 回落ちないことを確かめました。ClamAV の件は、Kali 2026.3 のコンテナで、`clamd.conf` が無いときの動き(「Can't parse clamd configuration file」、`freshclam` の終了コード 11 と 2)を再現して確かめました。ワークスペース全体の試験が通りました。
 
 ### 2.6.3
 
