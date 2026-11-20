@@ -1487,6 +1487,15 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 
 ## RoamSwitch for Mac
 
+## 2.2.2
+
+This version stops notifying about Gatekeeper (it is kept only in the notification history) and reduces false alerts from the AWS honeytoken. It bundles PersonalSOC 1.0.9.
+
+- **Changed: Gatekeeper is no longer notified; it is kept only in the notification history** (for both the real-time log watch and the hourly log audit). A message such as "Gatekeeper refused to run unauthorized code" did not tell which program it was or whether anything was really stopped, and appeared whenever a development tool ran. The severity is "info", and the entries are still in the notification history (menu bar).
+- **Fixed: an `aws` from Homebrew or similar reading the honeytoken decoy (`~/.aws/config`) was reported as a detection.** On one Mac, 213 of the 657 entries in the notification history were from the honeytoken, and about 90% of those were this. When an `aws` other than the official AWS CLI (`/usr/local/aws-cli/aws`) is installed, the AWS decoys (`aws_credentials` and `aws_config_cascade`) are not placed, and the ones RoamSwitch placed are removed. The design that does not trust a non-official `aws` as a legitimate tool is unchanged (the decoy is simply not placed instead of being read and reported). In that case there are 4 decoy kinds (`expected` in `get_honeytoken_status`).
+- **Changed: the bundled PersonalSOC is now 1.0.9.** Notifications carry PersonalSOC's name, and the notified detections are shown in a dialog and in the app (see PersonalSOC 1.0.9). Signing and notarization include the notifier app.
+- Verification: 4,643 XCTest tests pass with 0 failures. The Gatekeeper history-only change and the change that stops placing AWS decoys are checked by tests (a real-machine check of the published version is done after release). The bundled PersonalSOC 1.0.9 was checked on a real Mac for the notification, the dialog and the app display.
+
 ## 2.2.1
 
 This version fixes false notices and missing wording found on a real machine, and makes the Sensor files readable by root only.
