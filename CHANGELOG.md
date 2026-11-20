@@ -221,6 +221,16 @@ The contents of these releases, grouped by theme. The full text of each entry is
 
 ## PersonalSOC
 
+### 1.0.10
+
+Notifications on Linux now carry PersonalSOC's name and icon, and pressing one opens PersonalSOC.
+
+- **Fixed (Linux): the notification's app name was `notify-send` and it had no icon.** Notifications now carry the app name "PersonalSOC" and PersonalSOC's icon.
+- **Added (Linux): pressing a notification opens PersonalSOC, which shows the list of the notified detections first, without scanning again.** The notification is sent with `busctl` (a systemd tool), and its reply is awaited by a separate `systemd-run --user` unit (`personalsoc notify-wait`). If it is pressed, PersonalSOC opens; if it is only closed, nothing happens. The wait stops after one day. Where `busctl` or `systemd-run` is missing, the notification is the former `notify-send` one (pressing does nothing). `notify-send --action --wait` is not used because on Ubuntu 26.04 `notify-send` has an AppArmor profile that stops it from receiving the notification's reply signals.
+- **Added (Linux): when there are detections of severity High, the count line becomes the notification title and the High titles (up to 5) are listed in the body.** GNOME folds a notification body into one line, so the count line is the title and the number of High detections can be read even when folded.
+- **Note (Linux, GNOME): the `desktop-entry` hint is not set on notifications.** A notification with it showed neither a banner nor an entry in the list on GNOME 50.
+- Verification: the 401 workspace tests pass (0 failures). On a real Ubuntu 26.04 machine (GNOME 50, Wayland), the notification's name and icon, its title and body, opening by pressing it, and closing with "×" (nothing opens and the waiting job ends) were checked. Not checked on KDE or on older Ubuntu (22.04).
+
 ### 1.0.9
 
 Notifications now carry PersonalSOC's own name, and what was notified can be seen in a dialog and in the app.
@@ -542,6 +552,14 @@ The full text of each item is in this file's git history.
 
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
+
+### 2.6.6
+
+This version bundles PersonalSOC 1.0.10 (pressing a notification on Linux opens PersonalSOC).
+
+- **Changed: the bundled PersonalSOC is now 1.0.10.** Notifications carry PersonalSOC's name and icon, and pressing one opens PersonalSOC, which shows the list of the notified detections first (see PersonalSOC 1.0.10).
+- **Changed (how it is built): the arm64 packages are cross-compiled on an amd64 server.** The contents of the packages are the same (the file list, permissions and dependencies match the published 2.6.5 arm64 packages).
+- Verification: the whole workspace test run (86 suites, 6,772 tests) passes with 0 failures (Debian in Docker, with Xvfb). The behavior of the notification is as in the verification of PersonalSOC 1.0.10.
 
 ### 2.6.5
 

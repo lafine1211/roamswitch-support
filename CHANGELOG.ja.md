@@ -220,6 +220,16 @@ AI 宛てのおとりページと、形式のせいで評価できなかった�
 
 ## PersonalSOC
 
+### 1.0.10
+
+Linux の通知に、PersonalSOC の名前とアイコンを付け、押すと PersonalSOC が開くようにしました。
+
+- **修正(Linux): 通知のアプリ名が `notify-send` になり、アイコンもありませんでした。** 通知に、アプリ名「PersonalSOC」と、PersonalSOC のアイコンを付けます。
+- **追加(Linux): 通知を押すと、PersonalSOC が開き、通知した検出の一覧を、再確認をせずに先に見せます。** 通知を `busctl`(systemd の道具)で出し、その応答を、`systemd-run --user` の別の unit(`personalsoc notify-wait`)で待ちます。押されたら PersonalSOC を開き、閉じられただけなら何もしません。1 日たっても応答がなければ止まります。`busctl` か `systemd-run` がない環境では、これまでの `notify-send` の通知(押しても何も起きません)です。`notify-send --action --wait` を使わないのは、Ubuntu 26.04 では、`notify-send` に AppArmor のプロファイルが付いていて、通知の応答の信号を受け取れないためです。
+- **追加(Linux): 深刻度「高」があるときは、件数の行を通知の題名にして、「高」の題名(最大 5 件)を本文に並べます。** GNOME は、通知の本文を 1 行に畳むので、題名に件数の行を置いて、畳んだままでも「高」の件数が読めるようにしました。
+- **注意(Linux、GNOME): 通知に `desktop-entry` のヒントは付けません。** 付けた通知は、GNOME 50 で、バナーも通知の一覧も出ませんでした。
+- 検証: ワークスペースのテスト 401 件が通ります(失敗 0 件)。Ubuntu 26.04(GNOME 50、Wayland)の実機で、通知の名前とアイコン、題名と本文、押すと開くこと、「×」で閉じると何も開かず待つ仕事が終わることを確かめました。KDE と、古い Ubuntu(22.04)では、確かめていません。
+
 ### 1.0.9
 
 通知を PersonalSOC の名前で出し、通知した検出の中身を、ダイアログとアプリで見られるようにしました。
@@ -532,6 +542,14 @@ NBNS の役割と SNMP の既定 community を、受動で読むようにしま�
 
 Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）。
 詳しくは <https://lafine.net/linux>。
+
+### 2.6.6
+
+PersonalSOC 1.0.10 を同梱した版です(Linux の通知を押すと PersonalSOC が開きます)。
+
+- **変更: 同梱の PersonalSOC が 1.0.10 になりました。** 通知に PersonalSOC の名前とアイコンが付き、押すと PersonalSOC が開いて、通知した検出の一覧を先に見せます(詳しくは PersonalSOC の 1.0.10)。
+- **変更(作り方): arm64 のパッケージを、amd64 のサーバーでクロスコンパイルして作ります。** 配布物の中身は同じです(公開済みの 2.6.5 の arm64 版と、ファイルの一覧・権限・依存が同一であることを確かめました)。
+- 検証: ワークスペース全体の試験(86 組、6,772 件)が、失敗 0 件で通りました(Docker の Debian、Xvfb つき)。通知の動きは、PersonalSOC の 1.0.10 の検証のとおりです。
 
 ### 2.6.5
 
