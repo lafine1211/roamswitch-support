@@ -221,6 +221,17 @@ The contents of these releases, grouped by theme. The full text of each entry is
 
 ## PersonalSOC
 
+### 1.0.9
+
+Notifications now carry PersonalSOC's own name, and what was notified can be seen in a dialog and in the app.
+
+- **Fixed (Mac): pressing "Show" on a notification opened Script Editor.** The notification was sent with `osascript`. It is now sent by a small notifier app inside PersonalSOC.app (`PersonalSOC Notifier.app`) under PersonalSOC's name, and "Show" opens PersonalSOC. When notifications are not allowed, a message tells you to allow them in System Settings.
+- **Added: the notification includes a breakdown of the detections by kind.** For example "16 new detections (7 of them severity High): login attempts 5, suspicious execution 3, 2 more kinds". The kinds are nine fixed categories; no text from logs is included.
+- **Added (Mac): when there are detections of severity High, a dialog lists their titles.** Notification banners cut long text. The dialog lists up to five High titles and gives the rest as a count, and it can open PersonalSOC.
+- **Added: the app opened from a notification shows the notified detections first, without scanning again.** For a notification, the scheduled run writes the list (title, severity, confidence, subject, description, ATT&CK ID, count) to `~/.local/state/personalsoc/new_findings.json` (mode 0600). The app reads it once when it starts and when it comes to the front, and shows it as "New detections in the notification". Text from logs is stored without control characters and cut to 80 characters for the title, 60 for the subject and 400 for the description. "Check this device" still runs the full check.
+- **Fixed: an empty tab bar and an empty box appeared before any check.** The `hidden` attribute lost to a display rule.
+- Verification: the 399 workspace tests pass (0 failures). On a real Mac, the notification, the dialog, the app's display, and the path from a scheduled run (`scan --notify`) to the screen were checked. The notifier app signed with Developer ID and the Hardened Runtime also shows notifications. Notarization is done at release. Not checked on a real Linux machine (notifications still use `notify-send`, and the list file is written the same way).
+
 ### 1.0.8
 
 Keeps the investigation agent's hypotheses in a ledger.
@@ -531,6 +542,14 @@ The full text of each item is in this file's git history.
 
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
+
+### 2.6.5
+
+This version fixes a false alert when a file manager reads a honeytoken decoy, and bundles PersonalSOC 1.0.9.
+
+- **Fixed: a file manager or a search indexer reading a honeytoken decoy was reported as a detection** (`nautilus` read `.pypirc` and `.env.backup` on an Ubuntu desktop). Just opening a folder produced a notice about a decoy read. When `nautilus`, `nemo`, `thunar`, `dolphin`, `tracker`, `localsearch` or `baloo` reads any decoy, and the executable is in a place only root can write and no loader injection is present, the read is treated as routine. A program of the same name run from `/tmp` or similar is still detected.
+- **Changed: the bundled PersonalSOC is now 1.0.9.** It adds the breakdown in the notification, the app showing the notified detections first (`~/.local/state/personalsoc/new_findings.json`), and the fix for the empty tab bar (see PersonalSOC 1.0.9).
+- Verification: the whole workspace test run (86 suites, 6,772 tests) passes with 0 failures (Debian in Docker, with Xvfb). The tests of the package install scripts also had a problem: they failed when the host had root-owned files in `/var/lib/roamswitch/rollback` (it happened on the CI host). That is fixed, and I confirmed that the old test fails under the same condition and the fixed one passes. The file manager fix is checked by tests (not yet on a real desktop).
 
 ### 2.6.4
 
