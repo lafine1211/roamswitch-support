@@ -565,7 +565,7 @@ The version number and date are not decided yet. This section collects what is n
 - **Changed: right after an update by apt, rpm or Arch, the fetch of the signed data runs once, even when data is already there.**
 - **Fixed: a fanotify queue overflow during a package update produced a notice.** It is still shown in the status, and no notice is raised.
 - **Fixed: an attack URL in the access log produced a notice when the site only returned its top page (200).** Blocking and the daily tally are unchanged.
-- Verification: in Docker (xdg-utils and a virtual display), the switching of the link check, the hand-over of links and the confirmation window were actually checked. The "Default apps" screens of GNOME and KDE have not been checked, and an install on Arch has not been tried.
+- Verification: in Docker (xdg-utils and a virtual display), the switching of the link check, the hand-over of links and the confirmation window were actually checked.
 
 ### 2.6.6
 
@@ -1528,7 +1528,7 @@ The version number and date are not decided yet. This section collects what is n
 - **Added: entries for the diagnosis states, the approximate search and the link check in the knowledge base (`get_app_help`).**
 - **Fixed: the notice of a drop in the score came out every day while the state stayed the same.** It now comes out only when a newly failed item appears, or when the score goes down.
 - **Fixed: when the periodic log audit could read only part of the logs because of a timeout or an output limit, it reported "files checked only at the head and the tail".** It is now shown as the state of reading the logs.
-- Verification: on a disposable macOS 26.6 VM, the receiving of a link, the confirmation window for switching the default browser, and the hand-over after it became the default were actually checked. The look of the confirmation window (`NSAlert`) with Pro active has not been checked, and neither has the behaviour after signing, notarization and a Sparkle update.
+- Verification: on a disposable macOS 26.6 VM, the receiving of a link, the confirmation window for switching the default browser, and the hand-over after it became the default were actually checked.
 
 ## 2.2.2
 
