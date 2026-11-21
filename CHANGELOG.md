@@ -10,6 +10,13 @@ independently. Older releases are summarized in ranges.
 
 ## AccessScope
 
+### 1.0.10
+
+brief-json now carries, for each detection, the evidence of whether the attack had an effect (`effect`).
+
+- **Added: each detection of `--format brief-json` carries `effect`.** The brief form lacked the evidence that the full report has ("the response was the same as the normal page, so the attack's content was probably ignored"), and through RoamSwitch's MCP the AI did not have enough to judge whether something was read. `effect` holds only the keys that the detection counted, among `suggests_effect`, `same_as_normal_page`, `weak_evidence`, `looks_normal_use` and `server_errors` (zero is told apart from not counted). They are counts, not text, so no string an attacker can write is included. The schema id stays `accessscope-brief/1` (keys were added).
+- Verification: the 711 workspace tests pass (0 failures).
+
 A security diagnosis tool for access logs. It is a separate app (Apache-2.0): the Server Edition .deb / .rpm packages carry only the command (`accessscope`; from 1.11.2 they also carry the PersonalSOC and PathScope commands); the Linux client edition and the Mac app carry the command and a window app.
 
 ### 1.0.9
@@ -552,6 +559,19 @@ The full text of each item is in this file's git history.
 
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
+
+### 2.6.7
+
+This version fixes problems reported by Kali and Linux Mint customers and changes how package CVE counts are shown.
+
+- **Fixed: right after an update (apt, rpm, Arch), the fetch of the signed data did not run and the package CVE data stayed old.** The postinst ran `roamswitch-update.service` only on the first install and when there was no CVE data at all. On a Kali machine upgraded from 2.5.7 to 2.6.6, the fetch did not run right after the upgrade and the data kept an old date until the timer's next run. On updates of the Client (deb, rpm, Arch) and the Server (deb, rpm, Arch), when the update timer is enabled (for the Server, when updates are not off), it now runs once even when data exists. People who stopped the timer or turned updates off still get no fetch.
+- **Changed: when `systemd-resolved`, installed as a dependency, answers LLMNR, `LLMNR=no` is put in place if nothing is set (first install only).** Installing RoamSwitch on Kali brings in the dependency (Recommends) `systemd-resolved`. The default on Debian and Kali is `LLMNR=yes`, so resolved answers on UDP 5355 and RoamSwitch's own diagnosis reported "LLMNR / NBNS / mDNS responders" as needing action. On the first install, when resolved is running, really holds 5355 and none of `resolved.conf` and its drop-ins (`/etc`, `/usr/lib`, `/usr/local/lib`, `/run`) sets `LLMNR=`, `LLMNR=no` is written to `/etc/systemd/resolved.conf.d/roamswitch-llmnr.conf` and resolved is restarted. An update never touches a person's settings. Nothing is done when resolved does not answer to begin with (Ubuntu and others) or when a person set LLMNR. Deleting that file and restarting resolved undoes it.
+- **Changed: package CVE counts are split into "Action needed" and "Waiting for a fix".** When the Ubuntu data gained rows for the HWE kernel, the count on Linux Mint went from 131 to 1,650. All 1,519 added rows had no fixed version yet and do not close with an update. Detections with no fixed version (unfixed), not in CISA's KEV and with an EPSS below 0.9 are now counted separately as "Waiting for a fix". The CLI (`scan-packages`) shows "Action needed" without them, adds one line with the separate count, and colors the list yellow instead of red. The GUI's package CVE tab does the same. MCP's `acceptance` carries `waiting` and `actionable`. `open` is unchanged (everything not accepted), so readers of the JSON are not affected.
+- **Fixed: a fanotify queue overflow during a package update is shown in the status and no longer notified.** On Linux Mint during an apt update, one event was dropped and a notice "the protection cannot read its input" appeared. An update rewrites many files at once, so the queue overflows. A drop that happens while the package manager is working is marked, shown in `get_guard_status` (the guard reads "partly enabled"), and not notified. A drop outside an update is still notified once a day.
+- **Fixed: no notice when, for an attack URL, the site only returned its own top page.** When a static single-page site answered an attack-only URL (`GET /@fs/etc/passwd`) with its top page and a 200, it was treated as "the attack may have been executed" and the client was blocked and notified, although no file was read. The size of the response in the access log is now read, the size of each site's top page (a 200 for `GET /` and `/index.html`) is remembered (also read from the last 512 KB of the log at start), and a GET to an attack URL with a 200 of the same size is not notified. The block and the daily count are unchanged. A 5xx, a POST, a 200 of a different size, and a site whose top-page size has not been seen yet are notified as before.
+- **Added: `get_app_help` returns items close to a pasted notice.** When no item contains all the words, up to 3 close items are returned with `approximate: true` (a Japanese notice or one English log line can be pasted as it is). It also gained explanations of the diagnosis statuses (pass, fail, cannot verify, not applicable), the reasons for "cannot verify" and how to check again (10 languages), and the cause and the action for "The scan of the download did not finish" (unscanned, 10 languages).
+- **Changed: the bundled AccessScope is now 1.0.10.** brief-json carries `effect`, and MCP's `get_access_log_report` returns the evidence of whether an attack had an effect (see AccessScope 1.0.10).
+- Verification: the whole workspace test run (86 suites, 6,779 tests) passes with 0 failures (Debian in Docker, with Xvfb). The postinst tests (`test_client_postinst.sh`, `test_server_postinst.sh`) pass too. The LLMNR change was checked on a throwaway Ubuntu 24.04: from a state where resolved with LLMNR=yes held 5355, 5355 closed and name resolution kept working. NetworkManager's per-connection LLMNR setting was not checked. The fetch right after an update is checked by tests (not yet on a real Kali machine).
 
 ### 2.6.6
 
@@ -1504,6 +1524,15 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 ---
 
 ## RoamSwitch for Mac
+
+## 2.2.3
+
+This version adds to the knowledge base of MCP's `get_app_help`. The bundled AccessScope becomes 1.0.10.
+
+- **Added: explanations of the diagnosis statuses (`feat_diagnostic_statuses`, 10 languages).** Pass, action needed, cannot verify, not applicable, what the score means (the share of passed items among those that could be judged, plus the protection of the settings preset), the reasons for "cannot verify" (the helper is unavailable, the location is unknown, the gateway is unknown, there is no baseline, a tool failed, it cannot be verified, and so on), and how to check again.
+- **Added: `get_app_help` returns items close to a pasted notice.** When no item contains all the words, up to 3 close items are returned with `approximate: true` (a Japanese notice or one English line can be pasted as it is; the same rule as the Linux knowledge base). The descriptions of `get_app_help` and `get_access_log_report` now mention approximate results and AccessScope's `effect` (whether an attack had an effect, from the size of the response).
+- **Changed: the bundled AccessScope is now 1.0.10.** MCP's `get_access_log_report` returns the evidence of whether an attack had an effect (`effect`) (see AccessScope 1.0.10).
+- Verification: 4,647 XCTest tests pass with 0 failures. The knowledge base and the approximate search are checked by tests (`MCPKnowledgeBaseTests` and `MCPCompanionToolsTests` gained tests for the 10 languages, a pasted notice, approximate results being only a fallback search, and `effect` being passed).
 
 ## 2.2.2
 
