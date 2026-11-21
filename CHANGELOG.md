@@ -10,6 +10,13 @@ independently. Older releases are summarized in ranges.
 
 ## AccessScope
 
+### 1.0.10
+
+brief-json now carries, for each detection, the evidence of whether the attack had an effect (`effect`).
+
+- **Added: each detection of `--format brief-json` carries `effect`.** The brief form lacked the evidence that the full report has ("the response was the same as the normal page, so the attack's content was probably ignored"), and through RoamSwitch's MCP the AI did not have enough to judge whether something was read. `effect` holds only the keys that the detection counted, among `suggests_effect`, `same_as_normal_page`, `weak_evidence`, `looks_normal_use` and `server_errors` (zero is told apart from not counted). They are counts, not text, so no string an attacker can write is included. The schema id stays `accessscope-brief/1` (keys were added).
+- Verification: the 711 workspace tests pass (0 failures).
+
 A security diagnosis tool for access logs. It is a separate app (Apache-2.0): the Server Edition .deb / .rpm packages carry only the command (`accessscope`; from 1.11.2 they also carry the PersonalSOC and PathScope commands); the Linux client edition and the Mac app carry the command and a window app.
 
 ### 1.0.9
@@ -553,9 +560,9 @@ The full text of each item is in this file's git history.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
-### Unreleased (Linux)
+### 2.6.7
 
-The version number and date are not decided yet. This section collects what is not published yet.
+This version adds the check before opening a link, and fixes problems reported by Kali and Linux Mint customers. The bundled AccessScope becomes 1.0.10.
 
 - **Added: a check before a link is opened (`roamswitch open-url enable|disable|status`, and a switch in the "Link audit" tab).** It is off by default. Turned on, a link pressed in any app (a mail client, a PDF, a chat) is checked before the browser opens it. The whole URL, including the path and the query, is examined with the same analysis as the manual URL checker. Only a suspicious link shows a confirmation window (the default answer is "do not open"); the others go straight to the original default browser. Turned off, the original browser is restored. The body of a mail is not read. A link an app opens in its built-in browser, and where a redirect leads, are not visible. It makes no network connection.
 - **Added: the preset Maximum security now turns on outbound scan detection (`outbound_scan_detect_enabled`) and the repeated-notice for AI agents (`exec_agent_repeat_enabled`).** The link check is not written by any preset; it appears in the guidance of Maximum security.
@@ -565,7 +572,7 @@ The version number and date are not decided yet. This section collects what is n
 - **Changed: right after an update by apt, rpm or Arch, the fetch of the signed data runs once, even when data is already there.**
 - **Fixed: a fanotify queue overflow during a package update produced a notice.** It is still shown in the status, and no notice is raised.
 - **Fixed: an attack URL in the access log produced a notice when the site only returned its top page (200).** Blocking and the daily tally are unchanged.
-- Verification: in Docker (xdg-utils and a virtual display), the switching of the link check, the hand-over of links and the confirmation window were actually checked.
+- Verification: in Docker (xdg-utils and a virtual display), the switching of the link check, the hand-over of links and the confirmation window were actually checked. The whole workspace test run (86 suites, 6,787 tests) passes with 0 failures (Debian in Docker, with Xvfb). The postinst tests (`test_client_postinst.sh`, `test_server_postinst.sh`) pass too.
 
 ### 2.6.6
 
@@ -1519,16 +1526,16 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 
 ## RoamSwitch for Mac
 
-## Unreleased (Mac)
+## 2.2.3
 
-The version number and date are not decided yet. This section collects what is not published yet.
+This version adds the check before opening a link and more to the knowledge base. The bundled AccessScope becomes 1.0.10.
 
 - **Added: a check before a link is opened (menu "Malware protection", "Check before opening links (Pro)…").** It switches the default web browser (macOS asks for confirmation). It is off by default. It works the same way as on Linux: a suspicious link shows a confirmation window, the others go straight to the original browser, the body of a mail is not read, a link an app opens in its built-in browser and where a redirect leads are not visible, and it makes no network connection.
 - **Added: the presets turn on browser extension monitoring in all 4 presets.** No preset writes packet pre-recording. The link check is not written by any preset; it appears in the guidance of Maximum security.
 - **Added: entries for the diagnosis states, the approximate search and the link check in the knowledge base (`get_app_help`).**
 - **Fixed: the notice of a drop in the score came out every day while the state stayed the same.** It now comes out only when a newly failed item appears, or when the score goes down.
 - **Fixed: when the periodic log audit could read only part of the logs because of a timeout or an output limit, it reported "files checked only at the head and the tail".** It is now shown as the state of reading the logs.
-- Verification: on a disposable macOS 26.6 VM, the receiving of a link, the confirmation window for switching the default browser, and the hand-over after it became the default were actually checked.
+- Verification: on a disposable macOS 26.6 VM, the receiving of a link, the confirmation window for switching the default browser, and the hand-over after it became the default were actually checked. The 4,658 XCTest tests pass with 0 failures.
 
 ## 2.2.2
 
