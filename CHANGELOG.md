@@ -560,6 +560,14 @@ The full text of each item is in this file's git history.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### Unreleased (Linux)
+
+The version number and date are not decided yet.
+
+- **Fixed: a document or a script that contains `curl -s http://…` was detected as Kinsing, and the clipboard warning of ClickFix came out just by copying the text of a mail that contained it.** The string is in every document that has a curl example, so it is removed from the strings of the Kinsing detection. ClickFix still does not warn on a curl piped into a shell on its own, by design. The other Kinsing strings (kinsing, kdevtmpfsi and the like) stay.
+- **Fixed: the standard panel of Kali (xfce4-panel) reads the start of the decoy files (`.env.backup`, `.pypirc`) when it lists the home folder, and a notice said that a decoy was opened.** It also lowered the trusted network. A read by the `xfce4-panel` that a package installed is not a detection now. One with a library injected, and an executable that is not the package's, is still detected.
+- Verification: in a Kali container, a panel with only the folder icon (Directory Menu) was run and the icon pressed; strace showed the panel itself opening `.env.backup` and `.pypirc`, and not `visible.txt`, whose type the name tells.
+
 ### 2.6.8
 
 This version fixes false detections and the way package CVE counts are shown, reported by Kali and Linux Mint customers.
