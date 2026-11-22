@@ -1547,6 +1547,15 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 
 ## RoamSwitch for Mac
 
+## 2.2.5
+
+Suppresses false-positive notifications on sleep/DarkWake resume and Tailscale disconnect, and improves notification wording, auto-clearing, and localization.
+
+- **Fixed: false-positive "Couldn't restore the network connection" alerts after disconnecting Tailscale.** Switched the helper's DHCP wait deadline from wall-clock `Date` to monotonic `systemUptime` (25s) so a sleep/DarkWake gap no longer causes an immediate timeout on wake. Also suppresses the alert when no active IPv4 service existed to bounce (`no active network service to bounce`) or when a 5-second follow-up check confirms a non-link-local IPv4 address, and clears any delivered banner upon recovery.
+- **Fixed: false-positive "Endpoint Security extension has stopped" alerts across sleep/DarkWake.** Added a sleep/wake observer with a 45-second post-wake grace window (and streak reset on wake) so normal heartbeat lag while suspended is not treated as a stop, clears delivered banners once `.active` resumes, and compacts the fallback guard list.
+- **Improved: deduplicates repeated Tailscale Exit Node offline banners and adds 9-language translations (`en`, `zh-Hans`, `zh-Hant`, `ko`, `de`, `fr`, `es`, `it`, `pt-PT`) for the updated network recovery notice.**
+- Verification: `RoamSwitchHelper` build succeeded; all 40 tests in `ESExtensionStopNoticeTests` (10) and `SecureDNSHealthTests` (30) passed.
+
 ## 2.2.4
 
 This version adds to the Endpoint Security extension the ability to answer whether something may proceed (AUTH). The extension is replaced, so after the update "System Settings" may ask you to approve the extension again.
