@@ -1547,6 +1547,14 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 
 ## RoamSwitch for Mac
 
+## 2.2.4
+
+This version adds to the Endpoint Security extension the ability to answer whether something may proceed (AUTH). The extension is replaced, so after the update "System Settings" may ask you to approve the extension again.
+
+- **Added: besides watching, notifying and recording, the Endpoint Security extension answers whether something may proceed in three situations.** (1) Before a process runs, it refuses the execution only when the file to be started is in a place a user can write and matches the signature of a known high-severity threat (EICAR is not refused). (2) It refuses signals from other processes that would resume or end a process RoamSwitch itself froze (RoamSwitch's own actions are allowed). (3) It holds the mounting of an unapproved external storage device until it has been checked. It answers within the deadline using only a table in memory, and allows when it cannot decide in time or is unsure. When the extension is not running, the former method is used and these refusals and holds do not work.
+- **Changed: the version of the extension (`CFBundleVersion`) is 4 instead of 3.** The extension is replaced.
+- Verification: the 4,658 XCTest tests pass (one test that checks the version of the extension was changed to expect 4, because this version replaces the extension, and was confirmed to pass). With the AUTH build (`ES_AUTH=1`), `verify_es_auth_switch.sh` and `verify_release_bundle.sh` pass, and the app is signed and notarized.
+
 ## 2.2.3
 
 This version adds the check before opening a link and more to the knowledge base. The bundled AccessScope becomes 1.0.10.
