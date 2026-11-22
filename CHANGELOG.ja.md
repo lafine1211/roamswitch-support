@@ -550,6 +550,16 @@ NBNS の役割と SNMP の既定 community を、受動で読むようにしま�
 Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）。
 詳しくは <https://lafine.net/linux>。
 
+### 未リリース(Linux)
+
+版の番号と日付は、まだ決まっていません。
+
+- **変更: パッケージ CVE の件数に、「修正版はあるが、Ubuntu Pro(ESM)でしか入手できないもの」を、別の行で出します(CLI、GUI、MCP の `acceptance` の `proOnly`)。** Pro を使っていない環境(Linux Mint など)では入れられないため、「要対応」の数から分けました。CISA の KEV に載るものと、EPSS が 0.9 以上のものは、これまでどおり「要対応」です。
+- **修正: Debian と Kali の、パッケージ CVE の照合が、実行中のカーネルだけを対象にします。** 更新後に残っていた古いカーネルのパッケージの CVE(Kali で 494 件)が、件数に入っていました。Ubuntu と Linux Mint は、すでに実行中のカーネルだけを照合しています。
+- **修正: パッケージの説明文書(`/usr/share/doc` などの下と、README・NEWS・TODO のような拡張子のない名前のファイル)に書かれた `curl -s http://…` の例を、Kinsing として検知していました。** 説明文書は、Kinsing の検知の対象から外しました。スクリプトの同じ行は、これまでどおり検知します。
+- **修正: ファイル選択画面を出す `xdg-desktop-portal-gtk` などが、おとりのファイル(`.env.backup`、`.pypirc`)を開いたときに、検知として通知していました。** 隠しファイルを表示した GTK のファイル選択画面は、ファイルの種類を調べるために中身の先頭を読みます。パッケージが入れた portal の実装(gtk、gnome、xapp、kde、lxqt)が読んだときは、通知しません。パッケージのものでない実行ファイルと、ライブラリを差し込まれたものは、これまでどおり検知します。
+- 検証: 使い捨ての Ubuntu 24.04 の VM で、NetworkManager が systemd-resolved に接続ごとの LLMNR を設定する構成にして、`LLMNR=no` の設定ファイルを置くと、接続の設定が LLMNR を有効にしていても、5355 番の待ち受けが 0 件になることを確かめました。同じ VM に 2.6.7 を入れ、キューを小さくして書き込みを大量に流すと、パッケージ更新の最中(dpkg のロックを持つ unattended-upgrade が動いている間)の取りこぼしは通知されず、更新の外の取りこぼしは通知されることを確かめました。GTK のファイル選択画面(`GtkFileChooserDialog`)に隠しファイルを表示させ、おとり 2 つが開かれて読まれることを、strace で確かめました。
+
 ### 2.6.7
 
 リンクを開く前の確認と、Kali・Linux Mint のお客様から届いた不具合の修正を入れた版です。同梱の AccessScope は 1.0.10 になります。
