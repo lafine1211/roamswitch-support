@@ -550,13 +550,15 @@ NBNS の役割と SNMP の既定 community を、受動で読むようにしま�
 Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）。
 詳しくは <https://lafine.net/linux>。
 
-### 未リリース(Linux)
+### 2.6.9
 
-版の番号と日付は、まだ決まっていません。
+Kali と Linux Mint のお客様から届いた誤検知の修正と、ClamAV が `roamswitch-app` を誤検知する件の対策を入れた版です。
 
 - **修正: 「curl -s http://…」を含む文書やスクリプトを、Kinsing として検知していました。クリップボードの ClickFix の警告も、この文字列の入ったメールの本文をコピーしただけで出ていました。** この文字列は、curl の例が載るあらゆる文書に出るので、Kinsing の検知の文字列から外しました。ClickFix の確認は、curl を単独でシェルに渡す形は警告しない設計で、変わりません。ほかの Kinsing の文字列(kinsing、kdevtmpfsi など)は残しています。
 - **修正: Kali の標準のパネル(xfce4-panel)が、ホームフォルダの一覧を作るときに、おとりのファイル(`.env.backup`、`.pypirc`)の先頭を読むため、おとりを開いたという通知が出ていました。** 信頼済みネットワークが下がる原因にもなっていました。パッケージが入れた `xfce4-panel` が読んだときは、検知にしません。ライブラリを差し込まれたものと、パッケージのものでない実行ファイルは、これまでどおり検知します。
-- 検証: Kali の Docker で、フォルダのアイコン(Directory Menu)だけのパネルを動かしてアイコンを押すと、パネル自身が `.env.backup` と `.pypirc` を開き、名前から型が分かる `visible.txt` は開かないことを、strace で確かめました。
+- **修正: ClamAV が、`roamswitch-app` を `Unix.Trojan.Ekoms-1` として検知していました**(Linux Mint。2.6.8 の amd64 の `roamswitch-app` は、手元の ClamAV 1.5.4(daily 28190)で FOUND になります)。RoamSwitch 自身の `.desktop` の一部が、シグネチャの断片に当たっていました。`.desktop` の行の並びを変え、判定のために持っていた断片も、平文でバイナリに残らないように、XOR で持つ形にしました。amd64 の `roamswitch-app`、`roamswitch-daemon`、`roamswitch`(CLI)、`roamswitch-mcp` の 4 つで、断片は 0 回で、同じ ClamAV で、検知はありません。ClamAV が、検知を最初の 1 件しか報告しないので、ほかのマルウェアを隠されないよう、RoamSwitch 自身のファイルを除外する前に、`clamscan --allmatch` で再スキャンし、検知が Ekoms-1 だけのときにだけ、除外します。
+- **追加: ログの消去の検知と、SUID の変更の通知に、変更したプロセスを出します。**
+- 検証: Kali の Docker で、フォルダのアイコン(Directory Menu)だけのパネルを動かしてアイコンを押すと、パネル自身が `.env.backup` と `.pypirc` を開き、名前から型が分かる `visible.txt` は開かないことを、strace で確かめました。 ワークスペース全体の試験(86 組、6,797 件)が、失敗 0 件で通りました(Debian の Docker、Xvfb つき)。postinst の試験も通ります。
 
 ### 2.6.8
 
