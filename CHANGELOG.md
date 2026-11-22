@@ -560,15 +560,15 @@ The full text of each item is in this file's git history.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
-### Unreleased (Linux)
+### 2.6.8
 
-The version number and date are not decided yet.
+This version fixes false detections and the way package CVE counts are shown, reported by Kali and Linux Mint customers.
 
 - **Changed: the package CVE count shows "a fix exists, but only in Ubuntu Pro (ESM)" on a line of its own (`proOnly` in `acceptance` of the CLI, the GUI and MCP).** A system without Pro (Linux Mint, for one) cannot install it, so it is counted apart from "action needed". What CISA lists in KEV, and what has an EPSS of 0.9 or more, stays in "action needed".
 - **Fixed: the package CVE scan of Debian and Kali looks only at the running kernel.** The CVEs of an older kernel package left installed after an update (494 on Kali) were in the count. Ubuntu and Linux Mint already match only the running kernel.
 - **Fixed: a `curl -s http://…` example in a package's documentation (under `/usr/share/doc` and the like, and files with customary names without an extension such as README, NEWS and TODO) was detected as Kinsing.** Documentation is out of the Kinsing detection. The same line in a script is still detected.
 - **Fixed: `xdg-desktop-portal-gtk` and the like, which show the file-chooser dialog, raised a detection notice when they opened the decoy files (`.env.backup`, `.pypirc`).** A GTK file chooser that shows hidden files reads the start of each file to tell its type. A read by an implementation of the portal that a package installed (gtk, gnome, xapp, kde, lxqt) raises no notice. An executable that is not the package's, and one with a library injected, is still detected.
-- Verification: on a disposable Ubuntu 24.04 VM, with NetworkManager setting LLMNR per connection in systemd-resolved, putting the `LLMNR=no` file in place left 0 listeners on port 5355 even with a connection set to enable LLMNR. With 2.6.7 installed on the same VM, a small queue and a large burst of writes gave no notice for the overflow during a package update (while unattended-upgrade held the dpkg lock) and a notice for the overflow outside one. With `GtkFileChooserDialog` showing hidden files, strace showed both decoys being opened and read.
+- Verification: on a disposable Ubuntu 24.04 VM, with NetworkManager setting LLMNR per connection in systemd-resolved, putting the `LLMNR=no` file in place left 0 listeners on port 5355 even with a connection set to enable LLMNR. With 2.6.7 installed on the same VM, a small queue and a large burst of writes gave no notice for the overflow during a package update (while unattended-upgrade held the dpkg lock) and a notice for the overflow outside one. With `GtkFileChooserDialog` showing hidden files, strace showed both decoys being opened and read. The whole workspace test run (86 suites, 6,789 tests) passes with 0 failures (Debian in Docker, with Xvfb). The postinst tests pass too.
 
 ### 2.6.7
 
