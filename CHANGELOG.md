@@ -560,6 +560,15 @@ The full text of each item is in this file's git history.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 2.6.10
+
+Improves Tailscale VPN reconnection and bounded backoff retries on wake from sleep and network transitions.
+
+- **Improved: when waking from sleep or offline (`mac == None`) onto an untrusted network, per-network gateway neighbor lock, Evil-Twin history checks, and Tailscale VPN bring-up now run even when the security level stays `lockdown`.**
+- **Improved: defers new Exit Node bring-up and the 10-second route confirmation poll while no default gateway is present, avoiding false "route unconfirmed" alerts before the link settles.**
+- **Improved: adds bounded backoff retries (10s, 20s, 30s) with once-per-episode notification on transient failures, and re-verifies the kernel tunnel route even when already armed so a lost route after wake recovers automatically.**
+- Verification: all 7 `tailscale` unit tests in `roamswitch-daemon` passed in `rust:1-bookworm`, and `cargo check --tests` for the Linux target passed (live `tailscaled`/`nftables` integration was not run).
+
 ### 2.6.9
 
 This version fixes false detections reported by Kali and Linux Mint customers and works around ClamAV flagging `roamswitch-app`.
@@ -1546,6 +1555,15 @@ Everything in these releases, grouped by topic (Client and Server Edition unless
 ---
 
 ## RoamSwitch for Mac
+
+## 2.2.6
+
+Improves automatic Tailscale VPN reconnection when waking from sleep overlaps with a network switch.
+
+- **Fixed: resolved a race where an in-flight failure from an earlier network attempt could set `autoConnectSuppressed` after a network switch or wake event had already occurred, leaving Tailscale disconnected (added generation tracking and deferred re-reconcile).**
+- **Improved: separates explicit user disconnect (`userPaused`) from transient connection failures (`failurePaused`) and retries transient failures with 8s and 15s backoff before pausing or alerting.**
+- **Improved: clears failure-induced pauses automatically on `NSWorkspace.didWakeNotification` and when the gateway MAC resolves from `nil`, while preserving an explicit user disconnect on the same network.**
+- Verification: all 25 tests in `OverlayExposureTests` (including the new `TailscaleReconnectState` state-machine test) passed (live sleep-wake/`tailscaled` integration was not run).
 
 ## 2.2.5
 
