@@ -550,6 +550,16 @@ NBNS の役割と SNMP の既定 community を、受動で読むようにしま�
 Linux 版（systemd + nftables）。apt / dnf / zypper で配布（GPG 署名）。
 詳しくは <https://lafine.net/linux>。
 
+### 2.6.11
+
+Server Edition の Web ガード（`web_guard.conf`）について、新規導入時の既定値強化・UA 欠如時の安全装置・TUI 多言語設定対応・診断表示の改善を行った版です。
+
+- **追加: Server Edition TUI（`roamswitch-server-tui`）から `/etc/roamswitch/web_guard.conf` の全 24 項目を編集・差分確認・保存できるようにしました（10 言語対応）。**
+- **変更: 新規インストール時の `/etc/roamswitch/web_guard.conf` の既定値を `mode=block`、`login=block`、`recon=warn` にしました。** すでに導入済みの環境をアップグレードした場合は、既存の `web_guard.conf` を変更しません。
+- **改善: `common` 形式ログなど User-Agent が取得できない環境では共有アドレス判定ができないため、自動 BAN を抑止して `warn` に留める安全装置を追加しました。**
+- **改善: `roamswitch web-guard-check` の「いまの設定」に `mode`・`attack`・`login`・`recon`・`canary`（および設定時の `exempt_ua`・`ai_canary_path`）を表示し、各モードの凡例（日本語・英語）を追加しました。**
+- 検証: `rust:1-bookworm` コンテナ上で `roamswitch-server-tui`（ユニット 89 件、結合 `tui_render` 33 件）、`roamswitch-cli`（`web_cmd` 8 件）、`roamswitch-core`（`web_guard`）、`roamswitch-server-daemon`（`ban_evidence`）の各テストおよび `scripts/test_server_postinst.sh` がパスしています。
+
 ### 2.6.10
 
 スリープ復帰やネットワーク切り替わり時の Tailscale VPN 再接続とバックオフ再試行を改善した版です。

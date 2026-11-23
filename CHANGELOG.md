@@ -560,6 +560,16 @@ The full text of each item is in this file's git history.
 The Linux edition (systemd + nftables), distributed via apt / dnf / zypper
 (GPG‑signed). See <https://lafine.net/linux>.
 
+### 2.6.11
+
+Hardens fresh-install defaults for Server Edition Web Guard (`web_guard.conf`), adds a safety guard when User-Agent is missing, adds multilingual TUI configuration support, and expands `web-guard-check` output.
+
+- **Added: all 24 keys of `/etc/roamswitch/web_guard.conf` can now be viewed, diffed, and saved from `roamswitch-server-tui` (10 languages).**
+- **Changed: fresh installs now initialize `/etc/roamswitch/web_guard.conf` with `mode=block`, `login=block`, and `recon=warn`.** Existing installations keep their existing configuration on upgrade.
+- **Improved: when logs lack User-Agent (such as `common` log format) and shared-address detection is unavailable, Web Guard suppresses automatic bans and falls back to `warn`.**
+- **Improved: `roamswitch web-guard-check` now displays `mode`, `attack`, `login`, `recon`, and `canary` (plus `exempt_ua` and `ai_canary_path` when set) along with a localized legend (Japanese / English).**
+- Verification: `roamswitch-server-tui` (89 unit tests, 33 `tui_render` integration tests), `roamswitch-cli` (`web_cmd`, 8 tests), `roamswitch-core` (`web_guard`), and `roamswitch-server-daemon` (`ban_evidence`) passed in `rust:1-bookworm`, and `scripts/test_server_postinst.sh` passed.
+
 ### 2.6.10
 
 Improves Tailscale VPN reconnection and bounded backoff retries on wake from sleep and network transitions.
